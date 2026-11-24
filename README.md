@@ -379,7 +379,7 @@ blockloom_<material>_<seed>_<px>px.zip
 ### Resource pack (.zip) — interactive builder
 Open **Resource pack** in the export row. The builder lets you:
 
-- choose the **vanilla target** for every block (26 targets, including multi-face grass and log mappings),
+- choose the **vanilla target** for every block (88 targets, including multi-face grass and log mappings),
 - add more works from your library to build a **multi-block pack**,
 - pick a **pack format profile** — broad 1.20+, modern 1.21+, or current 1.21.9+,
 - reorder entries with the arrow controls — the first entry supplies the pack icon,
@@ -400,7 +400,7 @@ blockloom_resourcepack_<n>blocks_<date>.zip          # multi-block
 
 Drop the zip into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides existing vanilla block texture paths; it does not create a new block.
 
-- The 26 vanilla target descriptors are independent of the recipe library; pick an explicit target for new families.
+- All 89 recipes map to their actual vanilla texture paths; the builder exposes 88 target descriptors grouped by family.
 - Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. With a 1.21+/1.21.9+ profile, **Untint grass top** adds an official-style grass model with `tintindex` removed.
 - Oak leaves always keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.

@@ -49,6 +49,7 @@ const els = {
   materialThumb: $('#materialThumb'),
   materialPopover: $('#materialPopover'),
   materialGrid: $('#materialGrid'),
+  materialSearch: $('#materialSearch'),
   closeMaterialPopover: $('#closeMaterialPopover'),
   materialCount: $('#materialCount'),
   popoverCount: $('#popoverCount'),
@@ -219,6 +220,7 @@ const state = {
   libraryWorks: [],
   libraryFilter: 'all',
   libraryQuery: '',
+  materialQuery: '',
   editorOpen: false,
   userHasActed: false,
   archiveTimer: 0,
@@ -641,9 +643,17 @@ function updateActiveVariation() {
 /* ---------- Material picker ---------- */
 function renderMaterialPicker() {
   const fragment = document.createDocumentFragment();
+  const query = state.materialQuery.trim().toLowerCase();
+  let shown = 0;
   MATERIAL_GROUPS.forEach((group) => {
-    const items = MATERIALS.filter((material) => material.group === group);
+    const items = MATERIALS.filter((material) => {
+      if (material.group !== group) return false;
+      if (!query) return true;
+      return [material.name, material.id, material.group, material.type, ...(material.keywords || [])]
+        .some((value) => String(value).toLowerCase().includes(query));
+    });
     if (!items.length) return;
+    shown += items.length;
     const section = document.createElement('div');
     section.className = 'material-group';
     const heading = document.createElement('div');
@@ -684,6 +694,7 @@ function renderMaterialPicker() {
     fragment.append(section);
   });
   els.materialGrid.replaceChildren(fragment);
+  els.popoverCount.textContent = query ? `${shown} of ${MATERIALS.length} materials` : `${MATERIALS.length} materials`;
   updateMaterialSelection();
 }
 
@@ -713,8 +724,12 @@ function openMaterialPicker() {
     els.materialPopover.hidePopover();
     return;
   }
+  state.materialQuery = '';
+  els.materialSearch.value = '';
+  renderMaterialPicker();
   els.materialPopover.style.width = `${Math.min(568, window.innerWidth - 24)}px`;
   els.materialPopover.showPopover();
+  requestAnimationFrame(() => els.materialSearch.focus());
   requestAnimationFrame(positionMaterialPopover);
 }
 
@@ -1888,10 +1903,19 @@ function renderPackEntries() {
     const card = document.createElement('article');
     card.className = 'pack-entry';
     card.dataset.key = entry.key;
-    const options = PACK_TARGETS.map((item) => {
-      const usedByOther = state.packEntries.some((other) => other.key !== entry.key && other.targetId === item.id);
-      return `<option value="${item.id}" ${item.id === entry.targetId ? 'selected' : ''} ${usedByOther ? 'disabled' : ''}>${item.label}</option>`;
-    }).join('');
+    const groups = new Map();
+    for (const group of MATERIAL_GROUPS) groups.set(group, []);
+    for (const item of PACK_TARGETS) {
+      if (!groups.has(item.group)) groups.set(item.group, []);
+      groups.get(item.group).push(item);
+    }
+    const options = [...groups.entries()]
+      .filter(([, items]) => items.length)
+      .map(([group, items]) => `<optgroup label="${escapeHtml(group)}">${items.map((item) => {
+        const usedByOther = state.packEntries.some((other) => other.key !== entry.key && other.targetId === item.id);
+        return `<option value="${item.id}" ${item.id === entry.targetId ? 'selected' : ''} ${usedByOther ? 'disabled' : ''}>${escapeHtml(item.label)}</option>`;
+      }).join('')}</optgroup>`)
+      .join('');
     card.innerHTML = `
       <div class="pack-entry-thumb"><img src="${entry.thumb || entry.textures.side.canvas.toDataURL('image/png')}" alt="" /></div>
       <div class="pack-entry-main">
@@ -2794,6 +2818,10 @@ function bindEvents() {
 
   els.materialTrigger.addEventListener('click', openMaterialPicker);
   els.closeMaterialPopover.addEventListener('click', closeMaterialPicker);
+  els.materialSearch.addEventListener('input', () => {
+    state.materialQuery = els.materialSearch.value;
+    renderMaterialPicker();
+  });
   els.materialPopover.addEventListener('toggle', (event) => {
     els.materialTrigger.setAttribute('aria-expanded', String(event.newState === 'open'));
     if (event.newState === 'open') requestAnimationFrame(positionMaterialPopover);

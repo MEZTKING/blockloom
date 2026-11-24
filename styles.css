@@ -2855,3 +2855,8 @@ body.is-dragging-file .drop-overlay { display: grid; }
 }
 .footer-api { color: #8ba071; font-family: var(--font-mono); font-size: 6.5px; text-decoration: none; border-bottom: 1px dotted rgba(185,238,106,.25); }
 .footer-api:hover { color: var(--lime); border-bottom-color: rgba(185,238,106,.65); }
+
+.material-search { display: block; margin: 0 0 9px; }
+.material-search input { width: 100%; height: 29px; padding: 0 9px; border: 1px solid var(--line); border-radius: 5px; background: rgba(8,10,6,.45); color: var(--text-soft); font-family: var(--font-mono); font-size: 7px; outline: none; }
+.material-search input::placeholder { color: var(--dim); }
+.material-search input:focus { border-color: rgba(185,238,106,.38); }

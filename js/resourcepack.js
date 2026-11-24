@@ -2,6 +2,7 @@
 
 import { createZip } from './zip.js';
 import { drawIsoCube } from './engine.js';
+import { getMaterial, MATERIALS } from '../core/index.js';
 
 const TARGETS = {
   stone: { label: 'Stone', files: [{ path: 'stone', face: 'side' }] },
@@ -50,7 +51,37 @@ const TARGETS = {
   lapis_ore: { label: 'Lapis Ore', files: [{ path: 'lapis_ore', face: 'side' }] },
 };
 
-export const PACK_TARGETS = Object.entries(TARGETS).map(([id, target]) => ({ id, ...target }));
+/* New recipe families map to their real vanilla block IDs. */
+function familyTargetPath(material) {
+  if (material.type === 'stained_glass') return `${material.id.replace('stained_glass_', '')}_stained_glass`;
+  if (material.type === 'concrete') return `${material.id.replace('concrete_', '')}_concrete`;
+  if (material.type === 'wool' && material.id !== 'wool') return `${material.id.replace('wool_', '')}_wool`;
+  return material.id;
+}
+
+for (const material of MATERIALS) {
+  if (TARGETS[material.id] || material.id === 'leaves_cutout') continue;
+  const isFamily = ['Glass', 'Wool', 'Concrete', 'Metal'].includes(material.group) || material.type === 'bricks';
+  if (!isFamily) continue;
+  TARGETS[material.id] = {
+    label: material.name,
+    group: material.group,
+    files: [{ path: familyTargetPath(material), face: 'side' }],
+  };
+}
+
+const TARGET_ALIASES = { leaves_cutout: 'leaves' };
+const TARGET_GROUPS = { wool: 'Wool', leaves: 'Wood', oak_log: 'Wood' };
+
+function targetGroup(id, target) {
+  return target.group || TARGET_GROUPS[id] || getMaterial(id).group || 'Other';
+}
+
+export const PACK_TARGETS = Object.entries(TARGETS).map(([id, target]) => ({
+  id,
+  ...target,
+  group: targetGroup(id, target),
+}));
 
 export const GRASS_TINT_FREE_MODEL_PATH = 'assets/minecraft/models/block/grass_block.json';
 
@@ -126,11 +157,13 @@ export const PACK_FORMATS = [
 ];
 
 export function getPackTarget(targetId) {
-  return TARGETS[targetId] ? { id: targetId, ...TARGETS[targetId] } : null;
+  return TARGETS[targetId]
+    ? { id: targetId, ...TARGETS[targetId], group: targetGroup(targetId, TARGETS[targetId]) }
+    : null;
 }
 
 export function packTargetFor(materialId) {
-  return getPackTarget(materialId) || getPackTarget('stone');
+  return getPackTarget(TARGET_ALIASES[materialId] || materialId) || getPackTarget(materialId) || getPackTarget('stone');
 }
 
 export function isPackSupported(materialId) {
