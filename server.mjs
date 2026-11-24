@@ -2,10 +2,16 @@ import http from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { API_DOCS, BRIDGE_API_VERSION, OPENAPI, batchZip, capabilities, renderTextureSet, serializeTextureSet, texturePng, textureResultZip } from './server/bridge.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const port = Number(process.env.PORT) || 4173;
-const host = process.env.HOST || '0.0.0.0';
+const host = process.env.HOST || '127.0.0.1';
+const BRIDGE_TOKEN = process.env.BRIDGE_TOKEN || '';
+const BRIDGE_ALLOWED_ORIGINS = (process.env.BRIDGE_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'pollinations').toLowerCase();
 const AI_ENABLED = process.env.AI_ENABLED !== 'false' && AI_PROVIDER !== 'none';
@@ -334,7 +340,235 @@ function aiStatus() {
   };
 }
 
+const BRIDGE_PATHS = new Set(['/api', '/api/health', '/api/materials', '/api/generate', '/api/batch', '/api/openapi.json']);
+
+function isLoopbackHost(value) {
+  return value === '127.0.0.1' || value === 'localhost' || value === '::1';
+}
+
+function isLoopback(req) {
+  const address = req.socket.remoteAddress || '';
+  return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+}
+
+function bridgePath(url) {
+  if (url.pathname === '/api') return true;
+  return BRIDGE_PATHS.has(url.pathname);
+}
+
+function originAllowed(origin) {
+  if (!origin) return false;
+  if (BRIDGE_ALLOWED_ORIGINS.length) return BRIDGE_ALLOWED_ORIGINS.includes(origin);
+  if (BRIDGE_TOKEN) return true;
+  return origin === 'null'
+    || origin === 'https://meztking.github.io'
+    || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
+function applyBridgeCors(req, res) {
+  const origin = req.headers.origin;
+  if (!originAllowed(origin)) return false;
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Blockloom-Token');
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, X-Blockloom-Title, X-Blockloom-Seed, X-Blockloom-Material, X-Blockloom-Generator');
+  res.setHeader('Access-Control-Max-Age', '600');
+  return true;
+}
+
+function bridgeAuthorized(req) {
+  if (!BRIDGE_TOKEN) return isLoopback(req);
+  const bearer = req.headers.authorization || '';
+  return bearer === `Bearer ${BRIDGE_TOKEN}` || req.headers['x-blockloom-token'] === BRIDGE_TOKEN;
+}
+
+function bridgeInputFromQuery(url) {
+  const q = url.searchParams;
+  const modifiers = q.get('modifiers') || q.getAll('modifier').join(',');
+  return {
+    prompt: q.get('prompt') || '',
+    materialId: q.get('material') || q.get('materialId') || '',
+    seed: q.get('seed') || undefined,
+    size: q.get('size') || undefined,
+    finish: q.get('finish') || undefined,
+    grain: q.get('grain') || undefined,
+    contrast: q.get('contrast') || undefined,
+    hue: q.get('hue') || undefined,
+    modifiers: modifiers || undefined,
+    accent: q.get('accent') || undefined,
+    tint: q.get('tint') || undefined,
+    title: q.get('title') || undefined,
+    face: q.get('face') || 'side',
+  };
+}
+
+function bridgeFormat(value, input, accept = '') {
+  const requested = String(value || '').toLowerCase();
+  if (requested === 'json' || requested === 'zip' || requested === 'png') return requested;
+  if (input.face === 'all') return 'zip';
+  if (String(accept).includes('application/json')) return 'json';
+  return 'png';
+}
+
+function bridgeError(res, status, message) {
+  json(res, status, { ok: false, error: message });
+}
+
+function sendBuffer(res, status, data, type, filename, headers = {}) {
+  const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data);
+  res.writeHead(status, {
+    'Content-Type': type,
+    'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    ...headers,
+  });
+  res.end(buffer);
+}
+
+async function sendTextureResult(req, res, result, input, format, { download = false } = {}) {
+  const headers = {
+    'X-Blockloom-Title': encodeURIComponent(result.title),
+    'X-Blockloom-Seed': String(result.seed),
+    'X-Blockloom-Material': encodeURIComponent(result.material.name),
+    'X-Blockloom-Generator': 'blockloom-local-bridge',
+  };
+  if (format === 'json') {
+    json(res, 200, { ok: true, ...serializeTextureSet(result) });
+    return;
+  }
+  if (format === 'zip') {
+    const { zip, filename } = await textureResultZip(result);
+    sendBuffer(res, 200, zip, 'application/zip', filename, {
+      ...headers,
+      'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${filename}"`,
+    });
+    return;
+  }
+  if (input.face === 'all') {
+    bridgeError(res, 400, 'format=png needs one face; use face=side, top, or bottom, or format=zip for all faces.');
+    return;
+  }
+  const face = ['side', 'top', 'bottom'].includes(input.face) ? input.face : 'side';
+  const png = texturePng(result, face);
+  const filename = `${result.filename}_${face}.png`;
+  sendBuffer(res, 200, png, 'image/png', filename, {
+    ...headers,
+    'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${filename}"`,
+  });
+}
+
+async function handleBridge(req, res, url) {
+  if (!bridgePath(url)) return false;
+
+  applyBridgeCors(req, res);
+  if (req.method === 'OPTIONS') {
+    if (!originAllowed(req.headers.origin)) {
+      bridgeError(res, 403, 'Origin is not allowed by BRIDGE_ALLOWED_ORIGINS.');
+      return true;
+    }
+    res.writeHead(204);
+    res.end();
+    return true;
+  }
+
+  if (!bridgeAuthorized(req)) {
+    if (BRIDGE_TOKEN) res.setHeader('WWW-Authenticate', 'Bearer');
+    json(res, 401, {
+      ok: false,
+      error: BRIDGE_TOKEN ? 'Missing or invalid bridge token.' : 'Bridge access is limited to loopback clients.',
+      auth: BRIDGE_TOKEN ? 'Bearer token required' : 'loopback only',
+    });
+    return true;
+  }
+
+  if (url.pathname === '/api' && req.method === 'GET') {
+    json(res, 200, {
+      ok: true,
+      ...API_DOCS,
+      auth: {
+        required: Boolean(BRIDGE_TOKEN),
+        mode: BRIDGE_TOKEN ? 'Bearer token' : 'loopback only',
+        headers: ['Authorization: Bearer <token>', 'X-Blockloom-Token: <token>'],
+      },
+    });
+    return true;
+  }
+
+  if (url.pathname === '/api/health' && req.method === 'GET') {
+    const caps = capabilities();
+    json(res, 200, {
+      ok: true,
+      service: 'blockloom-local-bridge',
+      bridgeVersion: BRIDGE_API_VERSION,
+      appVersion: process.env.npm_package_version || '1.10.0',
+      auth: BRIDGE_TOKEN ? 'token' : 'loopback',
+      aiRequired: false,
+      capabilities: {
+        materials: caps.materials.length,
+        modifiers: caps.modifiers.length,
+        finishes: caps.finishes.map((finish) => finish.id),
+        faces: caps.faces,
+        formats: caps.formats,
+        maxBatchItems: caps.bridge.maxBatchItems,
+        sizes: caps.bridge.sizes,
+      },
+    });
+    return true;
+  }
+
+  if (url.pathname === '/api/materials' && req.method === 'GET') {
+    json(res, 200, { ok: true, ...capabilities() });
+    return true;
+  }
+
+  if (url.pathname === '/api/openapi.json' && req.method === 'GET') {
+    json(res, 200, OPENAPI);
+    return true;
+  }
+
+  if (url.pathname === '/api/generate' && (req.method === 'GET' || req.method === 'POST')) {
+    let body = {};
+    if (req.method === 'POST') {
+      body = await readJson(req, 64 * 1024);
+    }
+    const input = { ...bridgeInputFromQuery(url), ...body };
+    input.face = body.face || url.searchParams.get('face') || 'side';
+    const format = bridgeFormat(body.format || url.searchParams.get('format'), input, req.headers.accept);
+    const result = renderTextureSet(input);
+    await sendTextureResult(req, res, result, input, format, {
+      download: url.searchParams.get('download') === '1' || body.download === true,
+    });
+    return true;
+  }
+
+  if (url.pathname === '/api/batch' && req.method === 'POST') {
+    const body = await readJson(req, 512 * 1024);
+    const batch = await batchZip(body.items);
+    const filename = String(body.filename || batch.filename).replace(/[\r\n"]/g, '_');
+    sendBuffer(res, 200, batch.zip, 'application/zip', filename, {
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'X-Blockloom-Count': String(batch.manifest.count),
+      'X-Blockloom-Generator': 'blockloom-local-bridge',
+    });
+    return true;
+  }
+
+  bridgeError(res, 405, 'Method not allowed. See GET /api for the bridge reference.');
+  return true;
+}
+
+
 async function handleApi(req, res, url) {
+  try {
+    if (await handleBridge(req, res, url)) return true;
+  } catch (error) {
+    console.error('[bridge] request failed:', error);
+    bridgeError(res, error?.status || 400, error?.message || 'Bridge request failed.');
+    return true;
+  }
+
   if (url.pathname === '/api/ai/status' && req.method === 'GET') {
     json(res, 200, aiStatus());
     return true;
@@ -433,6 +667,8 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Blockloom running at http://localhost:${port}`);
+  console.log(`Blockloom running at http://${host}:${port}`);
+  console.log(`Local texture bridge: http://${host}:${port}/api  (AI not required)`);
+  console.log(`Bridge auth: ${BRIDGE_TOKEN ? 'Bearer token required' : `loopback only${isLoopbackHost(host) ? '' : ' — set BRIDGE_TOKEN for remote access'}`}`);
   console.log(`AI provider: ${provider?.label || 'disabled'} (${aiConfigured ? 'ready' : 'not configured'})`);
 });

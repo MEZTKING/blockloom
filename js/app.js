@@ -97,6 +97,7 @@ const els = {
   dragHint: $('#dragHint'),
   footerClock: $('#footerClock'),
   updateBtn: $('#updateBtn'),
+  footerApi: $('#footerApi'),
   howBtn: $('#howBtn'),
   howDialog: $('#howDialog'),
   closeHowBtn: $('#closeHowBtn'),
@@ -3206,6 +3207,7 @@ function init() {
     els.updateBtn.hidden = false;
     els.updateBtn.addEventListener('click', checkForUpdates);
   }
+  if (!IS_TAURI && !IS_STATIC_DEMO) els.footerApi.hidden = false;
   updateClock();
   setInterval(updateClock, 60000);
   window.addEventListener('online', () => {

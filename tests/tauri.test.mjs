@@ -19,7 +19,7 @@ test('Tauri config packages the same app version for Windows', () => {
   assert.equal(config.version, packageJson.version);
   assert.match(cargo, new RegExp(`version = "${packageJson.version.replace(/\./g, '\\.')}"`));
   assert.equal(config.identifier, 'com.meztking.blockloom');
-  assert.equal(config.build.devUrl, 'http://localhost:4173');
+  assert.equal(config.build.devUrl, 'http://127.0.0.1:4173');
   assert.equal(config.build.frontendDist, '../dist');
   assert.equal(config.build.beforeBuildCommand, 'npm run build:native');
   assert.deepEqual(config.bundle.targets, ['msi', 'nsis']);

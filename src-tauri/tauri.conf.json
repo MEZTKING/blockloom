@@ -5,7 +5,7 @@
   "identifier": "com.meztking.blockloom",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:4173",
+    "devUrl": "http://127.0.0.1:4173",
     "beforeBuildCommand": "npm run build:native",
     "frontendDist": "../dist"
   },

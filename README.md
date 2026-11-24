@@ -1,6 +1,6 @@
 # Blockloom
 
-A local-first, offline-capable **Minecraft texture studio**: prompt-driven generation, import of existing Minecraft PNGs, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
+A local-first, offline-capable **Minecraft texture studio** and **local texture-generation bridge** for other apps: prompt-driven generation, import of existing Minecraft PNGs, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
 
 No account, no framework. The web app has no build step; the optional Windows shell uses Tauri.
 
@@ -11,11 +11,13 @@ No account, no framework. The web app has no build step; the optional Windows sh
 ## Run it
 
 ```bash
-npm run dev
-# http://localhost:4173
+npm run dev       # full studio + optional AI proxy at http://127.0.0.1:4173
+npm run dev:noai  # the same studio with AI disabled
+npm run bridge    # studio + local texture API, AI disabled
+npm run check     # tests + syntax checks
 ```
 
-`npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy.
+`npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy and the local texture bridge. The server binds to `127.0.0.1` by default; set `HOST=0.0.0.0` only with `BRIDGE_TOKEN`.
 
 ```bash
 npm test     # parser, RGBA, seam, import, ZIP, PWA, share, target, and format tests
@@ -110,6 +112,27 @@ These are preview artifacts, not store-published or code-signed production relea
 - Auto-install updates are not configured. The desktop **Check updates** button only opens the release page.
 - Android SAF export, Play Store AAB/signing, and store listing are not complete.
 
+## Local API bridge
+
+The Node server exposes an AI-free texture API at `http://127.0.0.1:4173/api`:
+
+- `GET /api/generate?prompt=...&seed=...&size=16` → PNG (side face)
+- `format=json` → metadata + base64 data URLs for side/top/bottom
+- `format=zip` → a complete texture set ZIP
+- `POST /api/generate` → explicit prompt/material/seed/modifiers/accent recipe
+- `POST /api/batch` → up to 64 named texture sets in one ZIP
+- `GET /api/materials`, `/api/health`, `/api/openapi.json`
+
+Authentication is optional on loopback. Set `BRIDGE_TOKEN` for a token-protected local/LAN bridge; send `Authorization: Bearer <token>` or `X-Blockloom-Token`. CORS is restricted to local origins by default and configurable with `BRIDGE_ALLOWED_ORIGINS`.
+
+```bash
+npm run bridge
+curl "http://127.0.0.1:4173/api/generate?prompt=mossy%20cobblestone&seed=42&size=16" -o cobblestone.png
+node bin/blockloom.mjs set --prompt "frosted oak planks" --size 32 --out set.zip
+```
+
+Full reference: [docs/API.md](docs/API.md). TypeScript client for MCSuperMods/Electron: [examples/mcsupermods-client.ts](examples/mcsupermods-client.ts). Batch example: [examples/batch.json](examples/batch.json).
+
 ## Keyboard
 
 | Shortcut | Action |
@@ -164,6 +187,7 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 - A shareable compressed link carrying the current pixels and recipe.
 - An offline app shell; after first load, generation, import, finishing, library, versions, sharing, and packs work with no network.
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
+- A local HTTP API and CLI for generating PNGs and texture-set ZIPs for MCSuperMods and other applications.
 
 ## Texture finisher
 
@@ -386,6 +410,11 @@ At Minecraft resolution, texture quality comes from **palette discipline, contro
 index.html          app shell and UI
 styles.css          design system, 3D cube, AI lab, library, finisher, responsive layouts
 js/importer.js     square/animation import planning and filename titles
+server/bridge.mjs   local AI-free texture generator, API model, batch/ZIP logic
+server/png.mjs      dependency-free RGBA PNG encoder
+bin/blockloom.mjs   CLI for PNG, texture-set ZIP, batch, materials
+docs/API.md         HTTP bridge and MCSuperMods integration reference
+examples/           TypeScript client and batch JSON
 js/engine.js        noise, material recipes, prompt parser, isometric renderer, native save bridge
 src-tauri/          Tauri 2 Windows shell, Rust save command, capabilities, icons
 scripts/prepare-tauri.mjs  stages the static app into dist/
@@ -411,6 +440,9 @@ screenshots/        preview images
 ```
 
 ## Notes and limits
+
+- The local bridge is procedural only; it never calls an AI provider.
+- The Tauri Windows/Android apps do **not** start the HTTP bridge. Run `npm run bridge` separately for MCSuperMods or other apps.
 
 - The procedural core is not an ML model. The AI layer is optional and clearly labelled.
 - The free Pollinations demo can be rate-limited or unavailable (shared public quota). Configure a private provider for serious use.
@@ -444,6 +476,7 @@ screenshots/        preview images
 - ZIP central-directory and payload integrity,
 - resource-pack target mappings and format profiles,
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
+- PNG encoding, deterministic bridge output, batch ZIP manifests, API auth, CORS, and live bridge endpoints,
 - square/animated/large import planning and filename titles,
 - installable manifest metadata and complete offline app-shell cache coverage,
 - Tauri configuration, icon inventory, native save bridge, desktop-mode behavior, update-check version logic, and active CI workflows.

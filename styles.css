@@ -2853,3 +2853,5 @@ body.is-dragging-file .drop-overlay { display: grid; }
 @supports (padding: env(safe-area-inset-top)) {
   body { padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
 }
+.footer-api { color: #8ba071; font-family: var(--font-mono); font-size: 6.5px; text-decoration: none; border-bottom: 1px dotted rgba(185,238,106,.25); }
+.footer-api:hover { color: var(--lime); border-bottom-color: rgba(185,238,106,.65); }

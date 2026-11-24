@@ -1,0 +1,7 @@
+{
+  "items": [
+    { "id": "mossy-cobblestone", "prompt": "mossy cobblestone", "size": 16 },
+    { "id": "amber-deepslate", "prompt": "cracked deepslate with glowing amber veins", "size": 16 },
+    { "id": "frosted-planks", "prompt": "frosted oak planks", "size": 32 }
+  ]
+}
