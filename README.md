@@ -92,18 +92,20 @@ The browser is asked for persistent storage. There is no app-level cap; storage 
 
 ## AI concept layer (optional)
 
-![AI concept mode](screenshots/blockloom-ai.png)
+![AI candidate comparison](screenshots/blockloom-ai-candidates.png)
 
 - Open **AI** beside Forge.
-- The prompt is sent to a configured image provider; the return is:
+- Choose **1–3 concepts per run**. Each prompt is sent to the configured image provider; every return is:
   1. downscaled to the target resolution,
   2. auto-levelled and blended with the procedural recipe at an adjustable **AI influence**,
   3. snapped to a compact extracted palette,
   4. seam-repaired so the tile wraps,
-  5. handed through the same finisher, library, preview, and export pipeline.
+  5. shown in a candidate sheet with the other concepts.
+- Compare the candidates, select one, and choose **Use selected concept**. Only then does it enter the studio and auto-archive. Discarded candidates are never saved.
+- **+ Another** adds one more provider concept to the sheet for comparison (up to four at a time).
 - AI results are clearly marked **AI MODE**. Click the badge to return to a procedural render of the same recipe.
 
-**Default provider:** Pollinations (public, no key, free tier of one image every 45 seconds). It is a demo endpoint with no SLA. For production, configure OpenAI Images, Replicate, or a local Automatic1111 server.
+**Default provider:** Pollinations (public, no key, free tier of one image every 45 seconds). It is a demo endpoint with no SLA. A multi-concept run may therefore stop after the first candidate; **+ Another** lets you add another after the cooldown. For production, configure OpenAI Images, Replicate, or a local Automatic1111 server.
 
 ### AI provider configuration
 
@@ -189,7 +191,8 @@ Open **Resource pack** in the export row. The builder lets you:
 - choose the **vanilla target** for every block (26 targets, including multi-face grass and log mappings),
 - add more works from your library to build a **multi-block pack**,
 - pick a **pack format profile** — broad 1.20+, modern 1.21+, or current 1.21.9+,
-- see target and texture-file counts before exporting.
+- see target and texture-file counts before exporting,
+- optionally **untint the grass top** through a 1.21+ model override. The toggle is disabled on the 1.20+ profile; oak leaves keep vanilla biome tint.
 
 ```text
 blockloom_resourcepack_<target>_<seed>_<px>px.zip   # single block
@@ -206,8 +209,8 @@ blockloom_resourcepack_<n>blocks_<date>.zip          # multi-block
 Drop the zip into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides existing vanilla block texture paths; it does not create a new block.
 
 - All 26 materials map to a valid vanilla target, and any target can be selected for any texture.
-- Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. The top still inherits Minecraft's biome tint.
-- Oak leaves keep vanilla's biome tint, so in-game colour may differ.
+- Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. With a 1.21+/1.21.9+ profile, **Untint grass top** adds an official-style grass model with `tintindex` removed.
+- Oak leaves always keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.
 - Duplicate vanilla targets are prevented in the builder; the pack builder also skips duplicates defensively.
 
@@ -238,6 +241,7 @@ screenshots/        preview images
 - The free Pollinations demo can be rate-limited or unavailable (shared public quota). Configure a private provider for serious use.
 - The local library is per-browser/device. Clearing site data removes it; use Backup first.
 - Backups restore through the library's **Restore** button; duplicates by pixel fingerprint are skipped.
+- AI candidate comparison is in-memory only; only the chosen concept becomes a work and is archived.
 - All PNGs are opaque except intentionally erased pixels and the grass side overlay. Vanilla leaf tinting is preserved.
 - Surface textures wrap by construction; AI tiles are edge-repaired, and log tops are concentric rings by design.
 - Built and tested in Chromium. Uses native `<dialog>`, the Popover API, `color-mix()`, CSS 3D transforms, Canvas, and IndexedDB.

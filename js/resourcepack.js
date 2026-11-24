@@ -52,6 +52,46 @@ const TARGETS = {
 
 export const PACK_TARGETS = Object.entries(TARGETS).map(([id, target]) => ({ id, ...target }));
 
+export const GRASS_TINT_FREE_MODEL_PATH = 'assets/minecraft/models/block/grass_block.json';
+
+// A copy of the vanilla grass block model with every "tintindex" removed.
+// Scope: the 1.21+ format profiles only. The top face then renders the authored
+// texture without Minecraft's biome colour multiplying it.
+export const GRASS_TINT_FREE_MODEL = {
+  parent: 'block/block',
+  textures: {
+    particle: 'block/dirt',
+    bottom: 'block/dirt',
+    top: 'block/grass_block_top',
+    side: 'block/grass_block_side',
+    overlay: 'block/grass_block_side_overlay',
+  },
+  elements: [
+    {
+      from: [0, 0, 0],
+      to: [16, 16, 16],
+      faces: {
+        down: { uv: [0, 0, 16, 16], texture: '#bottom', cullface: 'down' },
+        up: { uv: [0, 0, 16, 16], texture: '#top', cullface: 'up' },
+        north: { uv: [0, 0, 16, 16], texture: '#side', cullface: 'north' },
+        south: { uv: [0, 0, 16, 16], texture: '#side', cullface: 'south' },
+        west: { uv: [0, 0, 16, 16], texture: '#side', cullface: 'west' },
+        east: { uv: [0, 0, 16, 16], texture: '#side', cullface: 'east' },
+      },
+    },
+    {
+      from: [0, 0, 0],
+      to: [16, 16, 16],
+      faces: {
+        north: { uv: [0, 0, 16, 16], texture: '#overlay', cullface: 'north' },
+        south: { uv: [0, 0, 16, 16], texture: '#overlay', cullface: 'south' },
+        west: { uv: [0, 0, 16, 16], texture: '#overlay', cullface: 'west' },
+        east: { uv: [0, 0, 16, 16], texture: '#overlay', cullface: 'east' },
+      },
+    },
+  ],
+};
+
 export const PACK_FORMATS = [
   {
     id: 'broad',
@@ -165,6 +205,9 @@ export async function buildResourcePack(entries, options = {}) {
   if (!included.length) throw new Error('Every entry points at the same block target.');
 
   const format = getPackFormat(options.formatId);
+  const tintFreeGrass = Boolean(options.grassTintFree)
+    && format.id !== 'broad'
+    && included.some((entry) => entry.targetId === 'grass_block');
   const files = [];
   const texturePaths = [];
   const packedEntries = [];
@@ -204,13 +247,22 @@ export async function buildResourcePack(entries, options = {}) {
     },
   };
 
+  if (tintFreeGrass) {
+    files.push({ name: GRASS_TINT_FREE_MODEL_PATH, data: JSON.stringify(GRASS_TINT_FREE_MODEL, null, 2) });
+  }
+
   files.push({ name: 'pack.mcmeta', data: JSON.stringify(packMcmeta, null, 2) });
   files.push({ name: 'pack.png', data: await canvasToBlob(packIcon(included[0].textures)) });
 
   const targetLines = packedEntries.map(
     (entry) => `  - ${entry.target.padEnd(16)} ← ${entry.source} (seed ${entry.seed}, ${entry.size}px)`,
   );
-  const notes = [...new Set(packedEntries.map((entry) => entry.note).filter(Boolean))];
+  const notes = [...new Set(packedEntries.map((entry) => {
+    if (entry.targetId === 'grass_block' && tintFreeGrass) {
+      return 'Grass top is rendered through the untinted 1.21+ model override; the side overlay stays transparent.';
+    }
+    return entry.note;
+  }).filter(Boolean))];
   const readme = [
     'BLOCKLOOM RESOURCE PACK',
     '=======================',
@@ -233,6 +285,9 @@ export async function buildResourcePack(entries, options = {}) {
     '-----',
     format.note,
     'This is a texture override pack, not a new block. Custom blocks require a mod or datapack.',
+    ...(tintFreeGrass
+      ? ['Tint override: grass block top is rendered untinted through a 1.21+ model override.']
+      : []),
     ...(notes.length ? ['', 'Tint notes:', ...notes.map((note) => `  - ${note}`)] : []),
     '',
   ].join('\n');
@@ -252,6 +307,7 @@ export async function buildResourcePack(entries, options = {}) {
         maxFormat: format.maxFormat,
       },
       entries: packedEntries,
+      tintFreeGrass,
       skippedDuplicates: skipped,
     }, null, 2),
   });
@@ -269,6 +325,7 @@ export async function buildResourcePack(entries, options = {}) {
     skipped,
     fileCount: files.length,
     format,
+    tintFreeGrass,
     description: packDescription,
   };
 }

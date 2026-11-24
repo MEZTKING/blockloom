@@ -309,7 +309,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.3 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.4 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -391,7 +391,7 @@
     <div class="ai-content">
       <div class="ai-kicker"><span></span>OPTIONAL AI LAYER</div>
       <h2>Dream it.<br><span>Then pixel it.</span></h2>
-      <p class="ai-lede">A second way in. Send one concept prompt to the image provider; Blockloom reduces the response to Minecraft resolution, snaps it to a tight palette, repairs the seams, and blends it with the recipe’s block structure.</p>
+      <p class="ai-lede">A second way in. Send a prompt and compare up to three concepts; Blockloom reduces each response to Minecraft resolution, snaps it to a tight palette, repairs the seams, and blends it with the recipe’s block structure. Nothing reaches your library until you choose.</p>
 
       <div class="ai-provider-card">
         <div class="ai-provider-main">
@@ -428,6 +428,18 @@
           <div class="ai-blend-scale"><span>Recipe structure</span><span>Raw concept</span></div>
         </div>
 
+        <div class="ai-concept-count">
+          <div class="ai-blend-head">
+            <span>Concepts per run</span>
+            <span id="aiConceptHint">Free tier may stop after one</span>
+          </div>
+          <div class="ai-count-group" id="aiConceptCountGroup" role="group" aria-label="Number of concepts to generate">
+            <button type="button" data-concepts="1" class="active">1</button>
+            <button type="button" data-concepts="2">2</button>
+            <button type="button" data-concepts="3">3</button>
+          </div>
+        </div>
+
         <div class="ai-pipeline">
           <span><i>01</i>Generate</span>
           <span><i>02</i>Downscale</span>
@@ -438,10 +450,22 @@
         <div class="ai-status" id="aiStatus" aria-live="polite">Ready when you are.</div>
         <button class="ai-generate" id="aiGenerateBtn" type="submit">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5c.6 5.2 3.3 7.9 8.5 8.5-5.2.6-7.9 3.3-8.5 8.5-.6-5.2-3.3-7.9-8.5-8.5 5.2-.6 7.9-3.3 8.5-8.5Z" fill="currentColor"/></svg>
-          <span>Generate concept</span>
+          <span>Generate concepts</span>
         </button>
-        <p class="ai-privacy" id="aiPrivacy">The prompt is sent to the provider shown above. The resulting image is processed locally in your browser.</p>
+        <p class="ai-privacy" id="aiPrivacy">The prompt is sent to the provider shown above. The resulting images are processed locally in your browser. Nothing is added to your library until you choose a concept.</p>
       </form>
+
+      <section class="ai-candidates" id="aiCandidates" hidden>
+        <div class="ai-candidates-head">
+          <div><span>CONCEPTS</span><strong id="aiCandidateCount">0 ready</strong></div>
+          <button class="ai-add-candidate" id="aiAddCandidate" type="button">+ Another</button>
+        </div>
+        <div class="ai-candidate-grid" id="aiCandidateGrid"></div>
+        <div class="ai-candidate-actions">
+          <p id="aiCandidateHint">Select a concept, then add it to the studio.</p>
+          <button class="ai-use-candidate" id="aiUseCandidate" type="button" disabled>Use selected concept</button>
+        </div>
+      </section>
 
       <div class="ai-unavailable" id="aiUnavailable" hidden>
         <strong>AI backend is not ready</strong>
@@ -644,9 +668,15 @@
             <div><span>Pack icon</span><strong>128 px</strong></div>
             <div><span>Format</span><strong id="packFormatLabel">1.21+</strong></div>
           </div>
+          <label class="pack-tint-toggle" id="packTintToggle">
+            <input type="checkbox" id="packTintFree" />
+            <span class="pack-toggle-track"><span></span></span>
+            <span class="pack-toggle-copy"><strong>Untint grass top</strong><small>Model override · 1.21+</small></span>
+          </label>
+          <p class="pack-tint-status" id="packTintStatus">Biome tint remains on grass tops and leaves.</p>
           <div class="pack-tint-note">
             <span>Biome tint</span>
-            <p>Grass tops and oak leaves still receive Minecraft's biome tint. The grass side overlay is transparent so the authored side is not double-tinted.</p>
+            <p>Oak leaves always use vanilla biome tint. Grass blocks can opt into the 1.21+ untinted model override above. The grass side overlay stays transparent to avoid double tinting.</p>
           </div>
           <button class="pack-export" id="packExportBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v2.2A2.8 2.8 0 0 0 6.8 21h10.4a2.8 2.8 0 0 0 2.8-2.8V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>

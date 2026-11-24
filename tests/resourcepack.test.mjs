@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  GRASS_TINT_FREE_MODEL,
+  GRASS_TINT_FREE_MODEL_PATH,
   PACK_FORMATS,
   PACK_TARGETS,
   getPackFormat,
@@ -44,4 +46,13 @@ test('format profiles include legacy and current metadata', () => {
   assert.equal(broad.maxFormat, 99);
   assert.equal(getPackFormat('missing').id, 'modern');
   assert.ok(PACK_FORMATS.every((format) => format.note && format.label));
+});
+
+
+test('tint-free grass override is a complete vanilla model with no tint indices', () => {
+  assert.equal(GRASS_TINT_FREE_MODEL_PATH, 'assets/minecraft/models/block/grass_block.json');
+  assert.equal(GRASS_TINT_FREE_MODEL.parent, 'block/block');
+  assert.equal(GRASS_TINT_FREE_MODEL.elements.length, 2);
+  assert.equal(GRASS_TINT_FREE_MODEL.elements[0].faces.up.texture, '#top');
+  assert.ok(!JSON.stringify(GRASS_TINT_FREE_MODEL).includes('tintindex'));
 });

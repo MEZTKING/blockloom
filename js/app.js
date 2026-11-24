@@ -102,6 +102,14 @@ const els = {
   aiGenerateBtn: $('#aiGenerateBtn'),
   aiStrength: $('#aiStrength'),
   aiStrengthValue: $('#aiStrengthValue'),
+  aiConceptCountGroup: $('#aiConceptCountGroup'),
+  aiConceptHint: $('#aiConceptHint'),
+  aiCandidates: $('#aiCandidates'),
+  aiCandidateGrid: $('#aiCandidateGrid'),
+  aiCandidateCount: $('#aiCandidateCount'),
+  aiAddCandidate: $('#aiAddCandidate'),
+  aiUseCandidate: $('#aiUseCandidate'),
+  aiCandidateHint: $('#aiCandidateHint'),
   aiPrivacy: $('#aiPrivacy'),
   aiUnavailable: $('#aiUnavailable'),
   aiSetupMessage: $('#aiSetupMessage'),
@@ -134,6 +142,9 @@ const els = {
   packTargetCount: $('#packTargetCount'),
   packFileCount: $('#packFileCount'),
   packExportBtn: $('#packExportBtn'),
+  packTintToggle: $('#packTintToggle'),
+  packTintFree: $('#packTintFree'),
+  packTintStatus: $('#packTintStatus'),
 };
 
 let finisher = null;
@@ -183,6 +194,9 @@ const state = {
   aiBusy: false,
   aiStatus: null,
   aiStrength: 48,
+  aiConceptCount: 1,
+  aiCandidates: [],
+  aiSelectedCandidate: -1,
   loadedWork: null,
   currentWorkId: null,
   libraryReady: false,
@@ -196,6 +210,7 @@ const state = {
   packEntries: [],
   packFormatId: 'modern',
   packBuilding: false,
+  packGrassTintFree: false,
 };
 
 /* ---------- Prompt state ---------- */
@@ -672,13 +687,62 @@ function setAiStatus(message, kind = '') {
   els.aiStatus.className = `ai-status${kind ? ` is-${kind}` : ''}`;
 }
 
+function updateAiCandidateControls() {
+  const count = state.aiCandidates.length;
+  const hasCandidates = count > 0;
+  els.aiCandidates.hidden = !hasCandidates;
+  els.aiCandidateCount.textContent = `${count} ready`;
+  els.aiAddCandidate.disabled = state.aiBusy || !state.aiStatus?.configured || count >= 4;
+  els.aiUseCandidate.disabled = state.aiBusy || state.aiSelectedCandidate < 0;
+  els.aiConceptCountGroup.querySelectorAll('button').forEach((button) => {
+    button.disabled = state.aiBusy;
+  });
+  if (hasCandidates) {
+    els.aiCandidateHint.textContent = state.aiSelectedCandidate >= 0
+      ? 'Use the selected concept, or add another to compare.'
+      : 'Select a concept, then add it to the studio.';
+  }
+}
+
 function setAiBusy(busy) {
   state.aiBusy = busy;
   els.aiGenerateBtn.disabled = busy || !(state.aiStatus?.configured);
   els.aiGenerateBtn.classList.toggle('is-loading', busy);
   const label = els.aiGenerateBtn.querySelector('span');
-  if (label) label.textContent = busy ? 'Generating…' : 'Generate concept';
+  if (label) label.textContent = busy ? 'Generating…' : 'Generate concepts';
   els.aiPromptInput.disabled = busy;
+  updateAiCandidateControls();
+}
+
+function setAiConceptCountUI() {
+  els.aiConceptCountGroup.querySelectorAll('button').forEach((button) => {
+    button.classList.toggle('active', Number(button.dataset.concepts) === state.aiConceptCount);
+  });
+}
+
+function renderAiCandidates() {
+  els.aiCandidateGrid.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  state.aiCandidates.forEach((candidate, index) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `ai-candidate${index === state.aiSelectedCandidate ? ' is-selected' : ''}`;
+    card.dataset.candidate = String(index);
+    card.style.setProperty('--i', String(index));
+    card.setAttribute('aria-label', `Select concept ${index + 1}, seed ${candidate.seed}`);
+    const canvas = document.createElement('canvas');
+    canvas.width = 240;
+    canvas.height = 205;
+    card.append(canvas);
+    const meta = document.createElement('span');
+    meta.className = 'ai-candidate-meta';
+    meta.innerHTML = `<strong>Concept ${index + 1}</strong><span>#${candidate.seed}</span>`;
+    card.append(meta);
+    drawIsoCube(canvas, { side: candidate.textures.side.canvas, top: candidate.textures.top.canvas }, { shadow: true, pad: 0.02 });
+    fragment.append(card);
+  });
+  els.aiCandidateGrid.append(fragment);
+  updateAiCandidateControls();
 }
 
 function updateAiPromptCount() {
@@ -694,6 +758,7 @@ function paintAiStatus(status) {
   if (status.configured) {
     setAiProviderBadge(status.free ? 'free' : 'ready', status.free ? 'FREE' : 'READY');
     setAiStatus(status.rateLimit ? `Ready · ${status.rateLimit}` : 'Ready when you are.');
+    els.aiConceptHint.textContent = status.free ? 'Free tier may stop after one' : 'Generate up to three per run';
     els.aiGenerateBtn.disabled = false;
   } else {
     setAiProviderBadge('offline', 'OFFLINE');
@@ -701,6 +766,7 @@ function paintAiStatus(status) {
     els.aiSetupMessage.textContent = status.setup || 'Configure a provider and restart the server.';
     els.aiGenerateBtn.disabled = true;
   }
+  updateAiCandidateControls();
 }
 
 async function openAiDialog() {
@@ -708,6 +774,10 @@ async function openAiDialog() {
     toast('An AI concept is already generating.');
     return;
   }
+  state.aiCandidates = [];
+  state.aiSelectedCandidate = -1;
+  renderAiCandidates();
+  setAiConceptCountUI();
   els.aiPromptInput.value = state.ai?.prompt || els.promptInput.value;
   els.aiStrength.value = state.aiStrength;
   els.aiStrengthValue.textContent = `${state.aiStrength}%`;
@@ -770,79 +840,148 @@ function clearAiMode({ rerender = true, silent = false } = {}) {
   return true;
 }
 
-async function submitAiConcept(event) {
-  event.preventDefault();
+async function runAiBatch({ append = false } = {}) {
   if (state.aiBusy || !state.aiStatus?.configured) return;
+  if (append && state.aiCandidates.length >= 4) {
+    toast('You can compare up to four concepts at once.', true);
+    return;
+  }
   const prompt = els.aiPromptInput.value.replace(/\s+/g, ' ').trim();
   if (prompt.length < 3) {
     setAiStatus('Add a few words to aim the concept.', 'error');
     els.aiPromptInput.focus();
     return;
   }
-  const seed = randomSeed();
   const strength = clamp(Number(els.aiStrength.value) / 100, 0, 1);
   state.aiStrength = Math.round(strength * 100);
+  const count = append ? 1 : state.aiConceptCount;
+  if (!append) {
+    state.aiCandidates = [];
+    state.aiSelectedCandidate = -1;
+    renderAiCandidates();
+  }
   setAiBusy(true);
-  setAiStatus(`Sending prompt to ${state.aiStatus.provider}…`, 'working');
-  const timers = [
-    setTimeout(() => setAiStatus('The provider is painting. This can take up to a minute…', 'working'), 7000),
-    setTimeout(() => setAiStatus('Still painting — keeping the pixels warm…', 'working'), 22000),
-  ];
-  try {
-    const payload = await generateAiConcept(prompt, seed);
-    setAiStatus(`Reducing the concept to ${state.size} × ${state.size} and repairing seams…`, 'working');
-    const textureSet = await processAiConcept({
-      image: payload.image,
-      prompt,
-      provider: payload.provider,
-      model: payload.model,
-      seed: payload.seed,
-      size: state.size,
-      materialId: state.materialId,
-      strength,
-      modifiers: [...state.modifiers],
-      overlayAccent: state.accent?.hex || null,
-      finish: state.finish,
-    });
-
-    els.promptInput.value = payload.prompt || prompt;
-    updateCharCount();
-    const parsed = parsePrompt(els.promptInput.value);
-    applyParsedPrompt(parsed);
-    state.userHasActed = true;
-    state.seed = payload.seed;
-    state.textures = textureSet;
-    state.loadedWork = null;
-    state.currentWorkId = null;
-    state.ai = {
-      ...textureSet,
-      textures: textureSet,
-      provider: payload.provider,
-      model: payload.model,
-      prompt: payload.prompt || prompt,
-      variations: textureSet.aiVariations,
-    };
-    renderVariationCards(state.ai.variations);
-    updateStageDetails(state.textures);
-    updateParsedTags(parsed);
-    syncControls();
-    updateActiveVariation();
-    pulseStage();
-    queueArchive(500);
-    setAiStatus(`Concept ready · ${state.ai.provider} / ${state.ai.model}`, 'success');
-    closeAiDialog();
-    toast(`AI concept forged · ${state.size} × ${state.size}`);
-  } catch (error) {
-    console.error(error);
-    setAiStatus(error.message || 'The AI concept could not be processed.', 'error');
-    toast('AI concept failed. The procedural studio is unchanged.', true);
-  } finally {
-    timers.forEach((timer) => clearTimeout(timer));
-    setAiBusy(false);
+  let lastError = null;
+  for (let index = 0; index < count; index++) {
+    const label = append ? 'another concept' : `concept ${index + 1} of ${count}`;
+    setAiStatus(`Sending prompt for ${label} to ${state.aiStatus.provider}…`, 'working');
+    const timer = setTimeout(() => {
+      if (state.aiBusy) setAiStatus('The provider is painting. This can take up to a minute…', 'working');
+    }, 8000);
+    try {
+      const payload = await generateAiConcept(prompt, randomSeed());
+      setAiStatus(`Reducing ${label} to ${state.size} × ${state.size} and repairing seams…`, 'working');
+      const textureSet = await processAiConcept({
+        image: payload.image,
+        prompt,
+        provider: payload.provider,
+        model: payload.model,
+        seed: payload.seed,
+        size: state.size,
+        materialId: state.materialId,
+        strength,
+        modifiers: [...state.modifiers],
+        overlayAccent: state.accent?.hex || null,
+        finish: state.finish,
+      });
+      state.aiCandidates.push({
+        seed: payload.seed,
+        prompt: payload.prompt || prompt,
+        provider: payload.provider,
+        model: payload.model,
+        strength,
+        textures: textureSet,
+      });
+      state.aiSelectedCandidate = state.aiCandidates.length - 1;
+      renderAiCandidates();
+      setAiStatus(
+        `${state.aiCandidates.length} concept${state.aiCandidates.length === 1 ? '' : 's'} ready${index + 1 < count ? ' · generating next…' : ' · choose one to use'}`,
+        'success',
+      );
+    } catch (error) {
+      lastError = error;
+      if (!state.aiCandidates.length) {
+        setAiStatus(error.message || 'The AI provider did not return a usable concept.', 'error');
+        toast('AI concept failed. The procedural studio is unchanged.', true);
+        break;
+      }
+      setAiStatus(
+        `${state.aiCandidates.length} concept${state.aiCandidates.length === 1 ? '' : 's'} ready. ${error.message || 'The provider stopped early.'}`,
+        'error',
+      );
+      break;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  setAiBusy(false);
+  if (!lastError && state.aiCandidates.length) {
+    setAiStatus(
+      `${state.aiCandidates.length} concept${state.aiCandidates.length === 1 ? '' : 's'} ready. Choose one to use.`,
+      'success',
+    );
+  }
+  updateAiCandidateControls();
+  if (state.aiCandidates.length) {
+    setTimeout(() => els.aiCandidates.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 80);
   }
 }
 
+async function submitAiConcept(event) {
+  event.preventDefault();
+  await runAiBatch({ append: false });
+}
+
+async function addAiConcept() {
+  await runAiBatch({ append: true });
+}
+
+function selectAiCandidate(index) {
+  if (!state.aiCandidates[index]) return;
+  state.aiSelectedCandidate = index;
+  renderAiCandidates();
+}
+
+async function useSelectedAiCandidate() {
+  const candidate = state.aiCandidates[state.aiSelectedCandidate];
+  if (!candidate || state.aiBusy) return;
+  const textureSet = candidate.textures;
+  els.promptInput.value = candidate.prompt;
+  updateCharCount();
+  const parsed = parsePrompt(els.promptInput.value);
+  applyParsedPrompt(parsed);
+  state.userHasActed = true;
+  state.seed = candidate.seed;
+  state.textures = textureSet;
+  state.loadedWork = null;
+  state.currentWorkId = null;
+  state.ai = {
+    ...textureSet,
+    textures: textureSet,
+    provider: candidate.provider,
+    model: candidate.model,
+    prompt: candidate.prompt,
+    aiPrompt: candidate.prompt,
+    aiSeed: candidate.seed,
+    aiStrength: candidate.strength,
+    aiSource: textureSet.aiSource,
+    aiSeam: textureSet.aiSeam,
+    variations: textureSet.aiVariations,
+  };
+  renderVariationCards(state.ai.variations);
+  updateStageDetails(state.textures);
+  updateParsedTags(parsed);
+  syncControls();
+  updateActiveVariation();
+  pulseStage();
+  queueArchive(500);
+  setAiStatus(`Applied concept ${state.aiSelectedCandidate + 1} · ${candidate.provider} / ${candidate.model}`, 'success');
+  closeAiDialog();
+  toast(`AI concept added · ${state.size} × ${state.size}`);
+}
+
 /* ---------- Local library ---------- */
+
 let archiveInFlight = null;
 
 function updateRangeFillForStrength(range) {
@@ -1623,6 +1762,30 @@ function updatePackFormatSummary() {
   els.packFormatCode.textContent = String(format.packFormat);
   els.packFormatLabel.textContent = format.label;
   els.packFormatNote.textContent = format.note;
+  updatePackTintControl();
+}
+
+function updatePackTintControl() {
+  const hasGrass = state.packEntries.some((entry) => entry.targetId === 'grass_block');
+  const supported = state.packFormatId !== 'broad';
+  const allowed = hasGrass && supported;
+  els.packTintFree.disabled = !allowed;
+  els.packTintToggle.classList.toggle('is-disabled', !allowed);
+  if (!allowed) {
+    state.packGrassTintFree = false;
+    els.packTintFree.checked = false;
+  }
+  els.packTintStatus.classList.toggle('is-warning', hasGrass && !supported);
+  els.packTintStatus.classList.toggle('is-on', allowed && state.packGrassTintFree);
+  if (!hasGrass) {
+    els.packTintStatus.textContent = 'Add a Grass Block target to enable the tint-free model override.';
+  } else if (!supported) {
+    els.packTintStatus.textContent = 'Tint-free grass needs the 1.21+ or 1.21.9+ pack profile.';
+  } else if (state.packGrassTintFree) {
+    els.packTintStatus.textContent = 'Grass top renders untinted through a model override. Oak leaves still use biome tint.';
+  } else {
+    els.packTintStatus.textContent = 'Biome tint remains on grass tops and leaves.';
+  }
 }
 
 function renderPackEntries() {
@@ -1668,7 +1831,7 @@ function updatePackSummary() {
   els.packEntryCount.textContent = String(count);
   els.packTargetCount.textContent = String(packTargetCount(state.packEntries));
   const fileCount = state.packEntries.reduce((total, entry) => total + (getPackTarget(entry.targetId)?.files.length || 0), 0);
-  els.packFileCount.textContent = String(fileCount);
+  els.packFileCount.textContent = String(fileCount + (state.packGrassTintFree && state.packEntries.some((entry) => entry.targetId === 'grass_block') && state.packFormatId !== 'broad' ? 1 : 0));
   els.packExportBtn.disabled = count === 0 || state.packBuilding;
   updatePackFormatSummary();
 }
@@ -1677,6 +1840,8 @@ async function openPackBuilder() {
   state.packEntries = [packEntryFromCurrent()];
   state.packFormatId = 'modern';
   state.packBuilding = false;
+  state.packGrassTintFree = false;
+  els.packTintFree.checked = false;
   renderPackFormats();
   renderPackEntries();
   if (!els.packDialog.open) {
@@ -1756,7 +1921,7 @@ async function buildPackFromState() {
       size: entry.size,
       origin: entry.origin,
     }));
-    const result = await buildResourcePack(entries, { formatId: state.packFormatId });
+    const result = await buildResourcePack(entries, { formatId: state.packFormatId, grassTintFree: state.packGrassTintFree });
     downloadBlob(result.blob, result.filename);
     toast(`${result.included.length} target${result.included.length === 1 ? '' : 's'} packed · ${result.filename}`);
     closePackBuilder();
@@ -2187,11 +2352,17 @@ function bindEvents() {
     const select = event.target.closest('[data-target]');
     if (select) changePackTarget(select.dataset.target, select.value);
   });
+  els.packTintFree.addEventListener('change', () => {
+    state.packGrassTintFree = els.packTintFree.checked && !els.packTintFree.disabled;
+    updatePackTintControl();
+    updatePackSummary();
+  });
   els.packFormats.addEventListener('change', (event) => {
     const input = event.target.closest('input[name="pack-format"]');
     if (!input) return;
     state.packFormatId = input.value;
     updatePackFormatSummary();
+    updatePackSummary();
   });
 
   els.libraryBtn.addEventListener('click', openLibraryDialog);
@@ -2240,6 +2411,18 @@ function bindEvents() {
   els.closeAiBtn.addEventListener('click', closeAiDialog);
   els.aiForm.addEventListener('submit', submitAiConcept);
   els.aiPromptInput.addEventListener('input', updateAiPromptCount);
+  els.aiConceptCountGroup.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-concepts]');
+    if (!button || state.aiBusy) return;
+    state.aiConceptCount = Number(button.dataset.concepts);
+    setAiConceptCountUI();
+  });
+  els.aiAddCandidate.addEventListener('click', addAiConcept);
+  els.aiUseCandidate.addEventListener('click', useSelectedAiCandidate);
+  els.aiCandidateGrid.addEventListener('click', (event) => {
+    const card = event.target.closest('[data-candidate]');
+    if (card) selectAiCandidate(Number(card.dataset.candidate));
+  });
   els.aiStrength.addEventListener('input', () => {
     state.aiStrength = Number(els.aiStrength.value);
     els.aiStrengthValue.textContent = `${state.aiStrength}%`;
