@@ -18,6 +18,7 @@ import { buildResourcePack, packTargetFor } from './resourcepack.js';
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+const IS_STATIC_DEMO = location.hostname.endsWith('.github.io') || new URLSearchParams(location.search).has('static');
 
 const els = {
   promptForm: $('#promptForm'),
@@ -628,6 +629,16 @@ async function openAiDialog() {
   if (!els.aiDialog.open) {
     document.body.classList.add('dialog-open');
     els.aiDialog.showModal();
+  }
+  if (IS_STATIC_DEMO) {
+    setAiProviderBadge('offline', 'STATIC');
+    els.aiProviderName.textContent = 'GitHub Pages demo';
+    els.aiProviderModel.textContent = 'procedural only';
+    setAiStatus('This static demo cannot run the AI backend. Clone the repo and run npm run dev for the AI layer.', 'error');
+    els.aiForm.hidden = true;
+    els.aiUnavailable.hidden = false;
+    els.aiSetupMessage.textContent = 'The Pages build is the procedural studio only. The full AI provider proxy lives in server.mjs and runs locally or on your own host.';
+    return;
   }
   try {
     const status = await fetchAiStatus();
@@ -1247,6 +1258,11 @@ function updateClock() {
 }
 
 function init() {
+  if (IS_STATIC_DEMO) {
+    const mode = $('#engineMode');
+    if (mode) mode.textContent = 'STATIC DEMO';
+    els.aiBtn?.setAttribute('title', 'Static Pages demo — run the Node server for AI');
+  }
   els.materialCount.textContent = `${MATERIALS.length} recipes`;
   els.popoverCount.textContent = `${MATERIALS.length} materials`;
   const initial = parsePrompt(els.promptInput.value);
