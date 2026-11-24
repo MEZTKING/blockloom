@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b0d09" />
+  <meta name="description" content="Blockloom is a local Minecraft texture studio. Describe a block, tune the finish, and export tileable pixel textures in seconds." />
+  <title>Blockloom — Minecraft texture studio</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <noscript><div style="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#090b07;color:#f0f1e8;font-family:sans-serif;text-align:center;padding:24px">Blockloom needs JavaScript to grow its pixels. Please enable JavaScript and reload.</div></noscript>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="Blockloom home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 34 38" fill="none">
+          <path d="M17 1.8 32 10v18L17 36.2 2 28V10L17 1.8Z" fill="#b9ee6a"/>
+          <path d="m2.8 10.3 14.2 8 14.2-8M17 18.3v17.1M17 18.3 2.8 10.3" stroke="#25301c" stroke-width="1.5"/>
+          <path d="m17 18.4 14.2-8.1v17.3L17 35.8V18.4Z" fill="#8fca43"/>
+          <path d="m17 18.4-14.2-8.1v17.3L17 35.8V18.4Z" fill="#d7ff9b"/>
+        </svg>
+      </span>
+      <span class="brand-copy">
+        <strong>BLOCKLOOM</strong>
+        <em>texture studio</em>
+      </span>
+    </a>
+
+    <div class="engine-status" aria-label="Local engine active">
+      <span class="status-light"></span>
+      <span>PROCEDURAL CORE</span>
+      <span class="status-divider">/</span>
+      <span class="status-muted">AI OPTIONAL</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="howBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M9.8 9a2.3 2.3 0 1 1 3.5 2c-.9.5-1.3 1.1-1.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
+        How it works
+      </button>
+      <button class="btn btn-primary top-export" id="topExportBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v2.2A2.8 2.8 0 0 0 6.8 21h10.4a2.8 2.8 0 0 0 2.8-2.8V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Export PNG
+        <kbd>E</kbd>
+      </button>
+    </div>
+  </header>
+
+  <main class="studio">
+    <aside class="panel controls-panel" aria-label="Texture controls">
+      <div class="panel-intro">
+        <div class="eyebrow"><span>01</span> Describe</div>
+        <h1>Forge a block<br><span>texture.</span></h1>
+        <p>Language in, pixel-perfect tiles out. Tune the material, finish, and grain until it feels at home in your world.</p>
+      </div>
+
+      <form class="prompt-form" id="promptForm" autocomplete="off">
+        <div class="field-label-row">
+          <label class="field-label" for="promptInput">Describe the block</label>
+          <span class="char-count" id="charCount">38 / 90</span>
+        </div>
+        <div class="prompt-box">
+          <input id="promptInput" type="text" maxlength="90" value="mossy cobblestone with tiny cyan crystals" aria-describedby="promptHint" />
+          <button class="prompt-submit" type="submit" aria-label="Forge texture from prompt">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h13m0 0-5-5m5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="parsed-tags" id="parsedTags" aria-live="polite"></div>
+        <p class="sr-only" id="promptHint">Mention a material, finish, and colour. Example: cracked deepslate with glowing amber veins.</p>
+        <div class="prompt-examples" aria-label="Example prompts">
+          <span>Try</span>
+          <button type="button" data-prompt="cracked deepslate with glowing amber veins">Amber deepslate</button>
+          <button type="button" data-prompt="frosted oak planks">Frosted planks</button>
+          <button type="button" data-prompt="ancient gilded stone">Gilded ruins</button>
+        </div>
+      </form>
+
+      <section class="control-block material-block">
+        <div class="control-title">
+          <span>Base material</span>
+          <span class="hint" id="materialCount">26 recipes</span>
+        </div>
+        <button class="material-trigger" id="materialTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="materialPopover">
+          <span class="material-thumb-wrap"><canvas id="materialThumb" width="64" height="64"></canvas></span>
+          <span class="material-trigger-copy">
+            <strong id="materialName">Cobblestone</strong>
+            <small id="materialGroup">Stone family</small>
+          </span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </section>
+
+      <section class="control-block">
+        <div class="control-title">
+          <span>Finish</span>
+          <span class="hint" id="finishNote">Classic pixel density</span>
+        </div>
+        <div class="segmented" id="finishGroup" role="group" aria-label="Finish">
+          <button type="button" data-finish="rugged">Rugged</button>
+          <button type="button" data-finish="balanced" class="active">Balanced</button>
+          <button type="button" data-finish="smooth">Smooth</button>
+        </div>
+      </section>
+
+      <section class="control-block tuning-block">
+        <div class="control-title">
+          <span>Tuning</span>
+          <button class="text-button" id="resetTuning" type="button">Reset</button>
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><label for="grainRange">Grain</label><output id="grainValue">58</output></div>
+          <input id="grainRange" type="range" min="0" max="100" value="58" />
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><label for="contrastRange">Contrast</label><output id="contrastValue">55</output></div>
+          <input id="contrastRange" type="range" min="0" max="100" value="55" />
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><label for="hueRange">Hue shift</label><output id="hueValue">0°</output></div>
+          <input id="hueRange" type="range" min="-180" max="180" value="0" />
+        </div>
+      </section>
+
+      <div class="forge-row">
+        <button class="forge-button" id="forgeBtn" type="button">
+          <span class="forge-spark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5c.6 5.2 3.3 7.9 8.5 8.5-5.2.6-7.9 3.3-8.5 8.5-.6-5.2-3.3-7.9-8.5-8.5 5.2-.6 7.9-3.3 8.5-8.5Z" fill="currentColor"/></svg>
+          </span>
+          <span>Forge texture</span>
+          <kbd>↵</kbd>
+        </button>
+        <button class="ai-action" id="aiBtn" type="button" aria-haspopup="dialog" title="Generate a concept with AI">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 4.2c.35 3.2 2 4.85 5.2 5.2-3.2.35-4.85 2-5.2 5.2-.35-3.2-2-4.85-5.2-5.2 3.2-.35 4.85-2 5.2-5.2Z" fill="currentColor"/><path d="M18 12.5c.2 1.85 1.15 2.8 3 3-1.85.2-2.8 1.15-3 3-.2-1.85-1.15-2.8-3-3 1.85-.2 2.8-1.15 3-3Z" fill="currentColor" opacity=".7"/><path d="M17 3.5c.15 1.4.85 2.1 2.25 2.25C17.85 5.9 17.15 6.6 17 8c-.15-1.4-.85-2.1-2.25-2.25C16.15 5.6 16.85 4.9 17 3.5Z" fill="currentColor" opacity=".5"/></svg>
+          <span>AI</span>
+        </button>
+      </div>
+      <p class="local-note"><span></span> Local procedural core. AI mode is optional and clearly marked.</p>
+    </aside>
+
+    <section class="panel stage-panel" aria-label="Texture preview">
+      <div class="stage-head">
+        <div class="stage-title-wrap">
+          <div class="eyebrow"><span>02</span> Preview</div>
+          <div class="title-line">
+            <h2 id="textureTitle">Mossy Cobblestone</h2>
+            <button class="ai-mode-badge" id="aiBadge" type="button" hidden title="AI concept is active. Click to return to the procedural texture.">
+              <span class="ai-mode-dot"></span>AI MODE<span class="ai-mode-exit">×</span>
+            </button>
+            <span class="seam-badge"><span></span>Seamless</span>
+          </div>
+        </div>
+        <div class="view-switch" role="group" aria-label="Preview mode">
+          <button type="button" data-view="3d" class="active">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.5"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.5"/></svg>
+            Block
+          </button>
+          <button type="button" data-view="tile">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="13" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+            Tile
+          </button>
+        </div>
+      </div>
+
+      <div class="stage-viewport" id="stageViewport">
+        <div class="stage-aura" aria-hidden="true"></div>
+        <div class="stage-coordinates" aria-hidden="true"><span>X+</span><span>Y+</span><span>Z+</span></div>
+        <div class="corner-bracket tl" aria-hidden="true"></div>
+        <div class="corner-bracket br" aria-hidden="true"></div>
+
+        <div class="scene-wrap" id="sceneWrap">
+          <div class="cube-float">
+            <div class="scene" id="scene">
+              <div class="cube" id="cube">
+                <div class="cube-face face-front" data-face="front"></div>
+                <div class="cube-face face-back" data-face="back"></div>
+                <div class="cube-face face-right" data-face="right"></div>
+                <div class="cube-face face-left" data-face="left"></div>
+                <div class="cube-face face-top" data-face="top"></div>
+                <div class="cube-face face-bottom" data-face="bottom"></div>
+                <span class="cube-edge" aria-hidden="true"></span>
+              </div>
+            </div>
+          </div>
+          <div class="floor-glow" aria-hidden="true"></div>
+        </div>
+
+        <div class="tile-wrap" id="tileWrap">
+          <div class="tile-frame">
+            <canvas id="tileCanvas" width="512" height="512" aria-label="Tiled texture preview"></canvas>
+            <span class="tile-axis horizontal">2×</span>
+            <span class="tile-axis vertical">2×</span>
+          </div>
+          <p>Repeat check <span>·</span> four-way seamless</p>
+        </div>
+
+        <div class="viewport-topline">
+          <span class="live-chip"><span></span>LIVE PREVIEW</span>
+          <span id="modeLabel">ORBIT VIEW</span>
+        </div>
+        <button class="reset-view" id="resetViewBtn" type="button" title="Reset camera">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4.9 8.5A8 8 0 1 1 4 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.5 4.5v4.4h4.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="drag-hint" id="dragHint">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 11V7.5a1.5 1.5 0 0 1 3 0V11m0-1.5a1.5 1.5 0 0 1 3 0V11m0-.5a1.5 1.5 0 0 1 3 0V13m-9-2a1.5 1.5 0 0 0-3 0v3.3c0 3.5 2.3 6.2 6 6.2 3 0 5-1.8 5-5v-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          Drag to orbit
+        </div>
+
+        <div class="stage-callouts" aria-hidden="true">
+          <span class="callout callout-top">TOP FACE</span>
+          <span class="callout-line line-top"></span>
+          <span class="callout callout-side">SIDE FACE</span>
+          <span class="callout-line line-side"></span>
+        </div>
+      </div>
+
+      <div class="stage-toolbar">
+        <div class="seed-control">
+          <span class="toolbar-label">Seed</span>
+          <div class="seed-field">
+            <span>#</span>
+            <input id="seedInput" inputmode="numeric" pattern="[0-9]*" maxlength="9" value="482910" aria-label="Texture seed" />
+            <button id="diceBtn" type="button" title="Random seed" aria-label="Randomize seed">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" stroke="currentColor" stroke-width="1.5"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.1" fill="currentColor"/><circle cx="12" cy="12" r="1.1" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="resolution-control">
+          <span class="toolbar-label">Resolution</span>
+          <div class="resolution-group" id="resolutionGroup" role="group" aria-label="Texture resolution">
+            <button type="button" data-size="16" class="active">16</button>
+            <button type="button" data-size="32">32</button>
+            <button type="button" data-size="64">64</button>
+          </div>
+        </div>
+
+        <div class="palette-control">
+          <span class="toolbar-label">Palette</span>
+          <div class="palette-swatches" id="paletteSwatches" aria-label="Texture palette"></div>
+        </div>
+      </div>
+
+      <div class="export-row">
+        <button class="btn btn-primary download-main" id="downloadPngBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v2.2A2.8 2.8 0 0 0 6.8 21h10.4a2.8 2.8 0 0 0 2.8-2.8V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Download PNG</span>
+          <kbd>D</kbd>
+        </button>
+        <button class="btn btn-outline" id="downloadSetBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8.2A2.2 2.2 0 0 1 6.2 6h3l1.6 2h7A2.2 2.2 0 0 1 20 10.2v7.6a2.2 2.2 0 0 1-2.2 2.2H6.2A2.2 2.2 0 0 1 4 17.8V8.2Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 11v5m0 0 2-2m-2 2-2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Texture set</span>
+          <span class="zip-tag">.ZIP</span>
+        </button>
+        <button class="btn btn-outline" id="downloadPackBtn" type="button" title="Export a drop-in resource pack for this block">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.5"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Resource pack</span>
+          <span class="zip-tag">.ZIP</span>
+        </button>
+        <button class="icon-button copy-button" id="copyPngBtn" type="button" title="Copy PNG to clipboard" aria-label="Copy PNG to clipboard">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.5"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <aside class="panel variations-panel" aria-label="Texture variations">
+      <div class="variations-head">
+        <div>
+          <div class="eyebrow"><span>03</span> Alternate cuts</div>
+          <h2>Variations</h2>
+        </div>
+        <button class="icon-button" id="rerollBtn" type="button" title="Reroll variations" aria-label="Reroll variations">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 5v5h-5M4 19v-5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.2 9A7 7 0 0 0 6.4 6.4L4 8.5m1.8 6.5A7 7 0 0 0 17.6 17.6L20 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="variations-sub" id="variationsSub">Six sibling seeds. Same recipe, different surface.</p>
+      <div class="variation-grid" id="variationGrid"></div>
+
+      <div class="dna-card">
+        <div class="dna-head"><span>Texture DNA</span><span class="dna-live"><span></span>LIVE</span></div>
+        <div class="dna-row"><span>Recipe</span><strong id="dnaMaterial">Cobblestone</strong></div>
+        <div class="dna-row"><span id="dnaFinishLabel">Finish</span><strong id="dnaFinish">Balanced</strong></div>
+        <div class="dna-row"><span>Tiling</span><strong class="with-check"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3 8.5 3 3 7-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>4-way seamless</strong></div>
+        <div class="dna-row"><span>Palette</span><div class="dna-palette" id="dnaPalette"></div></div>
+      </div>
+
+      <div class="tip-card">
+        <span class="tip-mark" aria-hidden="true">✳</span>
+        <p><strong>Prompt craft</strong> Name a material, then add “mossy”, “cracked”, “glowing”, “frosted”, or a colour. Mention crystals, veins, or flakes to steer the accent.</p>
+      </div>
+
+      <p class="shortcut-note"><kbd>G</kbd> forge <span></span> <kbd>R</kbd> reroll <span></span> <kbd>A</kbd> AI <span></span> <kbd>E</kbd> export</p>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
+    <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
+    <span>v1.1 · <span id="footerClock">LOCAL</span></span>
+  </footer>
+
+  <!-- Material picker -->
+  <div class="material-popover" id="materialPopover" popover="auto" role="dialog" aria-label="Choose a base material">
+    <div class="popover-head">
+      <div>
+        <div class="popover-eyebrow">RECIPE LIBRARY</div>
+        <h3>Choose a base</h3>
+      </div>
+      <button class="icon-button small" id="closeMaterialPopover" type="button" aria-label="Close material picker">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="material-groups" id="materialGrid"></div>
+    <div class="popover-foot"><span><span class="popover-dot"></span>All recipes are deterministic</span><span id="popoverCount">26 materials</span></div>
+  </div>
+
+  <!-- How it works -->
+  <dialog class="how-dialog" id="howDialog">
+    <button class="dialog-close icon-button" id="closeHowBtn" type="button" aria-label="Close dialog">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dialog-content">
+      <div class="dialog-kicker"><span></span>UNDER THE HOOD</div>
+      <h2>Language in.<br>Tileable pixels out.</h2>
+      <p class="dialog-lede">Blockloom is a local, procedural texture studio — not a cloud image model. It turns a short prompt into a deterministic material recipe, then grows the pixels from noise.</p>
+      <div class="how-grid">
+        <article>
+          <span>01</span>
+          <h3>Read the prompt</h3>
+          <p>A small vocabulary maps materials, finishes, colours, and accents. “Mossy cobblestone with cyan crystals” becomes a recipe.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Grow the surface</h3>
+          <p>Periodic value noise, Worley cells, and hand-built patterns create stone, grain, grout, bark, and ore in 16, 32, or 64 px.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Quantize the palette</h3>
+          <p>A compact colour ramp plus ordered dithering gives every pixel a job. Surface edges wrap, so side textures pass the four-way tile check.</p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Ship it</h3>
+          <p>Export a texture set with recipe metadata, or a drop-in resource pack that overrides one vanilla block with the correct texture paths.</p>
+        </article>
+      </div>
+      <div class="honest-note">
+        <span class="honest-icon">✦</span>
+        <div>
+          <strong>The honest bit</strong>
+          <p>The core is procedural and local. The optional AI layer sends a prompt to the provider shown in the AI dialog, then reduces the result to the same palette, seam, and export rules. AI is a concept source — the texture pipeline is still what makes it usable.</p>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn btn-primary" id="dialogCta" type="button">Back to the studio</button>
+        <span>No data leaves this page.</span>
+      </div>
+    </div>
+  </dialog>
+
+
+  <!-- Optional AI concept lab -->
+  <dialog class="ai-dialog" id="aiDialog">
+    <button class="dialog-close icon-button" id="closeAiBtn" type="button" aria-label="Close AI lab">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+    <div class="ai-content">
+      <div class="ai-kicker"><span></span>OPTIONAL AI LAYER</div>
+      <h2>Dream it.<br><span>Then pixel it.</span></h2>
+      <p class="ai-lede">A second way in. Send one concept prompt to the image provider; Blockloom reduces the response to Minecraft resolution, snaps it to a tight palette, repairs the seams, and blends it with the recipe’s block structure.</p>
+
+      <div class="ai-provider-card">
+        <div class="ai-provider-main">
+          <span class="ai-provider-label">PROVIDER</span>
+          <strong id="aiProviderName">Checking…</strong>
+        </div>
+        <div class="ai-provider-model">
+          <span class="ai-provider-label">MODEL</span>
+          <strong id="aiProviderModel">—</strong>
+        </div>
+        <span class="ai-provider-state" id="aiProviderState"><span></span>CHECKING</span>
+      </div>
+
+      <form id="aiForm">
+        <div class="ai-label-row">
+          <label for="aiPromptInput">Concept prompt</label>
+          <span id="aiPromptCount">0 / 360</span>
+        </div>
+        <div class="ai-prompt-box">
+          <textarea id="aiPromptInput" rows="3" maxlength="360" placeholder="Mossy cobblestone with tiny cyan crystals, flat top-down texture…" spellcheck="false"></textarea>
+        </div>
+        <div class="ai-chip-row" aria-label="AI prompt examples">
+          <button type="button" data-ai-prompt="mossy cobblestone with tiny cyan crystal pockets">Mossy crystals</button>
+          <button type="button" data-ai-prompt="cracked deepslate with glowing amber veins">Amber deepslate</button>
+          <button type="button" data-ai-prompt="frosted oak planks with silver grain">Frosted planks</button>
+        </div>
+
+        <div class="ai-blend-control">
+          <div class="ai-blend-head">
+            <label for="aiStrength">AI influence</label>
+            <output id="aiStrengthValue">48%</output>
+          </div>
+          <input id="aiStrength" type="range" min="0" max="100" value="48" style="--val:48%" />
+          <div class="ai-blend-scale"><span>Recipe structure</span><span>Raw concept</span></div>
+        </div>
+
+        <div class="ai-pipeline">
+          <span><i>01</i>Generate</span>
+          <span><i>02</i>Downscale</span>
+          <span><i>03</i>Snap palette</span>
+          <span><i>04</i>Repair seams</span>
+        </div>
+
+        <div class="ai-status" id="aiStatus" aria-live="polite">Ready when you are.</div>
+        <button class="ai-generate" id="aiGenerateBtn" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5c.6 5.2 3.3 7.9 8.5 8.5-5.2.6-7.9 3.3-8.5 8.5-.6-5.2-3.3-7.9-8.5-8.5 5.2-.6 7.9-3.3 8.5-8.5Z" fill="currentColor"/></svg>
+          <span>Generate concept</span>
+        </button>
+        <p class="ai-privacy" id="aiPrivacy">The prompt is sent to the provider shown above. The resulting image is processed locally in your browser.</p>
+      </form>
+
+      <div class="ai-unavailable" id="aiUnavailable" hidden>
+        <strong>AI backend is not ready</strong>
+        <p id="aiSetupMessage">Start the included Node server to use the AI layer.</p>
+        <code>AI_PROVIDER=pollinations npm run dev</code>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

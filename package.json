@@ -1,0 +1,14 @@
+{
+  "name": "blockloom",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A local, procedural Minecraft texture studio with an optional AI concept layer and resource-pack export.",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
