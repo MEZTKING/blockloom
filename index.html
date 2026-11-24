@@ -265,7 +265,7 @@
           <span>Texture set</span>
           <span class="zip-tag">.ZIP</span>
         </button>
-        <button class="btn btn-outline" id="downloadPackBtn" type="button" title="Export a drop-in resource pack for this block">
+        <button class="btn btn-outline" id="downloadPackBtn" type="button" title="Build a resource pack from this texture and your library">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.5"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.5"/></svg>
           <span>Resource pack</span>
           <span class="zip-tag">.ZIP</span>
@@ -309,7 +309,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.2 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.3 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -365,7 +365,7 @@
         <article>
           <span>06</span>
           <h3>Ship it</h3>
-          <p>Export a texture set with recipe metadata, or a drop-in resource pack that overrides one vanilla block with the correct texture paths.</p>
+          <p>Export a texture set with recipe metadata, or open the pack builder to choose vanilla targets, stack multiple works, pick a format, and write a drop-in resource pack.</p>
         </article>
       </div>
       <div class="honest-note">
@@ -598,6 +598,62 @@
             <button class="btn btn-outline" id="finisherSaveCopy" type="button">Save as copy</button>
             <button class="btn btn-primary" id="finisherSave" type="button">Save &amp; close</button>
           </div>
+        </aside>
+      </div>
+    </div>
+  </dialog>
+
+
+  <!-- Resource-pack builder -->
+  <dialog class="pack-dialog" id="packDialog">
+    <div class="pack-shell">
+      <header class="pack-head">
+        <div>
+          <div class="pack-kicker"><span></span>RESOURCE-PACK BUILDER</div>
+          <h2>Ship a block pack.</h2>
+          <p>Assign vanilla targets, stack works from your library, and choose a compatible pack format.</p>
+        </div>
+        <button class="icon-button" id="closePackBtn" type="button" aria-label="Close resource-pack builder">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+
+      <div class="pack-body">
+        <section class="pack-block-column" aria-label="Blocks in this pack">
+          <div class="pack-section-head"><span>Blocks in this pack</span><span id="packEntryCount">1</span></div>
+          <div class="pack-entries" id="packEntries"></div>
+          <div class="pack-add">
+            <div class="pack-section-head"><span>Add from library</span><span id="packLibraryCount">0 available</span></div>
+            <div class="pack-add-row">
+              <select id="packLibrarySelect" aria-label="Library work to add"></select>
+              <button class="btn btn-outline" id="packAddBtn" type="button">Add block</button>
+            </div>
+            <p>Only distinct target blocks are included. Add another work to override more than one vanilla block.</p>
+          </div>
+        </section>
+
+        <aside class="pack-side" aria-label="Pack settings">
+          <div class="pack-setting">
+            <div class="pack-section-head"><span>Pack format</span><span id="packFormatCode">34</span></div>
+            <div class="pack-formats" id="packFormats"></div>
+            <p class="pack-format-note" id="packFormatNote"></p>
+          </div>
+          <div class="pack-summary">
+            <div><span>Targets</span><strong id="packTargetCount">1</strong></div>
+            <div><span>Texture files</span><strong id="packFileCount">4</strong></div>
+            <div><span>Pack icon</span><strong>128 px</strong></div>
+            <div><span>Format</span><strong id="packFormatLabel">1.21+</strong></div>
+          </div>
+          <div class="pack-tint-note">
+            <span>Biome tint</span>
+            <p>Grass tops and oak leaves still receive Minecraft's biome tint. The grass side overlay is transparent so the authored side is not double-tinted.</p>
+          </div>
+          <button class="pack-export" id="packExportBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v2.2A2.8 2.8 0 0 0 6.8 21h10.4a2.8 2.8 0 0 0 2.8-2.8V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Build resource pack</span>
+            <kbd>.ZIP</kbd>
+          </button>
+          <p class="pack-foot">Install the zip in <code>.minecraft/resourcepacks</code> and enable it in-game.</p>
         </aside>
       </div>
     </div>

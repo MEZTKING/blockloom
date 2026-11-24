@@ -60,6 +60,8 @@ Edited pixels are palette-scanned, saved back into the originating library work,
 
 ![Local library](screenshots/blockloom-library.png)
 
+![Resource-pack builder](screenshots/blockloom-pack-builder.png)
+
 The library is backed by **IndexedDB** and stores every distinct texture you generate, edit, or import — without a save dialog.
 
 Each archived work keeps:
@@ -176,9 +178,17 @@ blockloom_<material>_<seed>_<px>px.zip
     └── six alternate cuts
 ```
 
-### Resource pack (.zip) — installable
+### Resource pack (.zip) — interactive builder
+Open **Resource pack** in the export row. The builder lets you:
+
+- choose the **vanilla target** for every block (26 targets, including multi-face grass and log mappings),
+- add more works from your library to build a **multi-block pack**,
+- pick a **pack format profile** — broad 1.20+, modern 1.21+, or current 1.21.9+,
+- see target and texture-file counts before exporting.
+
 ```text
-blockloom_resourcepack_<target>_<seed>_<px>px.zip
+blockloom_resourcepack_<target>_<seed>_<px>px.zip   # single block
+blockloom_resourcepack_<n>blocks_<date>.zip          # multi-block
 ├── pack.mcmeta
 ├── pack.png
 ├── assets/minecraft/textures/block/<vanilla paths>.png
@@ -186,13 +196,15 @@ blockloom_resourcepack_<target>_<seed>_<px>px.zip
 └── blockloom-pack.json
 ```
 
-Drop it into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides the target vanilla block's texture paths; it does not create a new block.
+`pack.mcmeta` writes `pack_format`, `supported_formats`, and the newer `min_format` / `max_format` fields so the same texture-only pack can target old and current readers.
 
-- Pack format **34** (Minecraft 1.21+; `supported_formats` 34–99).
-- All 26 materials map to a valid vanilla target.
+Drop the zip into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides existing vanilla block texture paths; it does not create a new block.
+
+- All 26 materials map to a valid vanilla target, and any target can be selected for any texture.
 - Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. The top still inherits Minecraft's biome tint.
 - Oak leaves keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.
+- Duplicate vanilla targets are prevented in the builder; the pack builder also skips duplicates defensively.
 
 ## Why the hybrid AI approach
 
@@ -207,8 +219,8 @@ js/engine.js        noise, material recipes, prompt parser, isometric renderer
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
 js/library.js       IndexedDB work archive, fingerprints, favorites, storage estimate
-js/resourcepack.js  vanilla target mapping and resource-pack ZIP builder
-js/app.js           state, interactions, library UI, exports
+js/resourcepack.js  vanilla target mapping, format profiles, and multi-block resource-pack ZIP builder
+js/app.js           state, interactions, library UI, finisher UI, pack builder, exports
 js/zip.js           dependency-free stored ZIP writer
 server.mjs          static server + AI provider proxy
 assets/fonts/       vendored Space Grotesk, IBM Plex Mono, Silkscreen

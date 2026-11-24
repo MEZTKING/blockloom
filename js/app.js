@@ -13,7 +13,7 @@ import {
 } from './engine.js';
 import { createZip } from './zip.js';
 import { fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
-import { buildResourcePack, packTargetFor } from './resourcepack.js';
+import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -120,6 +120,20 @@ const els = {
   librarySub: $('#librarySub'),
   libraryStorage: $('#libraryStorage'),
   finisherDialog: $('#finisherDialog'),
+  packDialog: $('#packDialog'),
+  closePackBtn: $('#closePackBtn'),
+  packEntries: $('#packEntries'),
+  packEntryCount: $('#packEntryCount'),
+  packLibrarySelect: $('#packLibrarySelect'),
+  packLibraryCount: $('#packLibraryCount'),
+  packAddBtn: $('#packAddBtn'),
+  packFormats: $('#packFormats'),
+  packFormatCode: $('#packFormatCode'),
+  packFormatNote: $('#packFormatNote'),
+  packFormatLabel: $('#packFormatLabel'),
+  packTargetCount: $('#packTargetCount'),
+  packFileCount: $('#packFileCount'),
+  packExportBtn: $('#packExportBtn'),
 };
 
 let finisher = null;
@@ -179,6 +193,9 @@ const state = {
   userHasActed: false,
   archiveTimer: 0,
   archiving: false,
+  packEntries: [],
+  packFormatId: 'modern',
+  packBuilding: false,
 };
 
 /* ---------- Prompt state ---------- */
@@ -1515,6 +1532,246 @@ async function openFinisher() {
   });
 }
 
+/* ---------- Resource-pack builder ---------- */
+function packTargetDefault(materialId) {
+  return packTargetFor(materialId)?.id || 'stone';
+}
+
+function packEntryFromCurrent() {
+  const target = packTargetDefault(state.materialId);
+  return {
+    key: `current-${Date.now()}`,
+    source: 'current',
+    workId: null,
+    textures: state.textures,
+    title: els.textureTitle.textContent || textureTitle(state.materialId, state.modifiers),
+    materialName: getMaterial(state.materialId).name,
+    seed: state.seed,
+    size: state.size,
+    origin: state.ai ? 'ai' : state.loadedWork ? 'saved' : 'procedural',
+    targetId: target,
+    thumb: workThumb(state.textures),
+  };
+}
+
+function packOriginLabel(origin) {
+  if (origin === 'ai') return 'AI';
+  if (origin === 'saved') return 'SAVED';
+  return 'PROCEDURAL';
+}
+
+function packTargetCount(entries) {
+  return new Set(entries.map((entry) => entry.targetId)).size;
+}
+
+function pickFreeTarget(desired) {
+  const used = new Set(state.packEntries.map((entry) => entry.targetId));
+  if (!used.has(desired)) return desired;
+  return PACK_TARGETS.find((target) => !used.has(target.id))?.id || desired;
+}
+
+async function refreshPackLibrarySelect() {
+  if (state.libraryReady) {
+    try {
+      state.libraryWorks = await listWorks();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  const usedWorkIds = new Set(state.packEntries.filter((entry) => entry.workId).map((entry) => entry.workId));
+  const available = state.libraryWorks.filter((work) => !usedWorkIds.has(work.id) && work.id !== state.currentWorkId);
+  els.packLibrarySelect.replaceChildren();
+  if (!available.length) {
+    const option = document.createElement('option');
+    option.textContent = state.libraryReady ? 'Every other library work is already in the pack' : 'Library is still opening';
+    option.value = '';
+    els.packLibrarySelect.append(option);
+    els.packLibrarySelect.disabled = true;
+    els.packAddBtn.disabled = true;
+  } else {
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Choose a library work…';
+    els.packLibrarySelect.append(placeholder);
+    available.forEach((work) => {
+      const option = document.createElement('option');
+      option.value = work.id;
+      option.textContent = `${work.title || work.materialName || 'Untitled'} · #${work.seed} · ${work.size}px`;
+      els.packLibrarySelect.append(option);
+    });
+    els.packLibrarySelect.disabled = false;
+    els.packAddBtn.disabled = false;
+  }
+  els.packLibraryCount.textContent = `${available.length} available`;
+}
+
+function renderPackFormats() {
+  els.packFormats.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  PACK_FORMATS.forEach((format) => {
+    const label = document.createElement('label');
+    label.className = 'pack-format-card';
+    label.innerHTML = `<input type="radio" name="pack-format" value="${format.id}" ${format.id === state.packFormatId ? 'checked' : ''} /><span><strong>${format.label}</strong><small>${format.detail} · F${format.packFormat}</small></span>`;
+    fragment.append(label);
+  });
+  els.packFormats.append(fragment);
+  updatePackFormatSummary();
+}
+
+function updatePackFormatSummary() {
+  const format = getPackFormat(state.packFormatId);
+  els.packFormatCode.textContent = String(format.packFormat);
+  els.packFormatLabel.textContent = format.label;
+  els.packFormatNote.textContent = format.note;
+}
+
+function renderPackEntries() {
+  els.packEntries.replaceChildren();
+  if (!state.packEntries.length) {
+    const empty = document.createElement('div');
+    empty.className = 'pack-empty';
+    empty.textContent = 'Add at least one texture block.';
+    els.packEntries.append(empty);
+    updatePackSummary();
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  state.packEntries.forEach((entry) => {
+    const target = getPackTarget(entry.targetId) || getPackTarget('stone');
+    const card = document.createElement('article');
+    card.className = 'pack-entry';
+    card.dataset.key = entry.key;
+    const options = PACK_TARGETS.map((item) => {
+      const usedByOther = state.packEntries.some((other) => other.key !== entry.key && other.targetId === item.id);
+      return `<option value="${item.id}" ${item.id === entry.targetId ? 'selected' : ''} ${usedByOther ? 'disabled' : ''}>${item.label}</option>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="pack-entry-thumb"><img src="${entry.thumb || entry.textures.side.canvas.toDataURL('image/png')}" alt="" /></div>
+      <div class="pack-entry-main">
+        <div class="pack-entry-top">
+          <strong title="${escapeHtml(entry.title)}">${escapeHtml(entry.title)}</strong>
+          <button class="pack-entry-remove" type="button" data-remove="${entry.key}" aria-label="Remove ${escapeHtml(entry.title)}">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="pack-entry-meta">${entry.size}px · seed ${entry.seed} · ${packOriginLabel(entry.origin)}${entry.source === 'current' ? ' · CURRENT' : ''}</div>
+        <label>Override <select data-target="${entry.key}" aria-label="Vanilla target for ${escapeHtml(entry.title)}">${options}</select></label>
+      </div>`;
+    fragment.append(card);
+  });
+  els.packEntries.append(fragment);
+  updatePackSummary();
+}
+
+function updatePackSummary() {
+  const count = state.packEntries.length;
+  els.packEntryCount.textContent = String(count);
+  els.packTargetCount.textContent = String(packTargetCount(state.packEntries));
+  const fileCount = state.packEntries.reduce((total, entry) => total + (getPackTarget(entry.targetId)?.files.length || 0), 0);
+  els.packFileCount.textContent = String(fileCount);
+  els.packExportBtn.disabled = count === 0 || state.packBuilding;
+  updatePackFormatSummary();
+}
+
+async function openPackBuilder() {
+  state.packEntries = [packEntryFromCurrent()];
+  state.packFormatId = 'modern';
+  state.packBuilding = false;
+  renderPackFormats();
+  renderPackEntries();
+  if (!els.packDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.packDialog.showModal();
+  }
+  await refreshPackLibrarySelect();
+  updatePackSummary();
+}
+
+function closePackBuilder() {
+  if (els.packDialog.open) els.packDialog.close();
+}
+
+async function addPackLibraryEntry() {
+  const id = els.packLibrarySelect.value;
+  if (!id || state.packBuilding) return;
+  const work = state.libraryWorks.find((item) => item.id === id);
+  if (!work) return;
+  try {
+    const set = await buildSetFromWork(work);
+    const target = pickFreeTarget(packTargetDefault(work.materialId));
+    state.packEntries.push({
+      key: `work-${work.id}`,
+      source: 'library',
+      workId: work.id,
+      textures: set,
+      title: work.title || work.materialName || 'Untitled texture',
+      materialName: work.materialName || getMaterial(work.materialId).name,
+      seed: work.seed,
+      size: work.size,
+      origin: work.kind,
+      targetId: target,
+      thumb: work.thumb || work.faces?.side,
+    });
+    renderPackEntries();
+    await refreshPackLibrarySelect();
+  } catch (error) {
+    console.error(error);
+    toast('Could not add that library work to the pack.', true);
+  }
+}
+
+function removePackEntry(key) {
+  state.packEntries = state.packEntries.filter((entry) => entry.key !== key);
+  renderPackEntries();
+  refreshPackLibrarySelect();
+}
+
+function changePackTarget(key, targetId) {
+  const entry = state.packEntries.find((item) => item.key === key);
+  if (!entry || !getPackTarget(targetId)) return;
+  const collision = state.packEntries.some((item) => item.key !== key && item.targetId === targetId);
+  if (collision) {
+    toast('That vanilla target is already used in this pack.', true);
+    renderPackEntries();
+    return;
+  }
+  entry.targetId = targetId;
+  renderPackEntries();
+}
+
+async function buildPackFromState() {
+  if (!state.packEntries.length || state.packBuilding) return;
+  state.packBuilding = true;
+  const previous = els.packExportBtn.querySelector('span')?.textContent || 'Build resource pack';
+  els.packExportBtn.disabled = true;
+  els.packExportBtn.classList.add('is-loading');
+  if (els.packExportBtn.querySelector('span')) els.packExportBtn.querySelector('span').textContent = 'Packing…';
+  try {
+    const entries = state.packEntries.map((entry) => ({
+      textures: entry.textures,
+      targetId: entry.targetId,
+      title: entry.title,
+      materialName: entry.materialName,
+      seed: entry.seed,
+      size: entry.size,
+      origin: entry.origin,
+    }));
+    const result = await buildResourcePack(entries, { formatId: state.packFormatId });
+    downloadBlob(result.blob, result.filename);
+    toast(`${result.included.length} target${result.included.length === 1 ? '' : 's'} packed · ${result.filename}`);
+    closePackBuilder();
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not build the resource pack.', true);
+  } finally {
+    state.packBuilding = false;
+    els.packExportBtn.disabled = state.packEntries.length === 0;
+    els.packExportBtn.classList.remove('is-loading');
+    const label = els.packExportBtn.querySelector('span');
+    if (label) label.textContent = previous;
+  }
+}
+
 /* ---------- Seeds & camera ---------- */
 function randomSeed() {
   const values = new Uint32Array(1);
@@ -1790,35 +2047,6 @@ async function downloadTextureSet() {
   }
 }
 
-async function downloadResourcePack() {
-  if (!state.textures || state.packing) return;
-  state.packing = true;
-  els.downloadPackBtn.disabled = true;
-  els.downloadSetBtn.disabled = true;
-  els.downloadPackBtn.setAttribute('aria-busy', 'true');
-  try {
-    const target = packTargetFor(state.materialId);
-    const pack = await buildResourcePack(state.textures, {
-      materialId: state.materialId,
-      materialName: getMaterial(state.materialId).name,
-      seed: state.seed,
-      size: state.size,
-      origin: state.ai ? 'ai' : state.loadedWork ? 'saved' : 'procedural',
-      prompt: els.promptInput.value,
-    });
-    downloadBlob(pack.blob, pack.filename);
-    toast(`Resource pack ready · overrides ${target.label}`);
-  } catch (error) {
-    console.error(error);
-    toast('Could not build the resource pack', true);
-  } finally {
-    state.packing = false;
-    els.downloadPackBtn.disabled = false;
-    els.downloadSetBtn.disabled = false;
-    els.downloadPackBtn.removeAttribute('aria-busy');
-  }
-}
-
 /* ---------- Toast ---------- */
 function toast(message, error = false) {
   const node = document.createElement('div');
@@ -1941,7 +2169,30 @@ function bindEvents() {
   els.topExportBtn.addEventListener('click', downloadPng);
   els.copyPngBtn.addEventListener('click', copyPng);
   els.downloadSetBtn.addEventListener('click', downloadTextureSet);
-  els.downloadPackBtn.addEventListener('click', downloadResourcePack);
+  els.downloadPackBtn.addEventListener('click', openPackBuilder);
+  els.closePackBtn.addEventListener('click', closePackBuilder);
+  els.packDialog.addEventListener('click', (event) => {
+    if (event.target === els.packDialog) closePackBuilder();
+  });
+  els.packDialog.addEventListener('close', () => {
+    document.body.classList.remove('dialog-open');
+  });
+  els.packAddBtn.addEventListener('click', addPackLibraryEntry);
+  els.packExportBtn.addEventListener('click', buildPackFromState);
+  els.packEntries.addEventListener('click', (event) => {
+    const remove = event.target.closest('[data-remove]');
+    if (remove) removePackEntry(remove.dataset.remove);
+  });
+  els.packEntries.addEventListener('change', (event) => {
+    const select = event.target.closest('[data-target]');
+    if (select) changePackTarget(select.dataset.target, select.value);
+  });
+  els.packFormats.addEventListener('change', (event) => {
+    const input = event.target.closest('input[name="pack-format"]');
+    if (!input) return;
+    state.packFormatId = input.value;
+    updatePackFormatSummary();
+  });
 
   els.libraryBtn.addEventListener('click', openLibraryDialog);
   els.closeLibraryBtn.addEventListener('click', closeLibraryDialog);
@@ -2056,7 +2307,7 @@ function bindEvents() {
     document.body.classList.remove('dialog-open');
   });
   document.addEventListener('keydown', (event) => {
-    if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open) return;
+    if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open) return;
     const tag = event.target.tagName;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target.isContentEditable) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
