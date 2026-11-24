@@ -21,3 +21,6 @@ _site/
 dist/
 src-tauri/target/
 src-tauri/gen/
+
+# Local downloaded CI artifacts
+artifacts/
