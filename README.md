@@ -1,6 +1,6 @@
 # Blockloom
 
-[![MIT License](https://img.shields.io/badge/license-MIT-b9ee6a.svg)](LICENSE) [![GitHub](https://img.shields.io/badge/GitHub-MEZTKING%2Fblockloom-181717?logo=github)](https://github.com/MEZTKING/blockloom)
+[![MIT License](https://img.shields.io/badge/license-MIT-b9ee6a.svg)](LICENSE) [![GitHub](https://img.shields.io/badge/GitHub-MEZTKING%2Fblockloom-181717?logo=github)](https://github.com/MEZTKING/blockloom) [![Live demo](https://img.shields.io/badge/live%20demo-procedural%20only-b9ee6a)](https://meztking.github.io/blockloom/)
 
 A local, prompt-driven **Minecraft texture studio** — a Bloxal-like flow with a procedural core, an optional real AI concept layer, and a proper resource-pack export.
 
@@ -16,6 +16,12 @@ npm run dev
 ```
 
 No dependencies, no build step. `npm run dev` starts `server.mjs`, a small static file server that also hosts the optional AI endpoint.
+
+**Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. Everything else runs locally in the browser.
+
+## Live demo
+
+The GitHub Pages build runs the procedural studio and all client-side exports. Because Pages cannot host `server.mjs`, the AI dialog explicitly reports that it is a static demo and asks you to run the Node server locally.
 
 ## Two ways to make a texture
 
