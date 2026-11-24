@@ -50,3 +50,11 @@ test('native shell disables AI, service worker, and uses the web share origin', 
   assert.match(app, /api\.github\.com/);
   assert.match(app, /Desktop build/);
 });
+
+test('inactive CI templates are present for later workflow-scope activation', () => {
+  assert.ok(existsSync(join(root, 'ci/windows-build.yml')));
+  assert.ok(existsSync(join(root, 'ci/android-build.yml')));
+  assert.ok(existsSync(join(root, 'scripts/install-workflows.ps1')));
+  assert.match(readFileSync(join(root, 'ci/windows-build.yml'), 'utf8'), /tauri:build/);
+  assert.match(readFileSync(join(root, 'ci/android-build.yml'), 'utf8'), /tauri:android:build/);
+});

@@ -2849,3 +2849,7 @@ body.is-dragging-file .drop-overlay { display: grid; }
 .footer-update { padding: 0; border: 0; border-bottom: 1px dotted rgba(185,238,106,.35); background: none; color: #9cbd78; font-family: var(--font-mono); font-size: 6.5px; letter-spacing: .04em; }
 .footer-update:hover { color: var(--lime); border-bottom-color: rgba(185,238,106,.7); }
 .footer-update:disabled { opacity: .55; cursor: wait; }
+
+@supports (padding: env(safe-area-inset-top)) {
+  body { padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
+}

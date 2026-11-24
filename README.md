@@ -92,7 +92,7 @@ Android still needs a **Storage Access Framework** save/share adapter for export
 
 - The Windows/Android shells are scaffolded but have **not been compiled in this Linux workspace**. Build on Windows or a Windows/Android CI runner.
 - Auto-install updates are not configured. The desktop **Check updates** button only opens the release page.
-- CI workflow files are not included because the publishing token used for this repository lacks the GitHub `workflow` scope. Add a Windows runner (or a local Windows build) to produce installers.
+- Ready-to-activate CI templates live in `ci/`. The publishing token lacks GitHub's `workflow` scope, so they cannot be moved into `.github/workflows` from this workspace. After granting the scope, run `gh auth refresh -s workflow` then `scripts/install-workflows.ps1`.
 - Android output is an APK scaffold; Play Store signing, AAB generation, and SAF file export are not complete.
 
 ## Keyboard
@@ -377,6 +377,8 @@ scripts/prepare-tauri.mjs  stages the static app into dist/
 scripts/build-windows.ps1  Windows installer helper
 scripts/sign-windows.ps1   SHA-256 code-signing helper
 scripts/build-android.ps1  Android APK helper
+scripts/install-workflows.ps1  activates ci/ templates after workflow scope
+ci/                Windows and draft Android CI templates
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
 js/library.js       IndexedDB work archive, versions, fingerprints, favorites, storage estimate
@@ -429,7 +431,7 @@ screenshots/        preview images
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
 - square/animated/large import planning and filename titles,
 - installable manifest metadata and complete offline app-shell cache coverage,
-- Tauri configuration, icon inventory, native save bridge, desktop-mode behavior, and update-check version logic.
+- Tauri configuration, icon inventory, native save bridge, desktop-mode behavior, update-check version logic, and CI templates.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.
 
