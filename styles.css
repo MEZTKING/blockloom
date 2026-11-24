@@ -2776,3 +2776,29 @@ body.dialog-open { overflow: hidden; }
 @media (max-width: 620px) {
   .share-launch { width: 35px; height: 35px; flex-basis: 35px; }
 }
+
+/* ---------- Keyboard / accessibility polish ---------- */
+.shortcut-sheet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  margin-top: 16px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8,10,6,.4);
+}
+.shortcut-sheet > div { display: flex; align-items: center; gap: 4px; min-height: 22px; padding-right: 9px; border-right: 1px solid rgba(255,255,255,.045); }
+.shortcut-sheet > div:last-child { border-right: 0; padding-right: 0; }
+.shortcut-sheet kbd { min-width: 18px; height: 18px; display: inline-grid; place-items: center; padding: 0 4px; border: 1px solid rgba(227,238,208,.16); border-bottom-color: rgba(0,0,0,.4); border-radius: 4px; background: #1a1f15; color: #aeb99d; font-family: var(--font-mono); font-size: 6.5px; box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.shortcut-sheet span { color: var(--dim); font-family: var(--font-mono); font-size: 6.4px; }
+:where(button, a, input, select, textarea):focus-visible { outline: 2px solid rgba(185,238,106,.72); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+.pack-entry-controls { display: flex; gap: 2px; flex: 0 0 auto; }
+.pack-entry-controls button { width: 21px; height: 21px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--dim); transition: .18s ease; }
+.pack-entry-controls button svg { width: 12px; height: 12px; }
+.pack-entry-controls button:hover:not(:disabled) { color: var(--text-soft); background: rgba(255,255,255,.04); border-color: var(--line); }
+.pack-entry-controls button:disabled { opacity: .25; cursor: default; }
+.pack-entry-controls .pack-entry-remove:hover { color: #d98171; border-color: rgba(217,129,113,.22); background: rgba(217,129,113,.05); }

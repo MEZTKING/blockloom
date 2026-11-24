@@ -24,6 +24,24 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, local library, and all client-side exports work.
 
+## Keyboard
+
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl/Cmd + Enter` | Forge the current prompt |
+| `Ctrl/Cmd + K` | Open the library and focus search |
+| `G` | New seed |
+| `R` | Re-roll |
+| `F` | Finisher |
+| `L` | Library |
+| `A` | AI lab |
+| `P` | Resource-pack builder |
+| `S` | Copy share link |
+| `E` | Download PNG |
+| `?` | Open this guide |
+
+Single-letter shortcuts are ignored while typing in a field. Dialogs use labelled native modals, visible focus rings, and reduced-motion support.
+
 ## The loop
 
 **Generate → choose → finish → auto-save → export**
@@ -217,6 +235,7 @@ Open **Resource pack** in the export row. The builder lets you:
 - choose the **vanilla target** for every block (26 targets, including multi-face grass and log mappings),
 - add more works from your library to build a **multi-block pack**,
 - pick a **pack format profile** — broad 1.20+, modern 1.21+, or current 1.21.9+,
+- reorder entries with the arrow controls — the first entry supplies the pack icon,
 - see target and texture-file counts before exporting,
 - optionally **untint the grass top** through a 1.21+ model override. The toggle is disabled on the 1.20+ profile; oak leaves keep vanilla biome tint.
 
@@ -297,7 +316,7 @@ screenshots/        preview images
 - resource-pack target mappings and format profiles,
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks.
 
-`npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages.
+`npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.
 
 ## License
 

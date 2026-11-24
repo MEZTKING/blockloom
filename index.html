@@ -89,7 +89,7 @@
           <span class="hint" id="materialCount">26 recipes</span>
         </div>
         <button class="material-trigger" id="materialTrigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="materialPopover">
-          <span class="material-thumb-wrap"><canvas id="materialThumb" width="64" height="64"></canvas></span>
+          <span class="material-thumb-wrap"><canvas id="materialThumb" width="64" height="64" aria-hidden="true"></canvas></span>
           <span class="material-trigger-copy">
             <strong id="materialName">Cobblestone</strong>
             <small id="materialGroup">Stone family</small>
@@ -203,7 +203,7 @@
 
         <div class="tile-wrap" id="tileWrap">
           <div class="tile-frame">
-            <canvas id="tileCanvas" width="512" height="512" aria-label="Tiled texture preview"></canvas>
+            <canvas id="tileCanvas" width="512" height="512" role="img" aria-label="Tiled texture preview"></canvas>
             <span class="tile-axis horizontal">2×</span>
             <span class="tile-axis vertical">2×</span>
           </div>
@@ -312,7 +312,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.5 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.6 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -331,14 +331,14 @@
   </div>
 
   <!-- How it works -->
-  <dialog class="how-dialog" id="howDialog">
+  <dialog class="how-dialog" id="howDialog" aria-labelledby="howTitle" aria-describedby="howLede">
     <button class="dialog-close icon-button" id="closeHowBtn" type="button" aria-label="Close dialog">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
     </button>
     <div class="dialog-content">
       <div class="dialog-kicker"><span></span>UNDER THE HOOD</div>
-      <h2>Language in.<br>Tileable pixels out.</h2>
-      <p class="dialog-lede">Blockloom is a local, procedural texture studio — not a cloud image model. It turns a short prompt into a deterministic material recipe, then grows the pixels from noise.</p>
+      <h2 id="howTitle">Language in.<br>Tileable pixels out.</h2>
+      <p class="dialog-lede" id="howLede">Blockloom is a local, procedural texture studio — not a cloud image model. It turns a short prompt into a deterministic material recipe, then grows the pixels from noise.</p>
       <div class="how-grid">
         <article>
           <span>01</span>
@@ -371,6 +371,19 @@
           <p>Export a texture set with recipe metadata, copy a compressed share link, or open the pack builder to choose vanilla targets, stack works, pick a format, and write a drop-in resource pack.</p>
         </article>
       </div>
+      <div class="shortcut-sheet" aria-label="Keyboard shortcuts">
+        <div><kbd>Ctrl</kbd><kbd>↵</kbd><span>Forge prompt</span></div>
+        <div><kbd>Ctrl</kbd><kbd>K</kbd><span>Library search</span></div>
+        <div><kbd>G</kbd><span>New seed</span></div>
+        <div><kbd>R</kbd><span>Re-roll</span></div>
+        <div><kbd>F</kbd><span>Finisher</span></div>
+        <div><kbd>L</kbd><span>Library</span></div>
+        <div><kbd>A</kbd><span>AI lab</span></div>
+        <div><kbd>P</kbd><span>Pack builder</span></div>
+        <div><kbd>S</kbd><span>Share link</span></div>
+        <div><kbd>E</kbd><span>PNG</span></div>
+        <div><kbd>?</kbd><span>This guide</span></div>
+      </div>
       <div class="honest-note">
         <span class="honest-icon">✦</span>
         <div>
@@ -387,14 +400,14 @@
 
 
   <!-- Optional AI concept lab -->
-  <dialog class="ai-dialog" id="aiDialog">
+  <dialog class="ai-dialog" id="aiDialog" aria-labelledby="aiTitle" aria-describedby="aiLede">
     <button class="dialog-close icon-button" id="closeAiBtn" type="button" aria-label="Close AI lab">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
     </button>
     <div class="ai-content">
       <div class="ai-kicker"><span></span>OPTIONAL AI LAYER</div>
-      <h2>Dream it.<br><span>Then pixel it.</span></h2>
-      <p class="ai-lede">A second way in. Send a prompt and compare up to three concepts; Blockloom reduces each response to Minecraft resolution, snaps it to a tight palette, repairs the seams, and blends it with the recipe’s block structure. Nothing reaches your library until you choose.</p>
+      <h2 id="aiTitle">Dream it.<br><span>Then pixel it.</span></h2>
+      <p class="ai-lede" id="aiLede">A second way in. Send a prompt and compare up to three concepts; Blockloom reduces each response to Minecraft resolution, snaps it to a tight palette, repairs the seams, and blends it with the recipe’s block structure. Nothing reaches your library until you choose.</p>
 
       <div class="ai-provider-card">
         <div class="ai-provider-main">
@@ -480,12 +493,12 @@
 
 
   <!-- Local texture library -->
-  <dialog class="library-dialog" id="libraryDialog">
+  <dialog class="library-dialog" id="libraryDialog" aria-labelledby="libraryTitle" aria-describedby="librarySub">
     <div class="library-shell">
       <header class="library-head">
         <div>
           <div class="library-kicker"><span></span>LOCAL ARCHIVE</div>
-          <h2>Your library</h2>
+          <h2 id="libraryTitle">Your library</h2>
           <p id="librarySub">Every distinct texture you make is stored in this browser.</p>
         </div>
         <div class="library-head-actions">
@@ -533,7 +546,7 @@
   </dialog>
 
   <!-- Pixel finisher -->
-  <dialog class="finisher-dialog" id="finisherDialog">
+  <dialog class="finisher-dialog" id="finisherDialog" aria-labelledby="finisherTitle" aria-describedby="finisherMeta">
     <div class="finisher-shell">
       <header class="finisher-head">
         <div class="finisher-title-wrap">
@@ -617,7 +630,7 @@
 
           <div class="finisher-mini">
             <div class="finisher-section-title">Live block <span>updates as you paint</span></div>
-            <canvas id="finisherPreview" width="230" height="150"></canvas>
+            <canvas id="finisherPreview" width="230" height="150" role="img" aria-label="Isometric texture preview"></canvas>
           </div>
 
           <p class="finisher-save-note">Save updates this library work <span>·</span> Save as copy keeps the original untouched.</p>
@@ -632,13 +645,13 @@
 
 
   <!-- Resource-pack builder -->
-  <dialog class="pack-dialog" id="packDialog">
+  <dialog class="pack-dialog" id="packDialog" aria-labelledby="packTitle" aria-describedby="packLede">
     <div class="pack-shell">
       <header class="pack-head">
         <div>
           <div class="pack-kicker"><span></span>RESOURCE-PACK BUILDER</div>
-          <h2>Ship a block pack.</h2>
-          <p>Assign vanilla targets, stack works from your library, and choose a compatible pack format.</p>
+          <h2 id="packTitle">Ship a block pack.</h2>
+          <p id="packLede">Assign vanilla targets, stack works from your library, and choose a compatible pack format.</p>
         </div>
         <button class="icon-button" id="closePackBtn" type="button" aria-label="Close resource-pack builder">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -655,7 +668,7 @@
               <select id="packLibrarySelect" aria-label="Library work to add"></select>
               <button class="btn btn-outline" id="packAddBtn" type="button">Add block</button>
             </div>
-            <p>Only distinct target blocks are included. Add another work to override more than one vanilla block.</p>
+            <p>Only distinct target blocks are included. The first entry supplies the pack icon; use the arrows to reorder.</p>
           </div>
         </section>
 
@@ -694,7 +707,7 @@
 
 
   <!-- Library version history -->
-  <dialog class="version-dialog" id="versionDialog">
+  <dialog class="version-dialog" id="versionDialog" aria-labelledby="versionTitle" aria-describedby="versionSub">
     <div class="version-shell">
       <header class="version-head">
         <div>

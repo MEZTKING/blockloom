@@ -757,6 +757,7 @@ function renderAiCandidates() {
     const canvas = document.createElement('canvas');
     canvas.width = 240;
     canvas.height = 205;
+    canvas.setAttribute('aria-hidden', 'true');
     card.append(canvas);
     const meta = document.createElement('span');
     meta.className = 'ai-candidate-meta';
@@ -1832,7 +1833,7 @@ function renderPackEntries() {
     return;
   }
   const fragment = document.createDocumentFragment();
-  state.packEntries.forEach((entry) => {
+  state.packEntries.forEach((entry, index) => {
     const target = getPackTarget(entry.targetId) || getPackTarget('stone');
     const card = document.createElement('article');
     card.className = 'pack-entry';
@@ -1846,11 +1847,19 @@ function renderPackEntries() {
       <div class="pack-entry-main">
         <div class="pack-entry-top">
           <strong title="${escapeHtml(entry.title)}">${escapeHtml(entry.title)}</strong>
-          <button class="pack-entry-remove" type="button" data-remove="${entry.key}" aria-label="Remove ${escapeHtml(entry.title)}">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </button>
+          <div class="pack-entry-controls">
+            <button type="button" data-move="-1" ${index === 0 ? 'disabled' : ''} aria-label="Move ${escapeHtml(entry.title)} up" title="Move up">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 14 5-5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button type="button" data-move="1" ${index === state.packEntries.length - 1 ? 'disabled' : ''} aria-label="Move ${escapeHtml(entry.title)} down" title="Move down">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="pack-entry-remove" type="button" data-remove="${entry.key}" aria-label="Remove ${escapeHtml(entry.title)}" title="Remove">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="pack-entry-meta">${entry.size}px · seed ${entry.seed} · ${packOriginLabel(entry.origin)}${entry.source === 'current' ? ' · CURRENT' : ''}</div>
+        <div class="pack-entry-meta">${entry.size}px · seed ${entry.seed} · ${packOriginLabel(entry.origin)}${entry.source === 'current' ? ' · CURRENT' : ''}${index === 0 ? ' · PACK ICON' : ''}</div>
         <label>Override <select data-target="${entry.key}" aria-label="Vanilla target for ${escapeHtml(entry.title)}">${options}</select></label>
       </div>`;
     fragment.append(card);
@@ -1922,6 +1931,15 @@ function removePackEntry(key) {
   state.packEntries = state.packEntries.filter((entry) => entry.key !== key);
   renderPackEntries();
   refreshPackLibrarySelect();
+}
+
+function movePackEntry(key, delta) {
+  const index = state.packEntries.findIndex((entry) => entry.key === key);
+  const target = index + Number(delta);
+  if (index < 0 || target < 0 || target >= state.packEntries.length) return;
+  const [entry] = state.packEntries.splice(index, 1);
+  state.packEntries.splice(target, 0, entry);
+  renderPackEntries();
 }
 
 function changePackTarget(key, targetId) {
@@ -2633,7 +2651,13 @@ function bindEvents() {
   els.packExportBtn.addEventListener('click', buildPackFromState);
   els.packEntries.addEventListener('click', (event) => {
     const remove = event.target.closest('[data-remove]');
-    if (remove) removePackEntry(remove.dataset.remove);
+    if (remove) {
+      removePackEntry(remove.dataset.remove);
+      return;
+    }
+    const move = event.target.closest('[data-move]');
+    const card = event.target.closest('[data-key]');
+    if (move && card) movePackEntry(card.dataset.key, Number(move.dataset.move));
   });
   els.packEntries.addEventListener('change', (event) => {
     const select = event.target.closest('[data-target]');
@@ -2798,25 +2822,46 @@ function bindEvents() {
   });
   document.addEventListener('keydown', (event) => {
     if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open) return;
+    if (event.repeat) return;
+    const command = event.metaKey || event.ctrlKey;
+    if (command && !event.altKey) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyPrompt({ newSeed: true });
+        return;
+      }
+      if (event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openLibraryDialog();
+        return;
+      }
+    }
     const tag = event.target.tagName;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target.isContentEditable) return;
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.key === 'g' || event.key === 'G') {
+    if (command || event.altKey) return;
+    const key = event.key.toLowerCase();
+    if (key === 'g') {
       event.preventDefault();
       applyPrompt({ newSeed: true });
-    } else if (event.key === 'r' || event.key === 'R') {
+    } else if (key === 'r') {
       event.preventDefault();
       reroll();
-    } else if (event.key === 'l' || event.key === 'L') {
+    } else if (key === 'l') {
       event.preventDefault();
       openLibraryDialog();
-    } else if (event.key === 'f' || event.key === 'F') {
+    } else if (key === 'f') {
       event.preventDefault();
       openFinisher();
-    } else if (event.key === 'a' || event.key === 'A') {
+    } else if (key === 'a') {
       event.preventDefault();
       openAiDialog();
-    } else if (event.key === 'e' || event.key === 'E') {
+    } else if (key === 'p') {
+      event.preventDefault();
+      openPackBuilder();
+    } else if (key === 's') {
+      event.preventDefault();
+      copyShareLink();
+    } else if (key === 'e') {
       event.preventDefault();
       downloadPng();
     } else if (event.key === '?') {
@@ -2827,7 +2872,6 @@ function bindEvents() {
       }
     }
   });
-
   bindCamera();
 }
 
