@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   FINISHES,
+  MATERIAL_GROUPS,
   MATERIALS,
   MODIFIERS,
   parsePrompt,
   renderTextureBuffer,
   textureTitle,
-} from '../js/engine.js';
+} from '../core/index.js';
 
 const base = {
   seed: 482910,
@@ -50,7 +51,7 @@ function seamRatio(buffer, size) {
 }
 
 test('the recipe library is complete', () => {
-  assert.equal(MATERIALS.length, 26);
+  assert.equal(MATERIALS.length, 89);
   assert.equal(new Set(MATERIALS.map((material) => material.id)).size, MATERIALS.length);
   assert.equal(FINISHES.length, 3);
   assert.ok(MODIFIERS.length >= 10);
@@ -92,7 +93,12 @@ test('every material and face renders a complete RGBA buffer', () => {
       const texture = renderTextureBuffer({ ...base, materialId: material.id, face });
       assert.equal(texture.buffer.length, 16 * 16 * 4, `${material.id}/${face} buffer size`);
       for (let i = 3; i < texture.buffer.length; i += 4) {
-        assert.equal(texture.buffer[i], 255, `${material.id}/${face} alpha at ${i}`);
+        const alpha = texture.buffer[i];
+        if (['glass', 'stained_glass', 'leaves_cutout'].includes(material.type)) {
+          assert.ok(alpha >= 0 && alpha <= 255, `${material.id}/${face} alpha at ${i}`);
+        } else {
+          assert.equal(alpha, 255, `${material.id}/${face} alpha at ${i}`);
+        }
       }
     }
   }
@@ -140,5 +146,32 @@ test('larger resolutions stay complete and deterministic', () => {
     const texture = renderTextureBuffer({ ...base, size, materialId: 'cobblestone' });
     assert.equal(texture.buffer.length, size * size * 4);
     assert.equal(texture.size, size);
+  }
+});
+
+test('every family passes its own 16 px seam check', () => {
+  for (const group of MATERIAL_GROUPS) {
+    const members = MATERIALS.filter((material) => material.group === group);
+    assert.ok(members.length > 0, group);
+    for (const material of members) {
+      const texture = renderTextureBuffer({ ...base, materialId: material.id, face: 'side' });
+      const ratio = seamRatio(texture.buffer, 16);
+      assert.ok(ratio < 2.6, `${group}/${material.id} seam ratio ${ratio.toFixed(2)}`);
+    }
+  }
+});
+
+test('transparent textures keep their alpha seams closed at 16 px', () => {
+  for (const material of MATERIALS.filter((item) => ['glass', 'stained_glass', 'leaves_cutout'].includes(item.type))) {
+    const texture = renderTextureBuffer({ ...base, materialId: material.id, face: 'side' });
+    const size = 16;
+    let edge = 0;
+    let count = 0;
+    for (let i = 0; i < size; i++) {
+      edge += Math.abs(texture.buffer[(i * size) * 4 + 3] - texture.buffer[(i * size + size - 1) * 4 + 3]);
+      edge += Math.abs(texture.buffer[i * 4 + 3] - texture.buffer[((size - 1) * size + i) * 4 + 3]);
+      count += 2;
+    }
+    assert.ok(edge / count < 4, `${material.id} alpha seam ${(edge / count).toFixed(2)}`);
   }
 });

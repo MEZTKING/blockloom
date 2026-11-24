@@ -74,7 +74,7 @@ test('health and materials work with a bearer token', async () => {
   const body = await response.json();
   assert.equal(body.service, 'blockloom-local-bridge');
   assert.equal(body.aiRequired, false);
-  assert.equal(body.capabilities.materials, 26);
+  assert.equal(body.capabilities.materials, 89);
   const materials = await fetch(`${base}/api/materials`, { headers: { 'X-Blockloom-Token': TOKEN } });
   assert.equal((await materials.json()).modifiers.length, 11);
 });

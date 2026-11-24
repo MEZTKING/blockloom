@@ -1,6 +1,7 @@
 /* Optional AI concept layer: provider request, pixel reduction, palette snap, seam repair. */
 
-import { getMaterial, renderTexture } from './engine.js';
+import { getMaterial } from '../core/index.js';
+import { renderTexture } from './engine.js';
 
 const BAYER = [
   [0, 8, 2, 10],

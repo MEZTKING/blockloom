@@ -1,16 +1,14 @@
 import {
   MATERIALS,
+  MATERIAL_GROUPS,
   MODIFIERS,
   FINISHES,
   getMaterial,
   parsePrompt,
-  renderTexture,
-  renderTextureSet,
   textureTitle,
   modifierLabel,
-  drawIsoCube,
-  downloadBlob,
-} from './engine.js';
+} from '../core/index.js';
+import { renderTexture, renderTextureSet, drawIsoCube, downloadBlob } from './engine.js';
 import { createZip } from './zip.js';
 import { createAiVariations, fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
 import { makeShareUrl, readShareHash } from './share.js';
@@ -188,7 +186,6 @@ const MOD_WORD = {
   wet: 'wet',
   flowery: 'flowery',
 };
-const MATERIAL_GROUPS = ['Stone', 'Earth', 'Wood', 'Ores', 'Other'];
 const DEFAULT_ACCENT = { name: 'Cyan', hex: '#54e0d8' };
 
 const state = {

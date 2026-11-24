@@ -9,7 +9,7 @@ const out = join(root, 'dist');
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
-for (const directory of ['js', 'assets']) {
+for (const directory of ['js', 'assets', 'core']) {
   await cp(join(root, directory), join(out, directory), { recursive: true });
 }
 for (const file of ['index.html', 'styles.css', 'manifest.webmanifest']) {

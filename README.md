@@ -26,6 +26,8 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
+**Core package:** [@blockloom/core v1.0.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.0.0) — DOM-free generator, 89 recipes, types, and worker docs.
+
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 
 **Local API release:** [Blockloom Local Texture API v1.0.0](https://github.com/MEZTKING/blockloom/releases/tag/api-v1.0.0) — bridge reference, TypeScript client, and batch kit.
@@ -181,7 +183,7 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 
 ## Texture generation
 
-- 26 hand-built recipes across stone, earth, wood, ore, and nether/end families.
+- 89 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
 - Natural-language parser: `mossy cobblestone with tiny cyan crystals`, `cracked deepslate with glowing amber veins`, `frosted oak planks`.
 - Effects: mossy, cracked, glowing, frosted, ancient, charred, gilded, flecked, wet, flowery, crystals.
 - Colour words are context-aware: `cyan crystals` becomes an accent; `blue stone` tints the base.
@@ -398,7 +400,7 @@ blockloom_resourcepack_<n>blocks_<date>.zip          # multi-block
 
 Drop the zip into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides existing vanilla block texture paths; it does not create a new block.
 
-- All 26 materials map to a valid vanilla target, and any target can be selected for any texture.
+- The 26 vanilla target descriptors are independent of the recipe library; pick an explicit target for new families.
 - Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. With a 1.21+/1.21.9+ profile, **Untint grass top** adds an official-style grass model with `tintindex` removed.
 - Oak leaves always keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.
@@ -419,7 +421,8 @@ server/png.mjs      dependency-free RGBA PNG encoder
 bin/blockloom.mjs   CLI for PNG, texture-set ZIP, batch, materials
 docs/API.md         HTTP bridge and MCSuperMods integration reference
 examples/           TypeScript client and batch JSON
-js/engine.js        noise, material recipes, prompt parser, isometric renderer, native save bridge
+core/              @blockloom/core: DOM-free generator, data recipes, prompt parser, types
+js/engine.js        browser canvas wrapper around @blockloom/core
 src-tauri/          Tauri 2 Windows shell, Rust save command, capabilities, icons
 scripts/prepare-tauri.mjs  stages the static app into dist/
 scripts/build-windows.ps1  Windows installer helper
@@ -472,7 +475,7 @@ screenshots/        preview images
 `npm test` runs a dependency-free suite with the Node test runner:
 
 - prompt parsing for materials, tints, accents, and effects,
-- all 26 materials across side/top/bottom faces,
+- all 89 materials across side/top/bottom faces,
 - RGBA completeness and deterministic seeds,
 - a seam sanity ratio at 16 px,
 - all finishes and effect overlays,

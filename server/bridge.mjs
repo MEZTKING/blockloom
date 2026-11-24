@@ -7,7 +7,7 @@ import {
   parsePrompt,
   renderTextureBuffer,
   textureTitle,
-} from '../js/engine.js';
+} from '../core/index.js';
 import { createZip } from '../js/zip.js';
 import { encodePng } from './png.mjs';
 
