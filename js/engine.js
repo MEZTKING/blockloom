@@ -1202,6 +1202,22 @@ export function drawIsoCube(canvas, textures, options = {}) {
 }
 
 export function downloadBlob(blob, filename) {
+  const tauri = window.__TAURI_INTERNALS__;
+  if (tauri?.invoke) {
+    return blob.arrayBuffer()
+      .then((buffer) => tauri.invoke('save_file', { name: filename, bytes: Array.from(new Uint8Array(buffer)) }))
+      .catch((error) => {
+        console.error('Native save failed', error);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      });
+  }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -1210,4 +1226,5 @@ export function downloadBlob(blob, filename) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 2000);
+  return undefined;
 }

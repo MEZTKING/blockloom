@@ -2,7 +2,7 @@
 
 A local-first, offline-capable **Minecraft texture studio**: prompt-driven generation, import of existing Minecraft PNGs, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
 
-No account, no build step, no framework. Procedural work runs entirely in the browser.
+No account, no framework. The web app has no build step; the optional Windows shell uses Tauri.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-b9ee6a.svg)](LICENSE) [![GitHub](https://img.shields.io/badge/GitHub-MEZTKING%2Fblockloom-181717?logo=github)](https://github.com/MEZTKING/blockloom) [![Live demo](https://img.shields.io/badge/live%20demo-procedural%20only-b9ee6a)](https://meztking.github.io/blockloom/)
 
@@ -23,6 +23,45 @@ npm run check # tests + syntax checks for every module
 ```
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
+
+## Windows desktop (Tauri 2)
+
+The web/PWA build remains the canonical app. `src-tauri` wraps the same offline frontend as a Windows desktop application.
+
+### Build on Windows
+
+Prerequisites: **Node 18+**, **Rust stable (MSVC)**, **Visual Studio Build Tools** with the Windows SDK, and WebView2 (bundled or installed by the bootstrapper).
+
+```powershell
+npm install
+npm run tauri:dev   # development window
+npm run tauri:build # MSI + NSIS installers
+```
+
+Installers are written to:
+
+```text
+src-tauri/target/release/bundle/msi/
+src-tauri/target/release/bundle/nsis/
+```
+
+The PowerShell helper `scripts/build-windows.ps1` runs checks, builds, and lists the installers.
+
+### Native behavior
+
+- Assets are bundled locally; no Node server and no service worker are needed.
+- Exports use a **native Save dialog** through the Rust `save_file` command.
+- Import still uses the WebView file picker and drag/drop.
+- AI is deliberately **not bundled** in the Windows shell. The Node AI proxy remains a web/dev-server feature.
+- Share links point at the public web app, not the local `tauri://` origin.
+- Library data lives in the WebView2 app profile on that machine.
+
+### Release caveats
+
+- Unsigned installers trigger Windows SmartScreen. A code-signing certificate is required for a smooth public release.
+- Auto-updates are not configured yet.
+- The Windows shell is scaffolded but has not been compiled in this Linux workspace; run the build on Windows or a Windows CI runner.
+- Android is next. The shared Rust `lib.rs` already exposes the Tauri mobile entry point.
 
 ## Keyboard
 
@@ -300,7 +339,10 @@ At Minecraft resolution, texture quality comes from **palette discipline, contro
 index.html          app shell and UI
 styles.css          design system, 3D cube, AI lab, library, finisher, responsive layouts
 js/importer.js     square/animation import planning and filename titles
-js/engine.js        noise, material recipes, prompt parser, isometric renderer
+js/engine.js        noise, material recipes, prompt parser, isometric renderer, native save bridge
+src-tauri/          Tauri 2 Windows shell, Rust save command, capabilities, icons
+scripts/prepare-tauri.mjs  stages the static app into dist/
+scripts/build-windows.ps1  Windows installer helper
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
 js/library.js       IndexedDB work archive, versions, fingerprints, favorites, storage estimate
@@ -350,7 +392,8 @@ screenshots/        preview images
 - resource-pack target mappings and format profiles,
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
 - square/animated/large import planning and filename titles,
-- installable manifest metadata and complete offline app-shell cache coverage.
+- installable manifest metadata and complete offline app-shell cache coverage,
+- Tauri configuration, icon inventory, native save bridge, and desktop-mode behavior.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.
 

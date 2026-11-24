@@ -16,3 +16,8 @@ Thumbs.db
 *.log
 tmp/
 _site/
+
+# Tauri / native build output
+dist/
+src-tauri/target/
+src-tauri/gen/

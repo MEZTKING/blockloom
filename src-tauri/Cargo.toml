@@ -1,0 +1,24 @@
+[package]
+name = "blockloom"
+version = "1.9.0"
+description = "Local-first Minecraft texture studio with import, pixel finisher, library, and resource packs"
+authors = ["Lelouch"]
+license = "MIT"
+repository = "https://github.com/MEZTKING/blockloom"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+name = "blockloom_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "blockloom"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"

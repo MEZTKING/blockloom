@@ -34,8 +34,9 @@ const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const PARAMS = new URLSearchParams(location.search);
+const IS_TAURI = Boolean(window.__TAURI_INTERNALS__);
 const IS_STATIC_DEMO = location.hostname.endsWith('.github.io') || PARAMS.has('static');
-const PROCEDURAL_ONLY = IS_STATIC_DEMO || PARAMS.has('noai') || PARAMS.has('procedural') || !navigator.onLine;
+const PROCEDURAL_ONLY = IS_TAURI || IS_STATIC_DEMO || PARAMS.has('noai') || PARAMS.has('procedural') || !navigator.onLine;
 
 const els = {
   promptForm: $('#promptForm'),
@@ -855,15 +856,17 @@ async function openAiDialog() {
     els.aiDialog.showModal();
   }
   if (PROCEDURAL_ONLY) {
-    setAiProviderBadge('offline', IS_STATIC_DEMO ? 'STATIC' : 'PROCEDURAL');
-    els.aiProviderName.textContent = IS_STATIC_DEMO ? 'GitHub Pages demo' : 'Procedural mode';
+    setAiProviderBadge('offline', IS_TAURI ? 'DESKTOP' : IS_STATIC_DEMO ? 'STATIC' : 'PROCEDURAL');
+    els.aiProviderName.textContent = IS_TAURI ? 'Desktop build' : IS_STATIC_DEMO ? 'GitHub Pages demo' : 'Procedural mode';
     els.aiProviderModel.textContent = 'AI disabled';
     setAiStatus('AI is unavailable in this offline / procedural session. Everything else still works.', 'error');
     els.aiForm.hidden = true;
     els.aiUnavailable.hidden = false;
-    els.aiSetupMessage.textContent = IS_STATIC_DEMO
-      ? 'The Pages build is the procedural studio only. The full AI provider proxy lives in server.mjs and runs locally or on your own host.'
-      : 'Remove ?noai / ?procedural or go online, then reload to enable the optional AI layer.';
+    els.aiSetupMessage.textContent = IS_TAURI
+      ? 'The Windows app ships without the AI proxy. Import, procedural generation, the finisher, library, share links, and packs all work offline.'
+      : IS_STATIC_DEMO
+        ? 'The Pages build is the procedural studio only. The full AI provider proxy lives in server.mjs and runs locally or on your own host.'
+        : 'Remove ?noai / ?procedural or go online, then reload to enable the optional AI layer.';
     return;
   }
   try {
@@ -2206,7 +2209,12 @@ async function copyShareLink() {
   if (!state.textures || els.shareBtn.disabled) return;
   els.shareBtn.disabled = true;
   try {
-    const url = await makeShareUrl(sharePayload(), { maxLength: 32000 });
+    const url = await makeShareUrl(
+      sharePayload(),
+      IS_TAURI
+        ? { origin: 'https://meztking.github.io', pathname: '/blockloom/', maxLength: 32000 }
+        : { maxLength: 32000 },
+    );
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
       await navigator.clipboard.writeText(url);
@@ -3123,7 +3131,7 @@ function updateClock() {
 }
 
 async function registerOfflineWorker() {
-  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  if (IS_TAURI || !('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
   try {
     await navigator.serviceWorker.register(new URL('../sw.js', import.meta.url));
   } catch (error) {
@@ -3134,8 +3142,8 @@ async function registerOfflineWorker() {
 function init() {
   if (PROCEDURAL_ONLY) {
     const mode = $('#engineMode');
-    if (mode) mode.textContent = IS_STATIC_DEMO ? 'STATIC DEMO' : 'PROCEDURAL';
-    els.aiBtn?.setAttribute('title', 'Procedural-only session — AI is off');
+    if (mode) mode.textContent = IS_TAURI ? 'DESKTOP' : IS_STATIC_DEMO ? 'STATIC DEMO' : 'PROCEDURAL';
+    els.aiBtn?.setAttribute('title', IS_TAURI ? 'Windows build — AI is not bundled' : 'Procedural-only session — AI is off');
   }
   els.materialCount.textContent = `${MATERIALS.length} recipes`;
   els.popoverCount.textContent = `${MATERIALS.length} materials`;
