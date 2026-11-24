@@ -54,14 +54,46 @@ The PowerShell helper `scripts/build-windows.ps1` runs checks, builds, and lists
 - Import still uses the WebView file picker and drag/drop.
 - AI is deliberately **not bundled** in the Windows shell. The Node AI proxy remains a web/dev-server feature.
 - Share links point at the public web app, not the local `tauri://` origin.
+- The footer **Check updates** button queries GitHub Releases and opens the release page. It is a manual update check; it does not auto-download or install.
 - Library data lives in the WebView2 app profile on that machine.
+
+### Code signing
+
+`scripts/sign-windows.ps1` signs the built EXEs, MSI, and NSIS installer with SHA-256 and an RFC3161 timestamp.
+
+```powershell
+$env:WINDOWS_CERT_PATH = "C:\path\to\certificate.pfx"
+$env:WINDOWS_CERT_PASSWORD = "…"
+# or use a certificate already in CurrentUser\My:
+$env:WINDOWS_CERT_THUMBPRINT = "…"
+.scriptsuild-windows.ps1
+```
+
+Without a certificate the build succeeds but installers remain unsigned and trigger Windows SmartScreen.
+
+### Android
+
+The Android target is scaffolded but not generated. The shared Tauri mobile entry point, package identifier, icons, and mobile capability are in place.
+
+Prerequisites: **JDK 17**, **Android Studio + SDK**, **Android NDK**, Rust Android targets, and the Tauri CLI.
+
+```powershell
+npm install
+npm run tauri:android:init   # generate src-tauri/gen/android
+npm run tauri:android:dev
+npm run tauri:android:build  # APK
+```
+
+Or run `scripts/build-android.ps1`.
+
+Android still needs a **Storage Access Framework** save/share adapter for exports; the current native Save dialog is Windows-first. AI remains absent. Full animated-texture and non-square sheet support are still separate work.
 
 ### Release caveats
 
-- Unsigned installers trigger Windows SmartScreen. A code-signing certificate is required for a smooth public release.
-- Auto-updates are not configured yet.
-- The Windows shell is scaffolded but has not been compiled in this Linux workspace; run the build on Windows or a Windows CI runner.
-- Android is next. The shared Rust `lib.rs` already exposes the Tauri mobile entry point.
+- The Windows/Android shells are scaffolded but have **not been compiled in this Linux workspace**. Build on Windows or a Windows/Android CI runner.
+- Auto-install updates are not configured. The desktop **Check updates** button only opens the release page.
+- CI workflow files are not included because the publishing token used for this repository lacks the GitHub `workflow` scope. Add a Windows runner (or a local Windows build) to produce installers.
+- Android output is an APK scaffold; Play Store signing, AAB generation, and SAF file export are not complete.
 
 ## Keyboard
 
@@ -343,11 +375,15 @@ js/engine.js        noise, material recipes, prompt parser, isometric renderer, 
 src-tauri/          Tauri 2 Windows shell, Rust save command, capabilities, icons
 scripts/prepare-tauri.mjs  stages the static app into dist/
 scripts/build-windows.ps1  Windows installer helper
+scripts/sign-windows.ps1   SHA-256 code-signing helper
+scripts/build-android.ps1  Android APK helper
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
 js/library.js       IndexedDB work archive, versions, fingerprints, favorites, storage estimate
 js/resourcepack.js  vanilla target mapping, format profiles, and multi-block resource-pack ZIP builder
 js/share.js         gzip/base64url share links and URL-fragment decoding
+js/update.js        manual GitHub release version comparison
+js/version.js       app version constant
 sw.js              offline app-shell worker
 manifest.webmanifest  installable PWA metadata
 js/app.js           state, interactions, library/version/share UI, finisher, pack builder, exports
@@ -393,7 +429,7 @@ screenshots/        preview images
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
 - square/animated/large import planning and filename titles,
 - installable manifest metadata and complete offline app-shell cache coverage,
-- Tauri configuration, icon inventory, native save bridge, and desktop-mode behavior.
+- Tauri configuration, icon inventory, native save bridge, desktop-mode behavior, and update-check version logic.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.
 

@@ -13,6 +13,7 @@ npm run check
 npm run tauri:build
 
 $release = Join-Path $PWD "src-tauri\target\release\bundle"
+& (Join-Path $PSScriptRoot "sign-windows.ps1")
 Write-Host ""
 Write-Host "Windows installers:" -ForegroundColor Green
 Get-ChildItem -Recurse $release -Include *.msi,*.exe | Select-Object FullName,Length

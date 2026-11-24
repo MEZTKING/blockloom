@@ -2845,3 +2845,7 @@ body.is-dragging-file .drop-overlay { display: grid; }
 .variation-empty { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; min-height: 170px; padding: 22px; border: 1px dashed rgba(227,238,208,.13); border-radius: 9px; text-align: center; background: rgba(7,9,5,.28); }
 .variation-empty span { color: #8d997c; font-family: var(--font-mono); font-size: 6.5px; letter-spacing: .14em; }
 .variation-empty p { max-width: 240px; margin: 0; color: var(--dim); font-size: 8.5px; line-height: 1.6; }
+.footer-version { display: inline-flex; align-items: center; justify-content: flex-end; gap: 9px; }
+.footer-update { padding: 0; border: 0; border-bottom: 1px dotted rgba(185,238,106,.35); background: none; color: #9cbd78; font-family: var(--font-mono); font-size: 6.5px; letter-spacing: .04em; }
+.footer-update:hover { color: var(--lime); border-bottom-color: rgba(185,238,106,.7); }
+.footer-update:disabled { opacity: .55; cursor: wait; }

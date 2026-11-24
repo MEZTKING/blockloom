@@ -15,6 +15,8 @@ import { createZip } from './zip.js';
 import { createAiVariations, fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
 import { makeShareUrl, readShareHash } from './share.js';
 import { importSummary, importTitle, planTextureImport } from './importer.js';
+import { releaseInfo } from './update.js';
+import { APP_VERSION } from './version.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
 import { TextureFinisher } from './finisher.js';
 import {
@@ -94,6 +96,7 @@ const els = {
   resetViewBtn: $('#resetViewBtn'),
   dragHint: $('#dragHint'),
   footerClock: $('#footerClock'),
+  updateBtn: $('#updateBtn'),
   howBtn: $('#howBtn'),
   howDialog: $('#howDialog'),
   closeHowBtn: $('#closeHowBtn'),
@@ -3125,6 +3128,36 @@ function bindEvents() {
   bindCamera();
 }
 
+async function checkForUpdates() {
+  if (!IS_TAURI || els.updateBtn.disabled) return;
+  els.updateBtn.disabled = true;
+  const previous = els.updateBtn.textContent;
+  els.updateBtn.textContent = 'Checking…';
+  try {
+    const response = await fetch('https://api.github.com/repos/MEZTKING/blockloom/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
+    const info = releaseInfo(await response.json(), APP_VERSION);
+    if (!info.newer) {
+      toast(`Blockloom is up to date · v${APP_VERSION}`);
+      els.updateBtn.textContent = 'Check updates';
+      return;
+    }
+    els.updateBtn.textContent = `Update v${info.latest}`;
+    if (window.confirm(`Blockloom v${info.latest} is available. Open the release page?`)) {
+      await window.__TAURI_INTERNALS__.invoke('open_external', { url: info.url });
+    }
+  } catch (error) {
+    console.error(error);
+    toast('Could not check for updates. Open the GitHub releases page manually.', true);
+    els.updateBtn.textContent = 'Releases';
+  } finally {
+    els.updateBtn.disabled = false;
+    if (els.updateBtn.textContent === 'Checking…') els.updateBtn.textContent = previous;
+  }
+}
+
 function updateClock() {
   const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
   els.footerClock.textContent = `${navigator.onLine ? 'LOCAL' : 'OFFLINE'} · ${time}`;
@@ -3169,6 +3202,10 @@ function init() {
   renderAll({ variations: true });
   initLibrary();
   loadSharedFromHash().catch((error) => console.error('Share load failed', error));
+  if (IS_TAURI) {
+    els.updateBtn.hidden = false;
+    els.updateBtn.addEventListener('click', checkForUpdates);
+  }
   updateClock();
   setInterval(updateClock, 60000);
   window.addEventListener('online', () => {

@@ -39,6 +39,8 @@ test('service worker caches the full app shell', () => {
     'js/zip.js',
     'js/share.js',
     'js/importer.js',
+    'js/update.js',
+    'js/version.js',
     'assets/fonts/space-grotesk.woff2',
     'assets/fonts/ibm-plex-mono-400.woff2',
     'assets/fonts/ibm-plex-mono-500.woff2',

@@ -1,6 +1,6 @@
 {
   "name": "blockloom",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "private": true,
   "type": "module",
   "description": "A local-first Minecraft texture studio with prompt generation, AI candidates, pixel finisher, versioned library, shareable links, and resource-pack export.",
@@ -12,7 +12,10 @@
     "dev:noai": "AI_ENABLED=false node server.mjs",
     "build:native": "node scripts/prepare-tauri.mjs",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:build": "tauri android build --apk"
   },
   "engines": {
     "node": ">=18"

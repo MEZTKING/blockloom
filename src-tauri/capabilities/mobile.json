@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "Capabilities for the Android build",
+  "platforms": ["android"],
+  "permissions": ["core:default", "dialog:default"]
+}
