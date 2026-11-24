@@ -1,9 +1,9 @@
 {
   "name": "blockloom",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
-  "description": "A local-first Minecraft texture studio with prompt generation, pixel finisher, auto-archiving library, AI concepts, and multi-block resource-pack builder.",
+  "description": "A local-first Minecraft texture studio with prompt generation, AI candidates, pixel finisher, versioned library, shareable links, and resource-pack export.",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",

@@ -80,7 +80,6 @@ export class TextureFinisher {
       this.requestClose();
     });
     root.addEventListener('close', () => {
-      document.body.classList.remove('dialog-open');
       this.busy = false;
     });
     this.refs.save.addEventListener('click', () => this.save(false));

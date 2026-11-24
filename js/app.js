@@ -12,7 +12,8 @@ import {
   downloadBlob,
 } from './engine.js';
 import { createZip } from './zip.js';
-import { fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
+import { createAiVariations, fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
+import { makeShareUrl, readShareHash } from './share.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
 import { TextureFinisher } from './finisher.js';
 import {
@@ -61,6 +62,7 @@ const els = {
   aiBadge: $('#aiBadge'),
   aiBadgeLabel: $('#aiBadgeLabel'),
   finishBtn: $('#finishBtn'),
+  shareBtn: $('#shareBtn'),
   textureTitle: $('#textureTitle'),
   stageViewport: $('#stageViewport'),
   cube: $('#cube'),
@@ -145,6 +147,12 @@ const els = {
   packTintToggle: $('#packTintToggle'),
   packTintFree: $('#packTintFree'),
   packTintStatus: $('#packTintStatus'),
+  versionDialog: $('#versionDialog'),
+  versionTitle: $('#versionTitle'),
+  versionSub: $('#versionSub'),
+  versionGrid: $('#versionGrid'),
+  versionBackBtn: $('#versionBackBtn'),
+  closeVersionBtn: $('#closeVersionBtn'),
 };
 
 let finisher = null;
@@ -211,6 +219,7 @@ const state = {
   packFormatId: 'modern',
   packBuilding: false,
   packGrassTintFree: false,
+  versionWorkId: null,
 };
 
 /* ---------- Prompt state ---------- */
@@ -283,7 +292,7 @@ function updateParsedTags(parsed) {
   if (state.ai) {
     els.parsedTags.append(chip('AI concept', 'ai'));
   } else if (state.loadedWork) {
-    els.parsedTags.append(chip(state.loadedWork.edited ? 'Edited copy' : 'Saved work', 'library'));
+    els.parsedTags.append(chip(state.loadedWork.shared ? 'Shared texture' : state.loadedWork.edited ? 'Edited copy' : 'Saved work', 'library'));
   }
   if (parsed.materialId) {
     els.parsedTags.append(chip(getMaterial(parsed.materialId).name, 'material'));
@@ -369,6 +378,11 @@ function hasCustomTexture() {
   return Boolean(currentCustomTextures());
 }
 
+function syncDialogBody() {
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog];
+  document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
+}
+
 function displayPalette(textures) {
   if (hasCustomTexture()) return textures.palette.slice(0, 6);
   const used = state.modifiers.some((m) => USES_ACCENT.includes(m));
@@ -434,23 +448,33 @@ function updateStageDetails(textures) {
   els.dnaFinish.textContent = custom
     ? aiActive
       ? 'AI concept'
-      : state.loadedWork?.edited
-        ? 'Edited copy'
-        : 'Saved work'
+      : state.loadedWork?.shared
+        ? 'Shared texture'
+        : state.loadedWork?.edited
+          ? 'Edited copy'
+          : 'Saved work'
     : FINISHES.find((f) => f.id === state.finish)?.label || 'Balanced';
   els.aiBadge.hidden = !custom;
   els.aiBadge.classList.toggle('is-saved', savedActive);
   if (els.aiBadgeLabel) {
-    els.aiBadgeLabel.textContent = aiActive ? 'AI MODE' : state.loadedWork?.edited ? 'EDITED COPY' : 'SAVED WORK';
+    els.aiBadgeLabel.textContent = aiActive
+      ? 'AI MODE'
+      : state.loadedWork?.shared
+        ? 'SHARED WORK'
+        : state.loadedWork?.edited
+          ? 'EDITED COPY'
+          : 'SAVED WORK';
   }
   els.aiBadge.title = aiActive
     ? 'AI concept is active. Click to return to the procedural texture.'
     : 'Saved library texture is active. Click to return to the procedural texture.';
   els.variationsSub.textContent = aiActive
     ? 'AI cuts · local colour and orientation studies.'
-    : savedActive
-      ? 'Saved cuts · restored with this library piece.'
-      : 'Six sibling seeds. Same recipe, different surface.';
+    : state.loadedWork?.shared
+      ? 'Local cuts · regenerated from shared pixels.'
+      : savedActive
+        ? 'Saved cuts · restored with this library piece.'
+        : 'Six sibling seeds. Same recipe, different surface.';
   if (document.activeElement !== els.seedInput) els.seedInput.value = state.seed;
 
   const palette = displayPalette(textures);
@@ -1132,6 +1156,7 @@ async function buildWorkFromCurrent(faces, fingerprint) {
     favorite: false,
     faces,
     variations,
+    versions: [],
     thumb: workThumb(state.textures),
     ai: aiMeta,
   };
@@ -1257,6 +1282,7 @@ function renderLibrary() {
         <span class="library-origin ${originClass}">${originLabel}</span>
       </button>
       <div class="library-card-actions">
+        ${work.versions?.length ? `<button type="button" data-action="history" title="${work.versions.length} versions" aria-label="Version history for ${escapeHtml(work.title || 'texture')}"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="7" r="1.4" fill="currentColor"/><circle cx="16" cy="12" r="1.4" fill="currentColor"/><circle cx="9" cy="17" r="1.4" fill="currentColor"/></svg></button>` : ''}
         <button type="button" class="${work.favorite ? 'is-favorite' : ''}" data-action="favorite" title="${work.favorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${work.favorite ? 'Remove from favorites' : 'Add to favorites'}">
           <svg viewBox="0 0 24 24" fill="${work.favorite ? 'currentColor' : 'none'}" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
         </button>
@@ -1268,7 +1294,7 @@ function renderLibrary() {
         <div class="library-name">${escapeHtml(work.title || 'Untitled texture')}</div>
         <div class="library-prompt">${escapeHtml(work.prompt || 'No prompt saved')}</div>
         <div class="library-meta-row">
-          <span>${work.size} px · #${work.seed}</span>
+          <span>${work.size} px · #${work.seed}${work.versions?.length ? ` · ${work.versions.length}v` : ''}</span>
           <span>${formatWorkDate(work.updatedAt || work.createdAt)}</span>
         </div>
       </div>`;
@@ -1458,6 +1484,7 @@ async function importLibrary(file) {
         kind: work.kind === 'ai' ? 'ai' : 'procedural',
         edited: Boolean(work.edited),
         variations: Array.isArray(work.variations) ? work.variations : [],
+        versions: Array.isArray(work.versions) ? work.versions : [],
         palette: Array.isArray(work.palette) ? work.palette : [],
       });
       imported += 1;
@@ -1535,6 +1562,10 @@ async function saveFinishedTexture({ faces, copy, size }) {
   const now = new Date().toISOString();
   let sourceWork = state.currentWorkId ? await getWork(state.currentWorkId) : null;
   const shouldCopy = copy || !sourceWork;
+  const previousSnapshot = sourceWork ? createWorkSnapshot(sourceWork, now) : null;
+  const previousVersions = sourceWork
+    ? [...(sourceWork.versions || []), previousSnapshot].slice(-30)
+    : [];
   let variations = sourceWork?.variations || [];
   if (!variations.length) {
     variations = [];
@@ -1566,6 +1597,7 @@ async function saveFinishedTexture({ faces, copy, size }) {
       favorite: false,
       faces: faceUrls,
       variations,
+      versions: [],
       thumb: workThumb(set),
       ai: state.ai
         ? {
@@ -1602,6 +1634,7 @@ async function saveFinishedTexture({ faces, copy, size }) {
       edited: true,
       faces: faceUrls,
       variations,
+      versions: previousVersions,
       thumb: workThumb(set),
       ai: sourceWork.ai || (state.ai
         ? {
@@ -1936,6 +1969,260 @@ async function buildPackFromState() {
     if (label) label.textContent = previous;
   }
 }
+
+/* ---------- Version history ---------- */
+function createWorkSnapshot(work, createdAt = new Date().toISOString()) {
+  return {
+    id: newWorkId(),
+    createdAt: work.updatedAt || createdAt,
+    faces: work.faces,
+    thumb: work.thumb || work.faces?.side || null,
+    palette: Array.isArray(work.palette) ? work.palette : [],
+    size: work.size,
+    edited: Boolean(work.edited),
+    label: work.edited ? 'Edited state' : 'Original',
+  };
+}
+
+function formatVersionDate(value) {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(new Date(value));
+  } catch {
+    return '—';
+  }
+}
+
+function versionCard({ title, thumb, date, current, versionId }) {
+  return `<article class="version-card${current ? ' is-current' : ''}">
+    <img src="${thumb}" alt="" loading="lazy" />
+    <div class="version-card-copy"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(date)}</span></div>
+    <div class="version-card-actions">
+      ${current ? '' : `<button type="button" data-version-action="restore" data-version-id="${versionId}">Restore</button>`}
+      <button type="button" data-version-action="download" data-version-id="${versionId || ''}">PNG</button>
+    </div>
+  </article>`;
+}
+
+function renderVersionHistory(work) {
+  const versions = Array.isArray(work.versions) ? work.versions : [];
+  els.versionTitle.textContent = work.title || 'Texture history';
+  els.versionSub.textContent = `${versions.length} earlier save${versions.length === 1 ? '' : 's'} · every finisher save adds a snapshot.`;
+  const cards = [
+    versionCard({
+      title: 'Current',
+      thumb: work.thumb || work.faces.side,
+      date: formatVersionDate(work.updatedAt || work.createdAt),
+      current: true,
+      versionId: null,
+    }),
+  ];
+  versions.slice().reverse().forEach((version, index) => {
+    cards.push(versionCard({
+      title: `Snapshot ${versions.length - index}`,
+      thumb: version.thumb || version.faces?.side,
+      date: formatVersionDate(version.createdAt),
+      current: false,
+      versionId: version.id,
+    }));
+  });
+  els.versionGrid.innerHTML = cards.join('') + (versions.length
+    ? ''
+    : '<div class="version-empty">No earlier saves yet. Edit this work in the finisher and save to create a snapshot.</div>');
+}
+
+async function openVersionHistory(workId) {
+  try {
+    const work = await getWork(workId);
+    if (!work) {
+      toast('That library piece could not be found.', true);
+      return;
+    }
+    closeLibraryDialog();
+    state.versionWorkId = workId;
+    renderVersionHistory(work);
+    if (!els.versionDialog.open) {
+      document.body.classList.add('dialog-open');
+      els.versionDialog.showModal();
+    }
+  } catch (error) {
+    console.error(error);
+    toast('Could not load version history.', true);
+  }
+}
+
+function closeVersionHistory() {
+  if (els.versionDialog.open) els.versionDialog.close();
+}
+
+async function restoreLibraryVersion(versionId) {
+  if (!state.versionWorkId) return;
+  try {
+    const work = await getWork(state.versionWorkId);
+    const version = work?.versions?.find((item) => item.id === versionId);
+    if (!work || !version) {
+      toast('That snapshot could not be found.', true);
+      return;
+    }
+    const now = new Date().toISOString();
+    const currentSnapshot = createWorkSnapshot(work, now);
+    work.versions = [...(work.versions || []), currentSnapshot].slice(-30);
+    work.faces = version.faces;
+    work.thumb = version.thumb || work.thumb;
+    work.palette = Array.isArray(version.palette) ? version.palette : work.palette;
+    work.size = version.size || work.size;
+    work.edited = true;
+    work.fingerprint = fingerprintFaces(work.faces);
+    work.updatedAt = now;
+    await putWork(work);
+    closeVersionHistory();
+    await openLibraryWork(work.id);
+    toast('Version restored · current state was snapshotted first');
+  } catch (error) {
+    console.error(error);
+    toast('Could not restore that version.', true);
+  }
+}
+
+async function downloadVersionFace(versionId) {
+  if (!state.versionWorkId) return;
+  try {
+    const work = await getWork(state.versionWorkId);
+    if (!work) return;
+    const version = versionId ? work.versions?.find((item) => item.id === versionId) : null;
+    const faces = version?.faces || work.faces;
+    const slug = String(work.title || 'texture').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const stamp = (version?.createdAt || work.updatedAt || new Date().toISOString()).slice(0, 19).replace(/[:T]/g, '-');
+    downloadBlob(dataUrlToBlob(faces.side), `blockloom_${slug}_${stamp}.png`);
+    toast('Version PNG exported');
+  } catch (error) {
+    console.error(error);
+    toast('Could not export that version.', true);
+  }
+}
+
+
+/* ---------- Shareable links ---------- */
+function shareRgb(hex) {
+  const value = String(hex || '').replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return [128, 128, 128];
+  return [parseInt(value.slice(0, 2), 16), parseInt(value.slice(2, 4), 16), parseInt(value.slice(4, 6), 16)];
+}
+
+function sharePayload() {
+  return {
+    v: 1,
+    app: 'Blockloom',
+    title: els.textureTitle.textContent || textureTitle(state.materialId, state.modifiers),
+    prompt: els.promptInput.value,
+    materialId: state.materialId,
+    seed: state.seed,
+    size: state.size,
+    finish: state.finish,
+    grain: state.grain,
+    contrast: state.contrast,
+    hue: state.hue,
+    modifiers: [...state.modifiers],
+    accent: state.accent ? { ...state.accent } : null,
+    promptColor: state.promptColor ? { ...state.promptColor } : null,
+    palette: displayPalette(state.textures),
+    faces: faceUrlsFromSet(state.textures),
+    kind: state.ai ? 'ai' : state.loadedWork?.work?.kind || 'procedural',
+    edited: Boolean(state.loadedWork?.edited),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function copyShareLink() {
+  if (!state.textures || els.shareBtn.disabled) return;
+  els.shareBtn.disabled = true;
+  try {
+    const url = await makeShareUrl(sharePayload(), { maxLength: 32000 });
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(url);
+      toast('Share link copied · the current texture travels in the URL');
+    } catch {
+      window.prompt('Copy this Blockloom share link:', url);
+      toast('Share link ready to copy');
+    }
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not build a share link.', true);
+  } finally {
+    els.shareBtn.disabled = false;
+  }
+}
+
+async function loadSharedFromHash() {
+  try {
+    const payload = await readShareHash(location.hash);
+    if (!payload) return false;
+    if (!payload.faces?.side || !payload.faces?.top || !payload.faces?.bottom || !payload.size) {
+      throw new Error('The share link is missing texture faces.');
+    }
+    const work = {
+      ...payload,
+      id: 'shared',
+      title: payload.title || 'Shared texture',
+      prompt: payload.prompt || '',
+      materialId: payload.materialId || 'cobblestone',
+      seed: Number(payload.seed) || 1,
+      size: Math.min(128, Math.max(1, Number(payload.size) || 16)),
+      palette: Array.isArray(payload.palette) ? payload.palette : [],
+      kind: payload.kind === 'ai' ? 'ai' : 'procedural',
+      edited: Boolean(payload.edited),
+      versions: [],
+    };
+    const set = await buildSetFromWork(work);
+    const palette = work.palette.length ? work.palette : ['#8a8a8a', '#5f5f5f', '#b0b0b0'];
+    const rgb = palette.map(shareRgb);
+    for (const face of ['side', 'top', 'bottom']) {
+      set[face].palette = rgb;
+      set[face].swatches = palette;
+    }
+    set.palette = palette;
+    set.swatches = palette;
+    set.aiSeed = work.seed;
+    const variations = createAiVariations(set);
+    state.materialId = work.materialId;
+    state.seed = work.seed;
+    state.size = work.size;
+    state.finish = work.finish || 'balanced';
+    state.grain = work.grain ?? 58;
+    state.contrast = work.contrast ?? 55;
+    state.hue = work.hue ?? 0;
+    state.modifiers = [...(work.modifiers || [])];
+    state.accent = work.accent || null;
+    state.promptColor = work.promptColor || null;
+    state.textures = set;
+    state.variations = variations;
+    state.ai = null;
+    state.loadedWork = { work, textures: set, variations, edited: Boolean(work.edited), shared: true };
+    state.currentWorkId = null;
+    state.userHasActed = false;
+    els.promptInput.value = work.prompt;
+    updateCharCount();
+    renderVariationCards(variations);
+    updateStageDetails(set);
+    updateParsedTags(parsePrompt(work.prompt));
+    syncControls();
+    updateActiveVariation();
+    pulseStage();
+    toast('Shared texture loaded');
+    return true;
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not read that share link.', true);
+    return false;
+  }
+}
+
 
 /* ---------- Seeds & camera ---------- */
 function randomSeed() {
@@ -2340,7 +2627,7 @@ function bindEvents() {
     if (event.target === els.packDialog) closePackBuilder();
   });
   els.packDialog.addEventListener('close', () => {
-    document.body.classList.remove('dialog-open');
+    syncDialogBody();
   });
   els.packAddBtn.addEventListener('click', addPackLibraryEntry);
   els.packExportBtn.addEventListener('click', buildPackFromState);
@@ -2377,7 +2664,25 @@ function bindEvents() {
     if (event.target === els.libraryDialog) closeLibraryDialog();
   });
   els.libraryDialog.addEventListener('close', () => {
-    document.body.classList.remove('dialog-open');
+    syncDialogBody();
+  });
+  els.closeVersionBtn.addEventListener('click', closeVersionHistory);
+  els.versionBackBtn.addEventListener('click', () => {
+    closeVersionHistory();
+    openLibraryDialog();
+  });
+  els.versionDialog.addEventListener('click', (event) => {
+    if (event.target === els.versionDialog) closeVersionHistory();
+  });
+  els.versionDialog.addEventListener('close', () => {
+    syncDialogBody();
+  });
+  els.versionGrid.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-version-action]')?.dataset.versionAction;
+    if (!action) return;
+    const id = event.target.closest('[data-version-id]')?.dataset.versionId || null;
+    if (action === 'restore' && id) restoreLibraryVersion(id);
+    if (action === 'download') downloadVersionFace(id);
   });
   els.librarySearch.addEventListener('input', () => {
     state.libraryQuery = els.librarySearch.value;
@@ -2397,11 +2702,13 @@ function bindEvents() {
     if (action === 'open') openLibraryWork(card.dataset.id);
     else if (action === 'delete') deleteLibraryItem(card.dataset.id);
     else if (action === 'favorite') toggleLibraryFavorite(card.dataset.id);
+    else if (action === 'history') openVersionHistory(card.dataset.id);
   });
   els.finishBtn.addEventListener('click', openFinisher);
+  els.shareBtn.addEventListener('click', copyShareLink);
   els.finisherDialog.addEventListener('close', () => {
     state.editorOpen = false;
-    document.body.classList.remove('dialog-open');
+    syncDialogBody();
   });
 
   els.aiBtn.addEventListener('click', openAiDialog);
@@ -2439,7 +2746,7 @@ function bindEvents() {
     if (event.target === els.aiDialog) closeAiDialog();
   });
   els.aiDialog.addEventListener('close', () => {
-    document.body.classList.remove('dialog-open');
+    syncDialogBody();
   });
 
   els.variationGrid.addEventListener('click', (event) => {
@@ -2487,10 +2794,10 @@ function bindEvents() {
     if (event.target === els.howDialog) closeHow();
   });
   els.howDialog.addEventListener('close', () => {
-    document.body.classList.remove('dialog-open');
+    syncDialogBody();
   });
   document.addEventListener('keydown', (event) => {
-    if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open) return;
+    if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open) return;
     const tag = event.target.tagName;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target.isContentEditable) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -2558,6 +2865,7 @@ function init() {
   applyCamera();
   renderAll({ variations: true });
   initLibrary();
+  loadSharedFromHash().catch((error) => console.error('Share load failed', error));
   updateClock();
   setInterval(updateClock, 60000);
 }

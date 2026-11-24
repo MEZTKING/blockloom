@@ -162,6 +162,9 @@
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 16.5-.7 3.2 3.2-.7L18 8.5 15.5 6 5 16.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" stroke="currentColor" stroke-width="1.5"/></svg>
             <span>Finish</span>
           </button>
+          <button class="share-launch" id="shareBtn" type="button" title="Copy a shareable link to this texture" aria-label="Copy a shareable link to this texture">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5M8 17H6.8A4.8 4.8 0 0 1 6.8 7.4H9M16 7h1.2a4.8 4.8 0 0 1 0 9.6H15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
           <div class="view-switch" role="group" aria-label="Preview mode">
           <button type="button" data-view="3d" class="active">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.5"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -309,7 +312,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.4 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.5 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -360,12 +363,12 @@
         <article>
           <span>05</span>
           <h3>Keep everything</h3>
-          <p>Every distinct texture you make is auto-archived in the local library — procedural, AI, and edited copies — with prompts, seeds, faces, palette, and cuts.</p>
+          <p>Every distinct texture you make is auto-archived in the local library — procedural, AI, and edited copies — with prompts, seeds, faces, palette, cuts, and version snapshots.</p>
         </article>
         <article>
           <span>06</span>
           <h3>Ship it</h3>
-          <p>Export a texture set with recipe metadata, or open the pack builder to choose vanilla targets, stack multiple works, pick a format, and write a drop-in resource pack.</p>
+          <p>Export a texture set with recipe metadata, copy a compressed share link, or open the pack builder to choose vanilla targets, stack works, pick a format, and write a drop-in resource pack.</p>
         </article>
       </div>
       <div class="honest-note">
@@ -686,6 +689,28 @@
           <p class="pack-foot">Install the zip in <code>.minecraft/resourcepacks</code> and enable it in-game.</p>
         </aside>
       </div>
+    </div>
+  </dialog>
+
+
+  <!-- Library version history -->
+  <dialog class="version-dialog" id="versionDialog">
+    <div class="version-shell">
+      <header class="version-head">
+        <div>
+          <div class="version-kicker"><span></span>VERSION HISTORY</div>
+          <h2 id="versionTitle">Texture history</h2>
+          <p id="versionSub">Every finisher save snapshots the previous pixels.</p>
+        </div>
+        <div class="version-head-actions">
+          <button class="btn btn-outline" id="versionBackBtn" type="button">Back to library</button>
+          <button class="icon-button" id="closeVersionBtn" type="button" aria-label="Close version history">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+      <div class="version-grid" id="versionGrid"></div>
+      <footer class="version-foot">Restoring a version first snapshots the current one. Nothing is lost.</footer>
     </div>
   </dialog>
 

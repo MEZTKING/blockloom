@@ -1,6 +1,6 @@
 # Blockloom
 
-A local-first **Minecraft texture studio**: prompt-driven generation, a real pixel finisher, and an automatically archived library — plus optional AI concepts and proper resource-pack export.
+A local-first **Minecraft texture studio**: prompt-driven generation, AI candidate comparison, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export.
 
 No account, no build step, no framework. Procedural work runs entirely in the browser.
 
@@ -31,8 +31,8 @@ npm run check # tests + syntax checks for every module
 1. Describe a block and forge a tileable texture.
 2. Pick one of six sibling seeds, or bring in an AI concept.
 3. Open the **Finisher** and paint the last few pixels by hand.
-4. Every distinct texture you make is silently archived in **Your Library**.
-5. Download a PNG, a texture set, or a drop-in resource pack.
+4. Every distinct texture you make is silently archived in **Your Library**, with version snapshots.
+5. Share it as a link, or download a PNG, a texture set, or a drop-in resource pack.
 
 ## Texture generation
 
@@ -43,6 +43,7 @@ npm run check # tests + syntax checks for every module
 - Rugged / Balanced / Smooth finish, grain, contrast, and hue controls.
 - Draggable CSS 3D block preview and a 2 × 2 tile check.
 - Six sibling-seed cuts and exact reproducibility by seed.
+- A shareable compressed link carrying the current pixels and recipe.
 
 ## Texture finisher
 
@@ -65,6 +66,8 @@ Edited pixels are palette-scanned, saved back into the originating library work,
 
 ![Local library](screenshots/blockloom-library.png)
 
+![Library version history](screenshots/blockloom-version-history.png)
+
 ![Resource-pack builder](screenshots/blockloom-pack-builder.png)
 
 The library is backed by **IndexedDB** and stores every distinct texture you generate, edit, or import — without a save dialog.
@@ -84,11 +87,34 @@ What qualifies as a new work:
 
 The browser is asked for persistent storage. There is no app-level cap; storage is bounded by the browser quota. The library footer shows current usage.
 
+### Version history
+
+Every **Save & close** in the finisher snapshots the previous pixels before overwriting them. The library card grows a history button and a version count.
+
+- Open history to see **Current** plus earlier snapshots.
+- **Restore** first snapshots the current state, then applies the older one — nothing is lost.
+- Every snapshot can be downloaded as a PNG.
+- Up to 30 snapshots are kept per work. Versions travel with the library backup.
+- **Save as copy** starts a new work with a fresh history.
+
 ### Backup and restore
 
 - **Backup** downloads a single JSON file containing every work, face, cut, prompt, palette, and AI source.
 - **Restore** merges a backup back into the current browser, skipping duplicates by pixel fingerprint.
 - The library is per-browser. It does not sync to GitHub, a server, or another device.
+
+## Share links
+
+The share icon beside Finish copies a URL that carries the current texture in its **fragment**, compressed with gzip and base64url.
+
+- No server call and no upload; the fragment never reaches GitHub.
+- Includes the current side/top/bottom pixels, palette, material, seed, prompt, and settings.
+- Variations are regenerated locally as six cuts from the shared pixels.
+- AI provenance and raw AI source images are **not** included; a received link opens as a **SHARED WORK** snapshot.
+- The recipient gets the exact pixels, can finish them, and can export.
+- Links are size-bounded. A tested 64 px texture fits in roughly 27 KB; over-limit links tell you to export a texture set instead.
+
+![Shared texture link](screenshots/blockloom-shared.png)
 
 ## AI concept layer (optional)
 
@@ -226,9 +252,10 @@ styles.css          design system, 3D cube, AI lab, library, finisher, responsiv
 js/engine.js        noise, material recipes, prompt parser, isometric renderer
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
-js/library.js       IndexedDB work archive, fingerprints, favorites, storage estimate
+js/library.js       IndexedDB work archive, versions, fingerprints, favorites, storage estimate
 js/resourcepack.js  vanilla target mapping, format profiles, and multi-block resource-pack ZIP builder
-js/app.js           state, interactions, library UI, finisher UI, pack builder, exports
+js/share.js         gzip/base64url share links and URL-fragment decoding
+js/app.js           state, interactions, library/version/share UI, finisher, pack builder, exports
 js/zip.js           dependency-free stored ZIP writer
 server.mjs          static server + AI provider proxy
 assets/fonts/       vendored Space Grotesk, IBM Plex Mono, Silkscreen
@@ -250,9 +277,8 @@ screenshots/        preview images
 
 ## Taking it further
 
-- A version-history browser inside the library for every finisher save.
 - Palette import/export (JASC-PAL / GPL).
-- Share links or `.blockloom` project bundles.
+- Full `.blockloom` project bundles with AI source provenance.
 - Multi-block resource-pack sessions.
 - Pack-format picker (1.20.x → current) and tint-safe grass/leaf model overrides.
 - `.mcmeta` support for animated textures.
@@ -268,7 +294,8 @@ screenshots/        preview images
 - all finishes and effect overlays,
 - 32 px / 64 px rendering,
 - ZIP central-directory and payload integrity,
-- resource-pack target mappings and format profiles.
+- resource-pack target mappings and format profiles,
+- compressed share-link round-trips, fragment URLs, oversize rejection, and version checks.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages.
 
