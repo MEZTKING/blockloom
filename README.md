@@ -1,10 +1,10 @@
 # Blockloom
 
+A local-first **Minecraft texture studio**: prompt-driven generation, a real pixel finisher, and an automatically archived library — plus optional AI concepts and proper resource-pack export.
+
+No account, no build step, no framework. Procedural work runs entirely in the browser.
+
 [![MIT License](https://img.shields.io/badge/license-MIT-b9ee6a.svg)](LICENSE) [![GitHub](https://img.shields.io/badge/GitHub-MEZTKING%2Fblockloom-181717?logo=github)](https://github.com/MEZTKING/blockloom) [![Live demo](https://img.shields.io/badge/live%20demo-procedural%20only-b9ee6a)](https://meztking.github.io/blockloom/)
-
-A local, prompt-driven **Minecraft texture studio** — a Bloxal-like flow with a procedural core, an optional real AI concept layer, and a proper resource-pack export.
-
-Describe a block, choose a material, tune the finish, and get a tileable 16 × 16 / 32 × 32 / 64 × 64 texture, a 3D block preview, and files you can actually install in Minecraft.
 
 ![Blockloom studio](screenshots/blockloom-studio.png)
 
@@ -15,45 +15,90 @@ npm run dev
 # http://localhost:4173
 ```
 
-No dependencies, no build step. `npm run dev` starts `server.mjs`, a small static file server that also hosts the optional AI endpoint.
+`npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy. Run `npm run check` to syntax-check every module and manifest.
 
-**Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. Everything else runs locally in the browser.
+**Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, local library, and all client-side exports work.
 
-## Live demo
+## The loop
 
-The GitHub Pages build runs the procedural studio and all client-side exports. Because Pages cannot host `server.mjs`, the AI dialog explicitly reports that it is a static demo and asks you to run the Node server locally.
+**Generate → choose → finish → auto-save → export**
 
-## Two ways to make a texture
+1. Describe a block and forge a tileable texture.
+2. Pick one of six sibling seeds, or bring in an AI concept.
+3. Open the **Finisher** and paint the last few pixels by hand.
+4. Every distinct texture you make is silently archived in **Your Library**.
+5. Download a PNG, a texture set, or a drop-in resource pack.
 
-### 1. Procedural — instant, local, deterministic
+## Texture generation
+
 - 26 hand-built recipes across stone, earth, wood, ore, and nether/end families.
 - Natural-language parser: `mossy cobblestone with tiny cyan crystals`, `cracked deepslate with glowing amber veins`, `frosted oak planks`.
 - Effects: mossy, cracked, glowing, frosted, ancient, charred, gilded, flecked, wet, flowery, crystals.
 - Colour words are context-aware: `cyan crystals` becomes an accent; `blue stone` tints the base.
 - Rugged / Balanced / Smooth finish, grain, contrast, and hue controls.
 - Draggable CSS 3D block preview and a 2 × 2 tile check.
-- Six sibling-seed variations and exact reproducibility by seed.
+- Six sibling-seed cuts and exact reproducibility by seed.
 
-### 2. AI concept — optional, real provider call
-- Open **AI** beside the Forge button.
-- The prompt is sent to a configured image provider; the returned concept is:
-  1. downscaled to the target Minecraft resolution,
-  2. blended with the procedural recipe at an adjustable **AI influence**,
-  3. snapped to an extracted compact palette,
-  4. seam-repaired so the tile wraps,
-  5. handed back to the same preview and export pipeline.
-- The result is clearly marked **AI MODE** in the studio. Click the badge to return to the procedural recipe.
-- AI output is a concept source, not a shortcut around the pixel, palette, and tiling rules.
+## Texture finisher
 
-**Default provider:** Pollinations (public, no key needed, free tier of one image every 45 seconds). It is a demo/public endpoint with no SLA. For production, configure OpenAI Images, Replicate, or a local Automatic1111 server.
+![Texture finisher](screenshots/blockloom-finisher.png)
+
+A real pixel editor for side, top, and bottom faces:
+
+- Pencil, eraser, eyedropper, and flood fill.
+- Brush sizes 1 / 2 / 3 px.
+- Mirror-X painting and pixel grid.
+- Per-face reset.
+- Full undo / redo history.
+- Live isometric block preview.
+- Save & close, or **Save as copy** to branch a new library piece.
+- Keyboard: `B` pencil, `E` eraser, `I` eyedropper, `G` fill, `Ctrl/Cmd+Z` undo, `Shift+Ctrl/Cmd+Z` redo.
+
+Edited pixels are palette-scanned, saved back into the originating library work, and immediately used by the 3D preview and every export.
+
+## Local library — everything you make
+
+![Local library](screenshots/blockloom-library.png)
+
+The library is backed by **IndexedDB** and stores every distinct texture you generate, edit, or import — without a save dialog.
+
+Each archived work keeps:
+- side / top / bottom face PNGs,
+- all six variation cuts,
+- the full recipe (material, seed, finish, grain, contrast, hue, modifiers, accent),
+- prompt and palette,
+- AI provider, model, influence, and the raw concept image (when applicable),
+- an isometric thumbnail and timestamps.
+
+What qualifies as a new work:
+- A new forge, material change, resolution change, reroll, seed change, AI concept, or stable control-driven variant produces a new work after the debounce.
+- A manual finisher session updates that piece in place. **Save as copy** creates a new piece instead.
+- The untouched starting preview is not archived until you interact with it.
+
+The browser is asked for persistent storage. There is no app-level cap; storage is bounded by the browser quota. The library footer shows current usage.
+
+### Backup and restore
+
+- **Backup** downloads a single JSON file containing every work, face, cut, prompt, palette, and AI source.
+- **Restore** merges a backup back into the current browser, skipping duplicates by pixel fingerprint.
+- The library is per-browser. It does not sync to GitHub, a server, or another device.
+
+## AI concept layer (optional)
 
 ![AI concept mode](screenshots/blockloom-ai.png)
 
-![AI concept lab](screenshots/blockloom-ai-lab.png)
+- Open **AI** beside Forge.
+- The prompt is sent to a configured image provider; the return is:
+  1. downscaled to the target resolution,
+  2. auto-levelled and blended with the procedural recipe at an adjustable **AI influence**,
+  3. snapped to a compact extracted palette,
+  4. seam-repaired so the tile wraps,
+  5. handed through the same finisher, library, preview, and export pipeline.
+- AI results are clearly marked **AI MODE**. Click the badge to return to a procedural render of the same recipe.
 
-## AI provider configuration
+**Default provider:** Pollinations (public, no key, free tier of one image every 45 seconds). It is a demo endpoint with no SLA. For production, configure OpenAI Images, Replicate, or a local Automatic1111 server.
 
-Environment variables are read by `server.mjs`. Keys stay on the server; they are never sent to the browser.
+### AI provider configuration
 
 ```bash
 # Free public demo (default)
@@ -75,22 +120,15 @@ AI_MODEL=black-forest-labs/flux-schnell
 AI_PROVIDER=a1111
 AI_BASE_URL=http://127.0.0.1:7860
 
-# Disable the AI layer entirely
+# Disable the AI layer
 AI_ENABLED=false
 ```
 
-Optional:
+Optional: `AI_IMAGE_SIZE=768`, `AI_TIMEOUT_MS=90000`, `PORT=4173`, `HOST=0.0.0.0`.
 
-```bash
-AI_IMAGE_SIZE=768       # requested provider resolution
-AI_TIMEOUT_MS=90000
-PORT=4173
-HOST=0.0.0.0
-```
+`GET /api/ai/status` reports readiness. `POST /api/ai/generate` accepts `{ "prompt": "...", "seed": 1234 }` and returns a base64 image plus provider metadata. Keys live only on the server. Requests are rate-limited, one per client at a time, with the free provider's cooldown surfaced in the UI.
 
-`GET /api/ai/status` reports the provider and readiness. `POST /api/ai/generate` accepts `{ "prompt": "...", "seed": 1234 }` and returns a base64 image plus provider metadata. Requests are rate-limited and one generation per client runs at a time. The default provider also enforces its public 45-second free-tier cooldown.
-
-**Privacy:** procedural mode sends nothing anywhere. AI mode sends the concept prompt to the provider shown in the dialog. The returned image is processed in the browser. The optional texture-set export includes the raw concept image and provenance JSON; the resource-pack export does not.
+**Privacy:** procedural mode sends nothing anywhere. AI mode sends the concept prompt to the provider shown in the dialog. The returned image and the prompt are stored locally in your library if you keep that work. Use Backup to move the library; nothing is uploaded to GitHub.
 
 ## Prompt recipes
 
@@ -122,7 +160,7 @@ A colour word near `crystal`, `gem`, `vein`, `fleck`, `glow`, or `ore` becomes a
 ## Exports
 
 ### PNG
-The side texture at the selected 16 / 32 / 64 px resolution, ready for a resource pack, mod, or image editor.
+The current side face at 16 / 32 / 64 px, ready for a resource pack, mod, or image editor.
 
 ### Texture set (.zip)
 ```text
@@ -132,15 +170,13 @@ blockloom_<material>_<seed>_<px>px.zip
 ├── side.png / top.png / bottom.png
 ├── preview.png
 ├── tile-2x2.png
-├── ai-source.(jpg|png)      # AI mode only
+├── ai-source.(jpg|png)       # AI mode only
 ├── ai-concept.json           # AI provenance
 └── variations/
     └── six alternate cuts
 ```
 
 ### Resource pack (.zip) — installable
-A proper texture override pack for one vanilla block target:
-
 ```text
 blockloom_resourcepack_<target>_<seed>_<px>px.zip
 ├── pack.mcmeta
@@ -150,29 +186,29 @@ blockloom_resourcepack_<target>_<seed>_<px>px.zip
 └── blockloom-pack.json
 ```
 
-Install by dropping the zip into `.minecraft/resourcepacks/`, then enabling **Blockloom** in Options → Resource Packs. It overrides the vanilla block's textures by path; it does not create a new block.
+Drop it into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides the target vanilla block's texture paths; it does not create a new block.
 
-- Pack format **34** (Minecraft 1.21+; `supported_formats` set to 34–99).
-- Grass blocks include top, side, and a transparent side overlay so the authored side is not double-tinted. The top still inherits Minecraft's biome tint.
+- Pack format **34** (Minecraft 1.21+; `supported_formats` 34–99).
+- All 26 materials map to a valid vanilla target.
+- Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. The top still inherits Minecraft's biome tint.
 - Oak leaves keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.
-- All 26 materials map to a valid vanilla target.
 
 ## Why the hybrid AI approach
 
-At Minecraft resolution, texture quality comes from **palette discipline, controlled noise, and seamless edges** — not from unbounded generation. Raw model output at 16 px tends to flatten into colour blobs. Blockloom therefore treats the AI image as a *concept source*: auto-levels and palette extraction keep its colour identity, while the procedural surface supplies readable cobble, grain, bark, and ore structure. The **AI influence** slider moves between recipe structure and raw concept pixels.
-
-The result is instant, reproducible by seed, offline by default, and exportable. The same pipeline can accept a better image model without changing the exporter, preview, or pack builder.
+At Minecraft resolution, texture quality comes from **palette discipline, controlled noise, and seamless edges** — not unbounded generation. Raw model output at 16 px tends to flatten into colour blobs. Blockloom treats the AI image as a *concept source*: auto-levels and palette extraction keep its colour identity, while the procedural surface supplies readable cobble, grain, bark, and ore structure. The **AI influence** slider moves between recipe structure and raw concept pixels.
 
 ## Project structure
 
 ```text
 index.html          app shell and UI
-styles.css          design system, 3D cube, AI lab, responsive layouts
+styles.css          design system, 3D cube, AI lab, library, finisher, responsive layouts
 js/engine.js        noise, material recipes, prompt parser, isometric renderer
-js/ai.js            provider client, recipe blend, palette snap, seam repair, AI cuts
+js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
+js/finisher.js      pixel editor: tools, history, faces, live preview
+js/library.js       IndexedDB work archive, fingerprints, favorites, storage estimate
 js/resourcepack.js  vanilla target mapping and resource-pack ZIP builder
-js/app.js           state, interactions, exports
+js/app.js           state, interactions, library UI, exports
 js/zip.js           dependency-free stored ZIP writer
 server.mjs          static server + AI provider proxy
 assets/fonts/       vendored Space Grotesk, IBM Plex Mono, Silkscreen
@@ -182,20 +218,24 @@ screenshots/        preview images
 ## Notes and limits
 
 - The procedural core is not an ML model. The AI layer is optional and clearly labelled.
-- The free Pollinations demo can be rate-limited or unavailable; configure a private provider for serious use.
-- All PNGs have an opaque alpha channel except the intentional grass side overlay; vanilla leaves tinting is preserved.
+- The free Pollinations demo can be rate-limited or unavailable (shared public quota). Configure a private provider for serious use.
+- The local library is per-browser/device. Clearing site data removes it; use Backup first.
+- Backups restore through the library's **Restore** button; duplicates by pixel fingerprint are skipped.
+- All PNGs are opaque except intentionally erased pixels and the grass side overlay. Vanilla leaf tinting is preserved.
 - Surface textures wrap by construction; AI tiles are edge-repaired, and log tops are concentric rings by design.
-- Built and tested in Chromium. Uses native `<dialog>`, the Popover API, `color-mix()`, CSS 3D transforms, and Canvas.
-- Maps generated textures onto existing vanilla block texture paths. New blocks still require a mod or datapack.
+- Built and tested in Chromium. Uses native `<dialog>`, the Popover API, `color-mix()`, CSS 3D transforms, Canvas, and IndexedDB.
+- Resource packs override existing vanilla blocks. New blocks still require a mod or datapack.
+- GitHub Pages runs the procedural client, finisher, library, and exports. AI requires the Node server.
 
 ## Taking it further
 
-- Pixel brush / touch-up editor.
-- Import/export JASC-PAL or GPL palettes.
-- Shareable seed + recipe links.
-- Multiple AI concepts composited or inpainted into one tile.
+- A version-history browser inside the library for every finisher save.
+- Palette import/export (JASC-PAL / GPL).
+- Share links or `.blockloom` project bundles.
+- Multi-block resource-pack sessions.
+- Pack-format picker (1.20.x → current) and tint-safe grass/leaf model overrides.
 - `.mcmeta` support for animated textures.
-- A proper pack-format picker (1.20.x → current) and model overrides for tint-free grass/leaves.
+- Automated parser, seam, library, and ZIP tests.
 
 ## License
 
@@ -203,4 +243,4 @@ MIT. See [LICENSE](LICENSE).
 
 ## Credits
 
-Material recipes, prompt grammar, AI post-processing, and the exporter are original to this project. Fonts are from Google Fonts under the SIL Open Font License. Blockloom is not affiliated with Mojang or Microsoft.
+Material recipes, prompt grammar, AI post-processing, finisher, library, and exporter are original to this project. Fonts are from Google Fonts under the SIL Open Font License. Blockloom is not affiliated with Mojang or Microsoft.

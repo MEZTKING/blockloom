@@ -14,6 +14,19 @@ import {
 import { createZip } from './zip.js';
 import { fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
 import { buildResourcePack, packTargetFor } from './resourcepack.js';
+import { TextureFinisher } from './finisher.js';
+import {
+  countWorks,
+  deleteWork,
+  findByFingerprint,
+  fingerprintFaces,
+  getWork,
+  listWorks,
+  newWorkId,
+  putWork,
+  setFavorite,
+  storageEstimate,
+} from './library.js';
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -46,6 +59,8 @@ const els = {
   forgeBtn: $('#forgeBtn'),
   aiBtn: $('#aiBtn'),
   aiBadge: $('#aiBadge'),
+  aiBadgeLabel: $('#aiBadgeLabel'),
+  finishBtn: $('#finishBtn'),
   textureTitle: $('#textureTitle'),
   stageViewport: $('#stageViewport'),
   cube: $('#cube'),
@@ -90,7 +105,24 @@ const els = {
   aiPrivacy: $('#aiPrivacy'),
   aiUnavailable: $('#aiUnavailable'),
   aiSetupMessage: $('#aiSetupMessage'),
+  libraryBtn: $('#libraryBtn'),
+  libraryCount: $('#libraryCount'),
+  libraryDialog: $('#libraryDialog'),
+  closeLibraryBtn: $('#closeLibraryBtn'),
+  librarySearch: $('#librarySearch'),
+  libraryFilters: $('#libraryFilters'),
+  libraryGrid: $('#libraryGrid'),
+  libraryEmpty: $('#libraryEmpty'),
+  libraryResultCount: $('#libraryResultCount'),
+  libraryBackupBtn: $('#libraryBackupBtn'),
+  libraryImportBtn: $('#libraryImportBtn'),
+  libraryImportInput: $('#libraryImportInput'),
+  librarySub: $('#librarySub'),
+  libraryStorage: $('#libraryStorage'),
+  finisherDialog: $('#finisherDialog'),
 };
+
+let finisher = null;
 
 const FACE_NAMES = ['front', 'back', 'left', 'right', 'top', 'bottom'];
 const FINISH_NOTES = {
@@ -137,6 +169,16 @@ const state = {
   aiBusy: false,
   aiStatus: null,
   aiStrength: 48,
+  loadedWork: null,
+  currentWorkId: null,
+  libraryReady: false,
+  libraryWorks: [],
+  libraryFilter: 'all',
+  libraryQuery: '',
+  editorOpen: false,
+  userHasActed: false,
+  archiveTimer: 0,
+  archiving: false,
 };
 
 /* ---------- Prompt state ---------- */
@@ -163,6 +205,7 @@ function applyParsedPrompt(parsed) {
 }
 
 function applyPrompt({ newSeed = true } = {}) {
+  state.userHasActed = true;
   clearAiMode({ rerender: false, silent: true });
   const parsed = parsePrompt(els.promptInput.value);
   applyParsedPrompt(parsed);
@@ -207,6 +250,8 @@ function updateParsedTags(parsed) {
   els.parsedTags.replaceChildren();
   if (state.ai) {
     els.parsedTags.append(chip('AI concept', 'ai'));
+  } else if (state.loadedWork) {
+    els.parsedTags.append(chip(state.loadedWork.edited ? 'Edited copy' : 'Saved work', 'library'));
   }
   if (parsed.materialId) {
     els.parsedTags.append(chip(getMaterial(parsed.materialId).name, 'material'));
@@ -280,8 +325,20 @@ function buildParams(seed = state.seed) {
   };
 }
 
+function currentCustomTextures() {
+  return state.ai?.textures || state.loadedWork?.textures || (state.ai ? state.textures : null);
+}
+
+function currentCustomVariations() {
+  return state.ai?.variations || state.loadedWork?.variations || null;
+}
+
+function hasCustomTexture() {
+  return Boolean(currentCustomTextures());
+}
+
 function displayPalette(textures) {
-  if (state.ai) return textures.palette.slice(0, 6);
+  if (hasCustomTexture()) return textures.palette.slice(0, 6);
   const used = state.modifiers.some((m) => USES_ACCENT.includes(m));
   const colors = textures.palette.slice(0, used ? 5 : 6);
   if (used && textures.overlayAccentSwatches?.length) colors.push(textures.overlayAccentSwatches[1]);
@@ -335,18 +392,33 @@ function setPalette(target, colors) {
 
 function updateStageDetails(textures) {
   const aiActive = Boolean(state.ai);
+  const savedActive = Boolean(state.loadedWork);
+  const custom = hasCustomTexture();
   const title = textureTitle(state.materialId, state.modifiers);
   els.textureTitle.textContent = title;
-  document.title = `${title}${aiActive ? ' (AI)' : ''} — Blockloom`;
+  document.title = `${title}${aiActive ? ' (AI)' : savedActive ? ' (Saved)' : ''} — Blockloom`;
   els.dnaMaterial.textContent = textures.material.name;
-  els.dnaFinishLabel.textContent = aiActive ? 'Origin' : 'Finish';
-  els.dnaFinish.textContent = aiActive
-    ? 'AI concept'
+  els.dnaFinishLabel.textContent = custom ? 'Origin' : 'Finish';
+  els.dnaFinish.textContent = custom
+    ? aiActive
+      ? 'AI concept'
+      : state.loadedWork?.edited
+        ? 'Edited copy'
+        : 'Saved work'
     : FINISHES.find((f) => f.id === state.finish)?.label || 'Balanced';
-  els.aiBadge.hidden = !aiActive;
+  els.aiBadge.hidden = !custom;
+  els.aiBadge.classList.toggle('is-saved', savedActive);
+  if (els.aiBadgeLabel) {
+    els.aiBadgeLabel.textContent = aiActive ? 'AI MODE' : state.loadedWork?.edited ? 'EDITED COPY' : 'SAVED WORK';
+  }
+  els.aiBadge.title = aiActive
+    ? 'AI concept is active. Click to return to the procedural texture.'
+    : 'Saved library texture is active. Click to return to the procedural texture.';
   els.variationsSub.textContent = aiActive
     ? 'AI cuts · local colour and orientation studies.'
-    : 'Six sibling seeds. Same recipe, different surface.';
+    : savedActive
+      ? 'Saved cuts · restored with this library piece.'
+      : 'Six sibling seeds. Same recipe, different surface.';
   if (document.activeElement !== els.seedInput) els.seedInput.value = state.seed;
 
   const palette = displayPalette(textures);
@@ -359,8 +431,9 @@ function updateStageDetails(textures) {
 }
 
 function renderCurrentOnly({ pulse = false } = {}) {
-  if (state.ai) {
-    state.textures = state.ai.textures;
+  const custom = currentCustomTextures();
+  if (custom) {
+    state.textures = custom;
     updateStageDetails(state.textures);
     updateActiveVariation();
     if (pulse) pulseStage();
@@ -370,13 +443,15 @@ function renderCurrentOnly({ pulse = false } = {}) {
   updateStageDetails(state.textures);
   updateActiveVariation();
   if (pulse) pulseStage();
+  queueArchive();
 }
 
 function renderAll({ variations = true, pulse = false } = {}) {
-  if (state.ai) {
-    state.textures = state.ai.textures;
+  const custom = currentCustomTextures();
+  if (custom) {
+    state.textures = custom;
     updateStageDetails(state.textures);
-    if (variations) renderVariationCards(state.ai.variations);
+    if (variations) renderVariationCards(currentCustomVariations() || []);
     else updateActiveVariation();
     if (pulse) pulseStage();
     syncControls();
@@ -388,6 +463,7 @@ function renderAll({ variations = true, pulse = false } = {}) {
   else updateActiveVariation();
   if (pulse) pulseStage();
   syncControls();
+  queueArchive();
 }
 
 function pulseStage() {
@@ -555,6 +631,7 @@ function closeMaterialPicker() {
 
 function chooseMaterial(materialId) {
   if (!MATERIALS.some((material) => material.id === materialId)) return;
+  state.userHasActed = true;
   clearAiMode({ rerender: false, silent: true });
   state.materialId = materialId;
   els.promptInput.value = composePrompt();
@@ -662,8 +739,10 @@ function closeAiDialog() {
 }
 
 function clearAiMode({ rerender = true, silent = false } = {}) {
-  if (!state.ai) return false;
+  if (!state.ai && !state.loadedWork) return false;
   state.ai = null;
+  state.loadedWork = null;
+  state.currentWorkId = null;
   state.variations = [];
   els.aiBadge.hidden = true;
   els.dnaFinishLabel.textContent = 'Finish';
@@ -713,10 +792,14 @@ async function submitAiConcept(event) {
     updateCharCount();
     const parsed = parsePrompt(els.promptInput.value);
     applyParsedPrompt(parsed);
+    state.userHasActed = true;
     state.seed = payload.seed;
     state.textures = textureSet;
+    state.loadedWork = null;
+    state.currentWorkId = null;
     state.ai = {
       ...textureSet,
+      textures: textureSet,
       provider: payload.provider,
       model: payload.model,
       prompt: payload.prompt || prompt,
@@ -728,6 +811,7 @@ async function submitAiConcept(event) {
     syncControls();
     updateActiveVariation();
     pulseStage();
+    queueArchive(500);
     setAiStatus(`Concept ready · ${state.ai.provider} / ${state.ai.model}`, 'success');
     closeAiDialog();
     toast(`AI concept forged · ${state.size} × ${state.size}`);
@@ -741,6 +825,696 @@ async function submitAiConcept(event) {
   }
 }
 
+/* ---------- Local library ---------- */
+let archiveInFlight = null;
+
+function updateRangeFillForStrength(range) {
+  const min = Number(range.min);
+  const max = Number(range.max);
+  const value = Number(range.value);
+  range.style.setProperty('--val', `${((value - min) / (max - min)) * 100}%`);
+}
+
+function updateLibraryCount(count) {
+  const value = Number(count) || 0;
+  els.libraryCount.textContent = value > 99 ? '99+' : String(value);
+  els.libraryCount.classList.toggle('is-empty', value === 0);
+  els.librarySub.textContent = value
+    ? `${value} work${value === 1 ? '' : 's'} archived locally. Everything you make lands here automatically.`
+    : 'Every distinct texture you make is stored in this browser.';
+}
+
+async function refreshLibraryCount() {
+  if (!state.libraryReady) return 0;
+  const count = await countWorks();
+  updateLibraryCount(count);
+  updateStorageEstimate();
+  return count;
+}
+
+async function initLibrary() {
+  try {
+    const persistRequest = navigator.storage?.persist?.();
+    persistRequest?.catch(() => {});
+    await countWorks();
+    state.libraryReady = true;
+    await refreshLibraryCount();
+  } catch (error) {
+    console.error(error);
+    state.libraryReady = false;
+    els.libraryBtn.disabled = true;
+    els.libraryBtn.title = 'Local library unavailable in this browser';
+    toast('Local library is unavailable. Texture generation still works.', true);
+  }
+}
+
+function queueArchive(delay = 800) {
+  if (!state.libraryReady || state.editorOpen || !state.userHasActed) return;
+  if (state.archiveTimer) clearTimeout(state.archiveTimer);
+  state.archiveTimer = window.setTimeout(() => {
+    state.archiveTimer = 0;
+    archiveCurrent().catch((error) => console.error('Archive failed', error));
+  }, delay);
+}
+
+async function archiveCurrent() {
+  if (!state.libraryReady || state.editorOpen || !state.userHasActed || !state.textures) return null;
+  if (archiveInFlight) return archiveInFlight;
+  archiveInFlight = (async () => {
+    const faces = faceUrlsFromSet(state.textures);
+    const fingerprint = fingerprintFaces(faces);
+    const existing = await findByFingerprint(fingerprint);
+    if (existing) {
+      state.currentWorkId = existing.id;
+      return existing;
+    }
+    const work = await buildWorkFromCurrent(faces, fingerprint);
+    await putWork(work);
+    state.currentWorkId = work.id;
+    await refreshLibraryCount();
+    if (els.libraryDialog.open) refreshLibraryWorks();
+    return work;
+  })();
+  try {
+    return await archiveInFlight;
+  } finally {
+    archiveInFlight = null;
+  }
+}
+
+async function flushArchive() {
+  if (state.archiveTimer) {
+    clearTimeout(state.archiveTimer);
+    state.archiveTimer = 0;
+  }
+  return archiveCurrent();
+}
+
+function faceUrlsFromSet(textures) {
+  return {
+    side: textures.side.canvas.toDataURL('image/png'),
+    top: textures.top.canvas.toDataURL('image/png'),
+    bottom: textures.bottom.canvas.toDataURL('image/png'),
+  };
+}
+
+function workThumb(textures) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 260;
+  canvas.height = 205;
+  drawIsoCube(canvas, { side: textures.side.canvas, top: textures.top.canvas }, { background: '#090b07', shadow: true, pad: 0.02 });
+  return canvas.toDataURL('image/png');
+}
+
+async function serializeVariation(variation) {
+  return {
+    seed: variation.seed,
+    accent: variation.accent || null,
+    faces: faceUrlsFromSet(variation.textures),
+  };
+}
+
+async function buildWorkFromCurrent(faces, fingerprint) {
+  const material = getMaterial(state.materialId);
+  const variations = [];
+  const sourceVariations = currentCustomVariations() || state.variations;
+  for (const variation of sourceVariations) {
+    variations.push(await serializeVariation(variation));
+  }
+  const now = new Date().toISOString();
+  const aiMeta = state.ai
+    ? {
+        provider: state.ai.provider || 'unknown',
+        model: state.ai.model || 'unknown',
+        prompt: state.ai.aiPrompt || els.promptInput.value,
+        strength: state.ai.aiStrength ?? null,
+        source: state.ai.aiSource || null,
+        seam: state.ai.aiSeam || null,
+      }
+    : null;
+  return {
+    id: newWorkId(),
+    fingerprint,
+    createdAt: now,
+    updatedAt: now,
+    title: textureTitle(state.materialId, state.modifiers),
+    prompt: els.promptInput.value,
+    materialId: state.materialId,
+    materialName: material.name,
+    seed: state.seed,
+    size: state.size,
+    finish: state.finish,
+    grain: state.grain,
+    contrast: state.contrast,
+    hue: state.hue,
+    modifiers: [...state.modifiers],
+    accent: state.accent ? { ...state.accent } : null,
+    promptColor: state.promptColor ? { ...state.promptColor } : null,
+    palette: displayPalette(state.textures),
+    kind: state.ai ? 'ai' : 'procedural',
+    edited: false,
+    favorite: false,
+    faces,
+    variations,
+    thumb: workThumb(state.textures),
+    ai: aiMeta,
+  };
+}
+
+function wrapFace(canvas, face, material, palette) {
+  return {
+    canvas,
+    size: canvas.width,
+    face,
+    material,
+    palette: [],
+    swatches: [...palette],
+    accentSwatches: [],
+    overlayAccentSwatches: [],
+  };
+}
+
+function buildTextureSetFromFaces(faceCanvases, size, material, palette) {
+  return {
+    side: wrapFace(faceCanvases.side, 'side', material, palette),
+    top: wrapFace(faceCanvases.top, 'top', material, palette),
+    bottom: wrapFace(faceCanvases.bottom, 'bottom', material, palette),
+    material,
+    palette: [...palette],
+    swatches: [...palette],
+    accentSwatches: [],
+    overlayAccentSwatches: [],
+    size,
+  };
+}
+
+function loadDataUrlCanvas(url, size, label) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      canvas.getContext('2d').drawImage(image, 0, 0, size, size);
+      resolve(canvas);
+    };
+    image.onerror = () => reject(new Error(`Could not decode ${label || 'library image'}.`));
+    image.src = url;
+  });
+}
+
+async function buildSetFromWork(work) {
+  const material = getMaterial(work.materialId || 'cobblestone');
+  const palette = Array.isArray(work.palette) ? work.palette : [];
+  const [side, top, bottom] = await Promise.all([
+    loadDataUrlCanvas(work.faces.side, work.size, 'side face'),
+    loadDataUrlCanvas(work.faces.top, work.size, 'top face'),
+    loadDataUrlCanvas(work.faces.bottom, work.size, 'bottom face'),
+  ]);
+  const set = buildTextureSetFromFaces({ side, top, bottom }, work.size, material, palette);
+  set.ai = work.kind === 'ai';
+  return set;
+}
+
+async function buildVariationsFromWork(work) {
+  if (!Array.isArray(work.variations)) return [];
+  const list = [];
+  for (const variation of work.variations) {
+    const faces = {};
+    for (const face of ['side', 'top', 'bottom']) {
+      faces[face] = await loadDataUrlCanvas(variation.faces[face], work.size, `${face} variation`);
+    }
+    const material = getMaterial(work.materialId || 'cobblestone');
+    const set = buildTextureSetFromFaces(faces, work.size, material, work.palette || []);
+    set.ai = work.kind === 'ai';
+    set.aiSeed = variation.seed;
+    list.push({ seed: variation.seed, textures: set, accent: variation.accent || work.palette?.[work.palette.length - 1] });
+  }
+  return list;
+}
+
+function workOriginLabel(work) {
+  if (work.kind === 'ai') return work.edited ? 'AI · EDIT' : 'AI';
+  if (work.edited) return 'EDITED';
+  return 'PROCEDURAL';
+}
+
+function workOriginClass(work) {
+  return work.kind === 'ai' ? 'is-ai' : work.edited ? 'is-saved' : '';
+}
+
+function formatWorkDate(value) {
+  try {
+    return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(new Date(value));
+  } catch {
+    return '—';
+  }
+}
+
+function libraryFilteredWorks() {
+  const query = state.libraryQuery.trim().toLowerCase();
+  return state.libraryWorks.filter((work) => {
+    if (state.libraryFilter === 'favorite' && !work.favorite) return false;
+    if (state.libraryFilter === 'procedural' && work.kind !== 'procedural') return false;
+    if (state.libraryFilter === 'ai' && work.kind !== 'ai') return false;
+    if (state.libraryFilter === 'saved' && !work.edited) return false;
+    if (!query) return true;
+    return [work.title, work.prompt, String(work.seed), work.materialName].some((value) => String(value || '').toLowerCase().includes(query));
+  });
+}
+
+function renderLibrary() {
+  const works = libraryFilteredWorks();
+  els.libraryGrid.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  works.forEach((work, index) => {
+    const card = document.createElement('article');
+    card.className = 'library-card';
+    card.dataset.id = work.id;
+    card.style.setProperty('--i', String(index));
+    const thumb = work.thumb || work.faces?.side;
+    const originLabel = workOriginLabel(work);
+    const originClass = workOriginClass(work);
+    card.innerHTML = `
+      <button class="library-open" type="button" data-action="open" aria-label="Open ${escapeHtml(work.title || 'texture')}">
+        <img class="library-thumb" src="${thumb}" alt="" loading="lazy" />
+        <span class="library-origin ${originClass}">${originLabel}</span>
+      </button>
+      <div class="library-card-actions">
+        <button type="button" class="${work.favorite ? 'is-favorite' : ''}" data-action="favorite" title="${work.favorite ? 'Remove from favorites' : 'Add to favorites'}" aria-label="${work.favorite ? 'Remove from favorites' : 'Add to favorites'}">
+          <svg viewBox="0 0 24 24" fill="${work.favorite ? 'currentColor' : 'none'}" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.4l6.1-.9L12 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" data-action="delete" title="Delete from library" aria-label="Delete ${escapeHtml(work.title || 'texture')}">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2m-8 0 .7 12h8.6L17 7M10 10.5v5.5m4-5.5v5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="library-body">
+        <div class="library-name">${escapeHtml(work.title || 'Untitled texture')}</div>
+        <div class="library-prompt">${escapeHtml(work.prompt || 'No prompt saved')}</div>
+        <div class="library-meta-row">
+          <span>${work.size} px · #${work.seed}</span>
+          <span>${formatWorkDate(work.updatedAt || work.createdAt)}</span>
+        </div>
+      </div>`;
+    fragment.append(card);
+  });
+  els.libraryGrid.append(fragment);
+  els.libraryResultCount.textContent = `${works.length} work${works.length === 1 ? '' : 's'}`;
+  els.libraryEmpty.hidden = works.length > 0;
+  const allEmpty = state.libraryWorks.length === 0;
+  if (allEmpty) {
+    const emptyTitle = els.libraryEmpty.querySelector('h3');
+    const emptyCopy = els.libraryEmpty.querySelector('p');
+    if (emptyTitle) emptyTitle.textContent = 'No textures here yet';
+    if (emptyCopy) emptyCopy.textContent = 'Forge a texture, generate an AI concept, or paint something in the finisher. It will appear here automatically.';
+  } else {
+    const emptyTitle = els.libraryEmpty.querySelector('h3');
+    const emptyCopy = els.libraryEmpty.querySelector('p');
+    if (emptyTitle) emptyTitle.textContent = 'Nothing matches';
+    if (emptyCopy) emptyCopy.textContent = 'Try another search or filter.';
+  }
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
+
+async function refreshLibraryWorks() {
+  if (!state.libraryReady) return;
+  try {
+    state.libraryWorks = await listWorks();
+    renderLibrary();
+    updateLibraryCount(state.libraryWorks.length);
+    updateStorageEstimate();
+  } catch (error) {
+    console.error(error);
+    toast('Could not read the local library.', true);
+  }
+}
+
+async function openLibraryDialog() {
+  if (!state.libraryReady) {
+    toast('The local library is still opening. Try again in a moment.', true);
+    return;
+  }
+  if (!els.libraryDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.libraryDialog.showModal();
+  }
+  try {
+    await flushArchive();
+  } catch (error) {
+    console.error('Library flush failed', error);
+  }
+  await refreshLibraryWorks();
+  els.librarySearch.value = state.libraryQuery;
+  requestAnimationFrame(() => els.librarySearch.focus());
+}
+
+function closeLibraryDialog() {
+  if (els.libraryDialog.open) els.libraryDialog.close();
+}
+
+async function openLibraryWork(workId) {
+  try {
+    state.userHasActed = true;
+    const work = await getWork(workId);
+    if (!work) {
+      toast('That library piece could not be found.', true);
+      return;
+    }
+    const set = await buildSetFromWork(work);
+    const variations = await buildVariationsFromWork(work);
+    const material = getMaterial(work.materialId || 'cobblestone');
+    state.materialId = material.id;
+    state.seed = work.seed;
+    state.size = work.size;
+    state.finish = work.finish || 'balanced';
+    state.grain = work.grain ?? 58;
+    state.contrast = work.contrast ?? 55;
+    state.hue = work.hue ?? 0;
+    state.modifiers = [...(work.modifiers || [])];
+    state.accent = work.accent || null;
+    state.promptColor = work.promptColor || null;
+    state.textures = set;
+    state.variations = variations;
+    state.currentWorkId = work.id;
+    state.ai = null;
+    state.loadedWork = null;
+    if (work.kind === 'ai') {
+      state.ai = {
+        kind: 'ai',
+        provider: work.ai?.provider || 'unknown',
+        model: work.ai?.model || 'unknown',
+        prompt: work.prompt,
+        aiPrompt: work.ai?.prompt || work.prompt,
+        aiSeed: work.seed,
+        aiStrength: work.ai?.strength ?? null,
+        aiSource: work.ai?.source || null,
+        aiSeam: work.ai?.seam || null,
+        textures: set,
+        variations,
+      };
+    } else {
+      state.loadedWork = {
+        work,
+        textures: set,
+        variations,
+        edited: Boolean(work.edited),
+      };
+    }
+    els.promptInput.value = work.prompt || '';
+    updateCharCount();
+    renderVariationCards(variations);
+    updateStageDetails(set);
+    const parsed = parsePrompt(els.promptInput.value);
+    updateParsedTags(parsed);
+    syncControls();
+    updateActiveVariation();
+    pulseStage();
+    closeLibraryDialog();
+    toast(`Opened ${work.title || 'saved texture'}`);
+  } catch (error) {
+    console.error(error);
+    toast('Could not open that library piece.', true);
+  }
+}
+
+async function deleteLibraryItem(workId) {
+  const work = state.libraryWorks.find((item) => item.id === workId);
+  if (!window.confirm(`Delete “${work?.title || 'this texture'}” from your local library? This cannot be undone.`)) return;
+  try {
+    await deleteWork(workId);
+    if (state.currentWorkId === workId) state.currentWorkId = null;
+    state.libraryWorks = state.libraryWorks.filter((item) => item.id !== workId);
+    renderLibrary();
+    updateLibraryCount(state.libraryWorks.length);
+    toast('Removed from library');
+  } catch (error) {
+    console.error(error);
+    toast('Could not delete that library piece.', true);
+  }
+}
+
+async function toggleLibraryFavorite(workId) {
+  const work = state.libraryWorks.find((item) => item.id === workId);
+  if (!work) return;
+  try {
+    await setFavorite(workId, !work.favorite);
+    work.favorite = !work.favorite;
+    renderLibrary();
+  } catch (error) {
+    console.error(error);
+    toast('Could not update favorite.', true);
+  }
+}
+
+async function importLibrary(file) {
+  if (!state.libraryReady) return;
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    const works = Array.isArray(payload) ? payload : payload?.works;
+    if (!Array.isArray(works)) throw new Error('This is not a Blockloom library backup.');
+    let imported = 0;
+    let skipped = 0;
+    for (const work of works) {
+      if (!work?.faces?.side || !work?.faces?.top || !work?.faces?.bottom || !work?.size) {
+        skipped += 1;
+        continue;
+      }
+      const fingerprint = work.fingerprint || fingerprintFaces(work.faces);
+      const existing = await findByFingerprint(fingerprint);
+      if (existing) {
+        skipped += 1;
+        continue;
+      }
+      let id = work.id;
+      if (!id || await getWork(id)) id = newWorkId();
+      const now = new Date().toISOString();
+      await putWork({
+        ...work,
+        id,
+        fingerprint,
+        favorite: Boolean(work.favorite),
+        createdAt: work.createdAt || now,
+        updatedAt: work.updatedAt || now,
+        kind: work.kind === 'ai' ? 'ai' : 'procedural',
+        edited: Boolean(work.edited),
+        variations: Array.isArray(work.variations) ? work.variations : [],
+        palette: Array.isArray(work.palette) ? work.palette : [],
+      });
+      imported += 1;
+    }
+    await refreshLibraryWorks();
+    await refreshLibraryCount();
+    toast(`Library restored · ${imported} added${skipped ? `, ${skipped} skipped` : ''}`);
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not restore that library backup.', true);
+  }
+}
+
+async function backupLibrary() {
+  if (!state.libraryReady) return;
+  try {
+    const works = await listWorks();
+    const payload = {
+      app: 'Blockloom',
+      schema: 1,
+      exportedAt: new Date().toISOString(),
+      works,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const date = new Date().toISOString().slice(0, 10);
+    downloadBlob(blob, `blockloom-library-backup-${date}.json`);
+    toast(`Backup exported · ${works.length} work${works.length === 1 ? '' : 's'}`);
+  } catch (error) {
+    console.error(error);
+    toast('Could not export the library backup.', true);
+  }
+}
+
+async function updateStorageEstimate() {
+  const estimate = await storageEstimate();
+  if (!estimate?.usage) {
+    els.libraryStorage.textContent = 'local storage';
+    return;
+  }
+  const mb = estimate.usage / (1024 * 1024);
+  els.libraryStorage.textContent = `${mb < 0.1 ? '<0.1' : mb.toFixed(1)} MB used`;
+}
+
+function paletteFromFaces(faces, size) {
+  const counts = new Map();
+  for (const face of ['side', 'top', 'bottom']) {
+    const data = faces[face].getContext('2d').getImageData(0, 0, size, size).data;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 24) continue;
+      const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+  }
+  const colors = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 9)
+    .map(([key]) => key.split(',').map(Number));
+  colors.sort((a, b) => (a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722) - (b[0] * 0.2126 + b[1] * 0.7152 + b[2] * 0.0722));
+  const unique = [];
+  for (const color of colors) {
+    if (!unique.some((other) => Math.hypot(other[0] - color[0], other[1] - color[1], other[2] - color[2]) < 6)) unique.push(color);
+  }
+  return unique.slice(0, 8).map((rgb) => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`);
+}
+
+async function saveFinishedTexture({ faces, copy, size }) {
+  state.userHasActed = true;
+  const material = getMaterial(state.materialId);
+  const faceCanvases = { ...faces };
+  const palette = paletteFromFaces(faceCanvases, size);
+  const set = buildTextureSetFromFaces(faceCanvases, size, material, palette);
+  set.ai = Boolean(state.ai);
+  const faceUrls = faceUrlsFromSet(set);
+  const fingerprint = fingerprintFaces(faceUrls);
+  const now = new Date().toISOString();
+  let sourceWork = state.currentWorkId ? await getWork(state.currentWorkId) : null;
+  const shouldCopy = copy || !sourceWork;
+  let variations = sourceWork?.variations || [];
+  if (!variations.length) {
+    variations = [];
+    for (const variation of (currentCustomVariations() || state.variations)) {
+      variations.push(await serializeVariation(variation));
+    }
+  }
+  if (shouldCopy) {
+    sourceWork = {
+      ...(sourceWork || {}),
+      id: newWorkId(),
+      fingerprint,
+      title: sourceWork?.title || textureTitle(state.materialId, state.modifiers),
+      prompt: els.promptInput.value,
+      materialId: state.materialId,
+      materialName: material.name,
+      seed: state.seed,
+      size: state.size,
+      finish: state.ai ? 'ai-concept' : state.finish,
+      grain: state.grain,
+      contrast: state.contrast,
+      hue: state.hue,
+      modifiers: [...state.modifiers],
+      accent: state.accent ? { ...state.accent } : null,
+      promptColor: state.promptColor ? { ...state.promptColor } : null,
+      palette,
+      kind: state.ai ? 'ai' : 'procedural',
+      edited: true,
+      favorite: false,
+      faces: faceUrls,
+      variations,
+      thumb: workThumb(set),
+      ai: state.ai
+        ? {
+            provider: state.ai.provider || 'unknown',
+            model: state.ai.model || 'unknown',
+            prompt: state.ai.aiPrompt || els.promptInput.value,
+            strength: state.ai.aiStrength ?? null,
+            source: state.ai.aiSource || null,
+            seam: state.ai.aiSeam || null,
+          }
+        : sourceWork?.ai || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+  } else {
+    sourceWork = {
+      ...sourceWork,
+      fingerprint,
+      title: sourceWork.title || textureTitle(state.materialId, state.modifiers),
+      prompt: els.promptInput.value,
+      materialId: state.materialId,
+      materialName: material.name,
+      seed: state.seed,
+      size: state.size,
+      finish: state.ai ? 'ai-concept' : state.finish,
+      grain: state.grain,
+      contrast: state.contrast,
+      hue: state.hue,
+      modifiers: [...state.modifiers],
+      accent: state.accent ? { ...state.accent } : null,
+      promptColor: state.promptColor ? { ...state.promptColor } : null,
+      palette,
+      kind: state.ai ? 'ai' : sourceWork.kind || 'procedural',
+      edited: true,
+      faces: faceUrls,
+      variations,
+      thumb: workThumb(set),
+      ai: sourceWork.ai || (state.ai
+        ? {
+            provider: state.ai.provider || 'unknown',
+            model: state.ai.model || 'unknown',
+            prompt: state.ai.aiPrompt || els.promptInput.value,
+            strength: state.ai.aiStrength ?? null,
+            source: state.ai.aiSource || null,
+            seam: state.ai.aiSeam || null,
+          }
+        : null),
+      updatedAt: now,
+    };
+  }
+  await putWork(sourceWork);
+  state.currentWorkId = sourceWork.id;
+  state.textures = set;
+  if (sourceWork.kind === 'ai') {
+    state.ai = {
+      ...(state.ai || {}),
+      kind: 'ai',
+      provider: sourceWork.ai?.provider,
+      model: sourceWork.ai?.model,
+      aiPrompt: sourceWork.ai?.prompt,
+      aiStrength: sourceWork.ai?.strength,
+      aiSource: sourceWork.ai?.source,
+      aiSeam: sourceWork.ai?.seam,
+      seed: state.seed,
+      aiSeed: state.seed,
+      textures: set,
+      variations: currentCustomVariations() || state.variations,
+    };
+    state.loadedWork = null;
+  } else {
+    state.ai = null;
+    state.loadedWork = {
+      work: sourceWork,
+      textures: set,
+      variations: currentCustomVariations() || state.variations,
+      edited: true,
+    };
+  }
+  updateStageDetails(state.textures);
+  syncControls();
+  updateParsedTags(parsePrompt(els.promptInput.value));
+  updateActiveVariation();
+  pulseStage();
+  await refreshLibraryCount();
+  if (els.libraryDialog.open) await refreshLibraryWorks();
+  toast(copy ? 'Saved as a new library copy' : 'Pixels saved to library');
+}
+
+async function openFinisher() {
+  if (!state.textures || state.editorOpen) return;
+  state.userHasActed = true;
+  if (state.archiveTimer) {
+    clearTimeout(state.archiveTimer);
+    state.archiveTimer = 0;
+  }
+  await archiveCurrent().catch((error) => console.error('Archive before edit failed', error));
+  state.editorOpen = true;
+  finisher.open({
+    textures: state.textures,
+    palette: displayPalette(state.textures),
+    title: els.textureTitle.textContent,
+    meta: `${state.size} × ${state.size} px · ${hasCustomTexture() ? 'saved copy' : 'procedural'}${state.ai ? ' · AI mode' : ''}`,
+  });
+}
+
 /* ---------- Seeds & camera ---------- */
 function randomSeed() {
   const values = new Uint32Array(1);
@@ -752,6 +1526,7 @@ function randomSeed() {
 }
 
 function setSeed(seed, { full = true } = {}) {
+  state.userHasActed = true;
   clearAiMode({ rerender: false, silent: true });
   state.seed = clamp(Math.floor(Number(seed) || 1), 1, 999999999);
   els.seedInput.value = state.seed;
@@ -760,6 +1535,7 @@ function setSeed(seed, { full = true } = {}) {
 }
 
 function reroll() {
+  state.userHasActed = true;
   clearAiMode({ rerender: false, silent: true });
   state.seed = randomSeed();
   els.seedInput.value = state.seed;
@@ -843,7 +1619,8 @@ function canvasToBlob(canvas) {
 
 function textureFilename(extension = 'png') {
   const slug = getMaterial(state.materialId).name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return `blockloom_${slug}${state.ai ? '_ai' : ''}_${state.seed}_${state.size}px.${extension}`;
+  const suffix = state.ai ? '_ai' : state.loadedWork ? '_saved' : '';
+  return `blockloom_${slug}${suffix}_${state.seed}_${state.size}px.${extension}`;
 }
 
 async function downloadPng() {
@@ -910,12 +1687,16 @@ async function downloadTextureSet() {
   if (!state.textures || state.packing) return;
   setZipBusy(true);
   try {
-    if (state.ai) {
-      state.variations = state.ai.variations;
+    if (hasCustomTexture()) {
+      state.variations = currentCustomVariations() || [];
     } else {
       renderVariations();
     }
-    const origin = state.ai ? 'AI concept (post-processed in browser)' : 'Procedural studio';
+    const origin = state.ai
+      ? 'AI concept (post-processed in browser)'
+      : state.loadedWork
+        ? 'Saved library work'
+        : 'Procedural studio';
     const readme = [
       'BLOCKLOOM TEXTURE SET',
       '=====================',
@@ -925,7 +1706,7 @@ async function downloadTextureSet() {
       `Prompt:     ${els.promptInput.value}`,
       `Seed:       ${state.seed}`,
       `Resolution: ${state.size} × ${state.size} px`,
-      `Finish:     ${state.ai ? 'AI concept' : state.finish}`,
+      `Finish:     ${state.ai ? 'AI concept' : state.loadedWork ? 'Saved / edited' : state.finish}`,
       `Modifiers:  ${state.modifiers.join(', ') || 'none'}`,
       `Palette:    ${displayPalette(state.textures).join(' ')}`,
       state.ai ? `Provider:   ${state.ai.provider || 'unknown'} / ${state.ai.model || 'unknown'}` : '',
@@ -948,14 +1729,14 @@ async function downloadTextureSet() {
     ].filter((line) => line !== null).join('\n');
     const metadata = {
       generator: 'Blockloom 1.1',
-      origin: state.ai ? 'ai' : 'procedural',
+      origin: state.ai ? 'ai' : state.loadedWork ? 'saved' : 'procedural',
       provider: state.ai?.provider || null,
       model: state.ai?.model || null,
       material: getMaterial(state.materialId).name,
       prompt: els.promptInput.value,
       seed: state.seed,
       resolution: state.size,
-      finish: state.ai ? 'ai-concept' : state.finish,
+      finish: state.ai ? 'ai-concept' : state.loadedWork ? 'saved' : state.finish,
       modifiers: state.modifiers,
       accent: state.accent?.hex || null,
       aiStrength: state.ai ? Math.round((state.ai.aiStrength || 0) * 100) : null,
@@ -1022,7 +1803,7 @@ async function downloadResourcePack() {
       materialName: getMaterial(state.materialId).name,
       seed: state.seed,
       size: state.size,
-      origin: state.ai ? 'ai' : 'procedural',
+      origin: state.ai ? 'ai' : state.loadedWork ? 'saved' : 'procedural',
       prompt: els.promptInput.value,
     });
     downloadBlob(pack.blob, pack.filename);
@@ -1088,6 +1869,7 @@ function bindEvents() {
 
   $$('#finishGroup button').forEach((button) => {
     button.addEventListener('click', () => {
+      state.userHasActed = true;
       clearAiMode({ rerender: false, silent: true });
       state.finish = button.dataset.finish;
       syncControls();
@@ -1097,6 +1879,7 @@ function bindEvents() {
 
   const bindRange = (range, output, key, formatter = (value) => value) => {
     range.addEventListener('input', () => {
+      state.userHasActed = true;
       clearAiMode({ rerender: false, silent: true });
       state[key] = Number(range.value);
       output.textContent = formatter(Number(range.value));
@@ -1104,6 +1887,7 @@ function bindEvents() {
       scheduleQuickRender();
     });
     range.addEventListener('change', () => {
+      state.userHasActed = true;
       clearAiMode({ rerender: false, silent: true });
       state[key] = Number(range.value);
       syncControls();
@@ -1115,6 +1899,7 @@ function bindEvents() {
   bindRange(els.hueRange, els.hueValue, 'hue', (value) => `${value}°`);
 
   els.resetTuning.addEventListener('click', () => {
+    state.userHasActed = true;
     clearAiMode({ rerender: false, silent: true });
     state.grain = 58;
     state.contrast = 55;
@@ -1140,6 +1925,7 @@ function bindEvents() {
   els.resolutionGroup.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-size]');
     if (!button) return;
+    state.userHasActed = true;
     clearAiMode({ rerender: false, silent: true });
     state.size = Number(button.dataset.size);
     syncControls();
@@ -1156,6 +1942,45 @@ function bindEvents() {
   els.copyPngBtn.addEventListener('click', copyPng);
   els.downloadSetBtn.addEventListener('click', downloadTextureSet);
   els.downloadPackBtn.addEventListener('click', downloadResourcePack);
+
+  els.libraryBtn.addEventListener('click', openLibraryDialog);
+  els.closeLibraryBtn.addEventListener('click', closeLibraryDialog);
+  els.libraryBackupBtn.addEventListener('click', backupLibrary);
+  els.libraryImportBtn.addEventListener('click', () => els.libraryImportInput.click());
+  els.libraryImportInput.addEventListener('change', () => {
+    const file = els.libraryImportInput.files?.[0];
+    if (file) importLibrary(file).finally(() => { els.libraryImportInput.value = ''; });
+  });
+  els.libraryDialog.addEventListener('click', (event) => {
+    if (event.target === els.libraryDialog) closeLibraryDialog();
+  });
+  els.libraryDialog.addEventListener('close', () => {
+    document.body.classList.remove('dialog-open');
+  });
+  els.librarySearch.addEventListener('input', () => {
+    state.libraryQuery = els.librarySearch.value;
+    renderLibrary();
+  });
+  els.libraryFilters.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-filter]');
+    if (!button) return;
+    state.libraryFilter = button.dataset.filter;
+    $$('button[data-filter]', els.libraryFilters).forEach((item) => item.classList.toggle('active', item === button));
+    renderLibrary();
+  });
+  els.libraryGrid.addEventListener('click', (event) => {
+    const action = event.target.closest('[data-action]')?.dataset.action;
+    const card = event.target.closest('.library-card');
+    if (!action || !card) return;
+    if (action === 'open') openLibraryWork(card.dataset.id);
+    else if (action === 'delete') deleteLibraryItem(card.dataset.id);
+    else if (action === 'favorite') toggleLibraryFavorite(card.dataset.id);
+  });
+  els.finishBtn.addEventListener('click', openFinisher);
+  els.finisherDialog.addEventListener('close', () => {
+    state.editorOpen = false;
+    document.body.classList.remove('dialog-open');
+  });
 
   els.aiBtn.addEventListener('click', openAiDialog);
   els.aiBadge.addEventListener('click', () => {
@@ -1188,18 +2013,25 @@ function bindEvents() {
     if (!card) return;
     const seed = Number(card.dataset.seed);
     if (!seed) return;
-    if (state.ai) {
-      const variant = state.ai.variations.find((item) => item.seed === seed);
+    state.userHasActed = true;
+    const customVariations = currentCustomVariations();
+    if (state.ai || state.loadedWork) {
+      const variant = customVariations?.find((item) => item.seed === seed);
       if (!variant) return;
       state.seed = seed;
-      state.ai.seed = seed;
-      state.ai.textures = variant.textures;
+      if (state.ai) {
+        state.ai.seed = seed;
+        state.ai.textures = variant.textures;
+      } else {
+        state.loadedWork.textures = variant.textures;
+        state.loadedWork.seed = seed;
+      }
       state.textures = variant.textures;
       els.seedInput.value = seed;
       updateStageDetails(state.textures);
       updateActiveVariation();
       pulseStage();
-      toast('Loaded AI cut #' + seed);
+      toast('Loaded saved cut #' + seed);
       return;
     }
     setSeed(seed, { full: false });
@@ -1224,7 +2056,7 @@ function bindEvents() {
     document.body.classList.remove('dialog-open');
   });
   document.addEventListener('keydown', (event) => {
-    if (els.howDialog.open || els.aiDialog.open) return;
+    if (els.howDialog.open || els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open) return;
     const tag = event.target.tagName;
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target.isContentEditable) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -1234,6 +2066,12 @@ function bindEvents() {
     } else if (event.key === 'r' || event.key === 'R') {
       event.preventDefault();
       reroll();
+    } else if (event.key === 'l' || event.key === 'L') {
+      event.preventDefault();
+      openLibraryDialog();
+    } else if (event.key === 'f' || event.key === 'F') {
+      event.preventDefault();
+      openFinisher();
     } else if (event.key === 'a' || event.key === 'A') {
       event.preventDefault();
       openAiDialog();
@@ -1270,10 +2108,22 @@ function init() {
   updateCharCount();
   updateParsedTags(initial);
   renderMaterialPicker();
+  finisher = new TextureFinisher(els.finisherDialog, {
+    onSave: async (payload) => {
+      try {
+        await saveFinishedTexture(payload);
+      } catch (error) {
+        console.error(error);
+        toast('Could not save those pixels to the library.', true);
+        throw error;
+      }
+    },
+  });
   bindEvents();
   syncControls();
   applyCamera();
   renderAll({ variations: true });
+  initLibrary();
   updateClock();
   setInterval(updateClock, 60000);
 }

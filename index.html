@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0d09" />
-  <meta name="description" content="Blockloom is a local Minecraft texture studio. Describe a block, tune the finish, and export tileable pixel textures in seconds." />
+  <meta name="description" content="Blockloom is a local-first Minecraft texture studio with prompt generation, a pixel finisher, an auto-archiving library, AI concepts, and resource-pack export." />
   <title>Blockloom — Minecraft texture studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
@@ -37,6 +37,11 @@
     </div>
 
     <div class="topbar-actions">
+      <button class="btn btn-ghost library-launch" id="libraryBtn" type="button" aria-label="Open your texture library">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span class="library-label">Library</span>
+        <span class="library-count" id="libraryCount">0</span>
+      </button>
       <button class="btn btn-ghost" id="howBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><path d="M9.8 9a2.3 2.3 0 1 1 3.5 2c-.9.5-1.3 1.1-1.3 2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></svg>
         How it works
@@ -137,7 +142,7 @@
           <span>AI</span>
         </button>
       </div>
-      <p class="local-note"><span></span> Local procedural core. AI mode is optional and clearly marked.</p>
+      <p class="local-note"><span></span> Local core · optional AI · every work auto-archives in this browser.</p>
     </aside>
 
     <section class="panel stage-panel" aria-label="Texture preview">
@@ -146,13 +151,18 @@
           <div class="eyebrow"><span>02</span> Preview</div>
           <div class="title-line">
             <h2 id="textureTitle">Mossy Cobblestone</h2>
-            <button class="ai-mode-badge" id="aiBadge" type="button" hidden title="AI concept is active. Click to return to the procedural texture.">
-              <span class="ai-mode-dot"></span>AI MODE<span class="ai-mode-exit">×</span>
+            <button class="ai-mode-badge" id="aiBadge" type="button" hidden title="A saved texture is active. Click to return to the procedural recipe.">
+              <span class="ai-mode-dot"></span><span id="aiBadgeLabel">AI MODE</span><span class="ai-mode-exit">×</span>
             </button>
             <span class="seam-badge"><span></span>Seamless</span>
           </div>
         </div>
-        <div class="view-switch" role="group" aria-label="Preview mode">
+        <div class="stage-head-actions">
+          <button class="finish-launch" id="finishBtn" type="button" title="Open the pixel finisher" aria-label="Open the pixel finisher">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 16.5-.7 3.2 3.2-.7L18 8.5 15.5 6 5 16.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+            <span>Finish</span>
+          </button>
+          <div class="view-switch" role="group" aria-label="Preview mode">
           <button type="button" data-view="3d" class="active">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.5"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9" stroke="currentColor" stroke-width="1.5"/></svg>
             Block
@@ -161,6 +171,7 @@
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="4" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="13" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
             Tile
           </button>
+          </div>
         </div>
       </div>
 
@@ -291,14 +302,14 @@
         <p><strong>Prompt craft</strong> Name a material, then add “mossy”, “cracked”, “glowing”, “frosted”, or a colour. Mention crystals, veins, or flakes to steer the accent.</p>
       </div>
 
-      <p class="shortcut-note"><kbd>G</kbd> forge <span></span> <kbd>R</kbd> reroll <span></span> <kbd>A</kbd> AI <span></span> <kbd>E</kbd> export</p>
+      <p class="shortcut-note"><kbd>G</kbd> forge <span></span> <kbd>R</kbd> reroll <span></span> <kbd>A</kbd> AI <span></span> <kbd>F</kbd> finish <span></span> <kbd>L</kbd> library</p>
     </aside>
   </main>
 
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.1 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.2 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -343,6 +354,16 @@
         </article>
         <article>
           <span>04</span>
+          <h3>Finish by hand</h3>
+          <p>The pixel finisher adds pencil, eraser, eyedropper, fill, mirror, brush sizes, undo/redo, and independent side / top / bottom editing.</p>
+        </article>
+        <article>
+          <span>05</span>
+          <h3>Keep everything</h3>
+          <p>Every distinct texture you make is auto-archived in the local library — procedural, AI, and edited copies — with prompts, seeds, faces, palette, and cuts.</p>
+        </article>
+        <article>
+          <span>06</span>
           <h3>Ship it</h3>
           <p>Export a texture set with recipe metadata, or a drop-in resource pack that overrides one vanilla block with the correct texture paths.</p>
         </article>
@@ -351,12 +372,12 @@
         <span class="honest-icon">✦</span>
         <div>
           <strong>The honest bit</strong>
-          <p>The core is procedural and local. The optional AI layer sends a prompt to the provider shown in the AI dialog, then reduces the result to the same palette, seam, and export rules. AI is a concept source — the texture pipeline is still what makes it usable.</p>
+          <p>The core is procedural and local. The optional AI layer sends a prompt to the provider shown in the AI dialog, then reduces the result to the same palette, seam, and export rules. The library stores everything in this browser’s IndexedDB; use Backup/Restore to move it between devices. AI is a concept source — the texture pipeline is still what makes it usable.</p>
         </div>
       </div>
       <div class="dialog-actions">
         <button class="btn btn-primary" id="dialogCta" type="button">Back to the studio</button>
-        <span>No data leaves this page.</span>
+        <span>Procedural work stays local. AI is opt-in.</span>
       </div>
     </div>
   </dialog>
@@ -426,6 +447,158 @@
         <strong>AI backend is not ready</strong>
         <p id="aiSetupMessage">Start the included Node server to use the AI layer.</p>
         <code>AI_PROVIDER=pollinations npm run dev</code>
+      </div>
+    </div>
+  </dialog>
+
+
+  <!-- Local texture library -->
+  <dialog class="library-dialog" id="libraryDialog">
+    <div class="library-shell">
+      <header class="library-head">
+        <div>
+          <div class="library-kicker"><span></span>LOCAL ARCHIVE</div>
+          <h2>Your library</h2>
+          <p id="librarySub">Every distinct texture you make is stored in this browser.</p>
+        </div>
+        <div class="library-head-actions">
+          <button class="btn btn-outline library-backup" id="libraryBackupBtn" type="button" title="Download all works as a JSON backup">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v2.2A2.8 2.8 0 0 0 6.8 21h10.4a2.8 2.8 0 0 0 2.8-2.8V16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Backup</span>
+          </button>
+          <button class="btn btn-outline library-restore" id="libraryImportBtn" type="button" title="Restore works from a Blockloom library backup">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21V10m0 0 4 4m-4-4-4 4M4 8V5.8A2.8 2.8 0 0 1 6.8 3h10.4A2.8 2.8 0 0 1 20 5.8V8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Restore</span>
+          </button>
+          <input type="file" id="libraryImportInput" accept="application/json,.json" hidden />
+          <button class="icon-button" id="closeLibraryBtn" type="button" aria-label="Close library">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="library-toolbar">
+        <label class="library-search">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="m15 15 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input id="librarySearch" type="search" placeholder="Search name, prompt, or seed" autocomplete="off" />
+        </label>
+        <div class="library-filters" id="libraryFilters" role="group" aria-label="Filter works">
+          <button type="button" data-filter="all" class="active">All</button>
+          <button type="button" data-filter="favorite">Favorites</button>
+          <button type="button" data-filter="procedural">Procedural</button>
+          <button type="button" data-filter="ai">AI</button>
+          <button type="button" data-filter="saved">Edited</button>
+        </div>
+        <span class="library-result-count" id="libraryResultCount">0 works</span>
+      </div>
+
+      <div class="library-grid" id="libraryGrid" aria-live="polite"></div>
+      <div class="library-empty" id="libraryEmpty" hidden>
+        <span class="library-empty-mark">✦</span>
+        <h3>No textures here yet</h3>
+        <p>Forge a texture, generate an AI concept, or paint something in the finisher. It will appear here automatically.</p>
+      </div>
+      <footer class="library-foot">
+        <span><span class="library-live-dot"></span>Auto-saved to IndexedDB <span class="library-sep">/</span> <span id="libraryStorage">checking storage…</span></span>
+        <span>Everything stays in this browser.</span>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- Pixel finisher -->
+  <dialog class="finisher-dialog" id="finisherDialog">
+    <div class="finisher-shell">
+      <header class="finisher-head">
+        <div class="finisher-title-wrap">
+          <div class="finisher-kicker"><span></span>TEXTURE FINISHER</div>
+          <h2 id="finisherTitle">Mossy Cobblestone</h2>
+          <p id="finisherMeta">16 × 16 px · side / top / bottom</p>
+        </div>
+        <div class="finisher-head-right">
+          <div class="finisher-faces" role="tablist" aria-label="Texture face">
+            <button class="finisher-face active" type="button" data-face="side" role="tab" aria-selected="true">Side</button>
+            <button class="finisher-face" type="button" data-face="top" role="tab" aria-selected="false">Top</button>
+            <button class="finisher-face" type="button" data-face="bottom" role="tab" aria-selected="false">Bottom</button>
+          </div>
+          <button class="icon-button" id="finisherClose" type="button" aria-label="Close finisher">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="finisher-body">
+        <section class="finisher-canvas-pane" aria-label="Pixel canvas">
+          <div class="finisher-canvas-wrap">
+            <canvas id="finisherCanvas" width="512" height="512" tabindex="0" aria-label="Active texture face"></canvas>
+            <div class="finisher-cursor" id="finisherCursor" hidden></div>
+            <span class="finisher-coord" id="finisherCoord">0, 0</span>
+          </div>
+          <div class="finisher-canvas-foot">
+            <span>Drag to paint <span class="finisher-dot">·</span> click a face to switch</span>
+            <span id="finisherDims">16 × 16</span>
+          </div>
+        </section>
+
+        <aside class="finisher-tools" aria-label="Painting tools">
+          <div class="finisher-section">
+            <div class="finisher-section-title">Tool <span>keyboard: B E I G</span></div>
+            <div class="finisher-tool-grid">
+              <button class="finisher-tool active" type="button" data-tool="pencil" title="Pencil (B)">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 16.5-.7 3.2 3.2-.7L18 8.5 15.5 6 5 16.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m13.8 7.7 2.5 2.5" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span>Pencil</span>
+              </button>
+              <button class="finisher-tool" type="button" data-tool="eraser" title="Eraser (E)">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 15 6.5-9 5 3.6L11 19H6l-1.5-2L6 15Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m10 9 5 3.6M8 19h10" stroke="currentColor" stroke-width="1.5"/></svg>
+                <span>Eraser</span>
+              </button>
+              <button class="finisher-tool" type="button" data-tool="picker" title="Eyedropper (I)">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 5.2 4.3 4.3M12 8l4 4M4 20l1.1-4.4 8-8 3.3 3.3-8 8L4 20Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Pick</span>
+              </button>
+              <button class="finisher-tool" type="button" data-tool="fill" title="Fill (G)">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 13 6-6 6 6-6 6-6-6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 3.8 9 7M19 16c1.2 1.6 1.5 2.6 1.5 3.2a1.5 1.5 0 0 1-3 0c0-.6.3-1.6 1.5-3.2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span>Fill</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="finisher-section">
+            <div class="finisher-section-title">Brush <span id="finisherBrushLabel">1 px</span></div>
+            <div class="finisher-brush-row">
+              <button class="finisher-brush active" type="button" data-brush="1">1</button>
+              <button class="finisher-brush" type="button" data-brush="2">2</button>
+              <button class="finisher-brush" type="button" data-brush="3">3</button>
+              <button class="finisher-toggle" id="finisherMirror" type="button" aria-pressed="false" title="Mirror strokes across the vertical axis">Mirror X</button>
+              <button class="finisher-toggle is-on" id="finisherGrid" type="button" aria-pressed="true" title="Show pixel grid">Grid</button>
+            </div>
+          </div>
+
+          <div class="finisher-section">
+            <div class="finisher-section-title">Colour <span id="finisherColorHex">#6A6A6A</span></div>
+            <div class="finisher-palette" id="finisherPalette"></div>
+            <label class="finisher-custom-color"><span>Custom</span><input id="finisherColor" type="color" value="#6a6a6a" aria-label="Custom colour" /></label>
+          </div>
+
+          <div class="finisher-section">
+            <div class="finisher-section-title">History</div>
+            <div class="finisher-history-row">
+              <button class="finisher-history-btn" id="finisherUndo" type="button" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+              <button class="finisher-history-btn" id="finisherRedo" type="button" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button>
+              <button class="finisher-history-btn" id="finisherResetFace" type="button">Reset face</button>
+            </div>
+          </div>
+
+          <div class="finisher-mini">
+            <div class="finisher-section-title">Live block <span>updates as you paint</span></div>
+            <canvas id="finisherPreview" width="230" height="150"></canvas>
+          </div>
+
+          <p class="finisher-save-note">Save updates this library work <span>·</span> Save as copy keeps the original untouched.</p>
+          <div class="finisher-actions">
+            <button class="btn btn-outline" id="finisherSaveCopy" type="button">Save as copy</button>
+            <button class="btn btn-primary" id="finisherSave" type="button">Save &amp; close</button>
+          </div>
+        </aside>
       </div>
     </div>
   </dialog>

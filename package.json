@@ -1,12 +1,13 @@
 {
   "name": "blockloom",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "A local, procedural Minecraft texture studio with an optional AI concept layer and resource-pack export.",
+  "description": "A local-first Minecraft texture studio with prompt generation, pixel finisher, auto-archiving library, AI concepts, and resource-pack export.",
   "scripts": {
     "dev": "node server.mjs",
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check js/engine.js && node --check js/app.js && node --check js/ai.js && node --check js/finisher.js && node --check js/library.js && node --check js/resourcepack.js && node --check js/zip.js && node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('check ok')\""
   },
   "engines": {
     "node": ">=18"
