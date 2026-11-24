@@ -26,6 +26,8 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
+**Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
+
 **Local API release:** [Blockloom Local Texture API v1.0.0](https://github.com/MEZTKING/blockloom/releases/tag/api-v1.0.0) — bridge reference, TypeScript client, and batch kit.
 
 **Preview desktop/mobile builds:** [Blockloom v1.10.0](https://github.com/MEZTKING/blockloom/releases/tag/v1.10.0) — unsigned Windows installers and a debug-signed Android APK.
