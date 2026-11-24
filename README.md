@@ -15,7 +15,12 @@ npm run dev
 # http://localhost:4173
 ```
 
-`npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy. Run `npm run check` to syntax-check every module and manifest.
+`npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy.
+
+```bash
+npm test     # parser, RGBA, seam, ZIP, target, and format tests
+npm run check # tests + syntax checks for every module
+```
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, local library, and all client-side exports work.
 
@@ -247,7 +252,21 @@ screenshots/        preview images
 - Multi-block resource-pack sessions.
 - Pack-format picker (1.20.x → current) and tint-safe grass/leaf model overrides.
 - `.mcmeta` support for animated textures.
-- Automated parser, seam, library, and ZIP tests.
+
+## Validation
+
+`npm test` runs a dependency-free suite with the Node test runner:
+
+- prompt parsing for materials, tints, accents, and effects,
+- all 26 materials across side/top/bottom faces,
+- RGBA completeness and deterministic seeds,
+- a seam sanity ratio at 16 px,
+- all finishes and effect overlays,
+- 32 px / 64 px rendering,
+- ZIP central-directory and payload integrity,
+- resource-pack target mappings and format profiles.
+
+`npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages.
 
 ## License
 

@@ -891,7 +891,7 @@ function flowerOverlay(buf, ctx) {
 }
 
 /* Main generator */
-export function renderTexture(params = {}) {
+export function renderTextureBuffer(params = {}) {
   const material = getMaterial(params.materialId);
   const size = params.size || 16;
   const seed = Number(params.seed) || 1;
@@ -1031,17 +1031,11 @@ export function renderTexture(params = {}) {
   if (mods.has('wet')) wetOverlay(buf, ctx);
   if (mods.has('flowery')) flowerOverlay(buf, ctx);
 
-  const canvas = createCanvas(size);
-  const context = canvas.getContext('2d');
-  const imageData = context.createImageData(size, size);
-  imageData.data.set(buf);
-  context.putImageData(imageData, 0, 0);
-
   const colorSet = [...new Set(palette.slice(1, 7).map((rgb) => rgb.join(',')))]
     .map((s) => s.split(',').map(Number));
 
   return {
-    canvas,
+    buffer: buf,
     size,
     face,
     material,
@@ -1051,6 +1045,16 @@ export function renderTexture(params = {}) {
     overlayAccentSwatches: overlayAccent.slice(2, 5).map((rgb) => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`),
     modifiers: [...mods],
   };
+}
+
+export function renderTexture(params = {}) {
+  const { buffer, ...data } = renderTextureBuffer(params);
+  const canvas = createCanvas(data.size);
+  const context = canvas.getContext('2d');
+  const imageData = context.createImageData(data.size, data.size);
+  imageData.data.set(buffer);
+  context.putImageData(imageData, 0, 0);
+  return { ...data, canvas };
 }
 
 export function renderTextureSet(params) {
