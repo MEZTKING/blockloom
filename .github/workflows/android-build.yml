@@ -47,10 +47,44 @@ jobs:
       - run: npm run tauri:android:init
       - run: npm run tauri:android:build
 
+      - name: Sign APK
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          UNSIGNED=$(find src-tauri/gen/android/app/build/outputs/apk -name '*unsigned.apk' | head -1)
+          if [ -z "$UNSIGNED" ]; then
+            echo "No unsigned APK found" >&2
+            find src-tauri/gen/android/app/build/outputs -type f || true
+            exit 1
+          fi
+          mkdir -p artifacts
+          if [ -n "${ANDROID_KEYSTORE_BASE64}" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/blockloom-release.keystore"
+            KEYSTORE="$RUNNER_TEMP/blockloom-release.keystore"
+            KS_PASS="$ANDROID_KEYSTORE_PASSWORD"
+            KEY_ALIAS="$ANDROID_KEY_ALIAS"
+            KEY_PASS="$ANDROID_KEY_PASSWORD"
+          else
+            KEYSTORE="$RUNNER_TEMP/blockloom-debug.keystore"
+            keytool -genkeypair -keystore "$KEYSTORE" -storepass android -alias androiddebugkey -keypass android -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000
+            KS_PASS="android"
+            KEY_ALIAS="androiddebugkey"
+            KEY_PASS="android"
+          fi
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          OUT="artifacts/Blockloom_${VERSION}_android-universal.apk"
+          "$APKSIGNER" sign --ks "$KEYSTORE" --ks-pass "pass:$KS_PASS" --ks-key-alias "$KEY_ALIAS" --key-pass "pass:$KEY_PASS" --out "$OUT" "$UNSIGNED"
+          "$APKSIGNER" verify "$OUT"
+          echo "APK_SIGNED=$OUT" >> "$GITHUB_ENV"
+
       - uses: actions/upload-artifact@v4
         with:
           name: blockloom-android
           if-no-files-found: error
-          path: |
-            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
-            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          path: artifacts/*.apk
