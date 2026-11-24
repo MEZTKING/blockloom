@@ -1,6 +1,6 @@
 /* Blockloom offline worker. Network-first so local development stays fresh;
    every successful response is cached, and offline requests fall back to it. */
-const CACHE = 'blockloom-v1.7.0';
+const CACHE = 'blockloom-v1.8.0';
 const ASSETS = [
   './',
   './index.html',
@@ -22,6 +22,7 @@ const ASSETS = [
   './js/resourcepack.js',
   './js/zip.js',
   './js/share.js',
+  './js/importer.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Blockloom — Minecraft Texture Studio",
   "short_name": "Blockloom",
-  "description": "A local-first Minecraft texture studio: procedural generation, pixel finisher, versioned library, share links, and resource-pack export. AI is optional.",
+  "description": "A local-first Minecraft texture studio: procedural generation, PNG import, pixel finisher, versioned library, share links, and resource-pack export. AI is optional.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -1,6 +1,6 @@
 # Blockloom
 
-A local-first, offline-capable **Minecraft texture studio**: prompt-driven generation, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
+A local-first, offline-capable **Minecraft texture studio**: prompt-driven generation, import of existing Minecraft PNGs, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
 
 No account, no build step, no framework. Procedural work runs entirely in the browser.
 
@@ -18,11 +18,11 @@ npm run dev
 `npm run dev` starts `server.mjs`, a tiny static server that also hosts the optional AI provider proxy.
 
 ```bash
-npm test     # parser, RGBA, seam, ZIP, target, and format tests
+npm test     # parser, RGBA, seam, import, ZIP, PWA, share, target, and format tests
 npm run check # tests + syntax checks for every module
 ```
 
-**Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, local library, and all client-side exports work.
+**Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
 ## Keyboard
 
@@ -37,6 +37,7 @@ npm run check # tests + syntax checks for every module
 | `A` | AI lab |
 | `P` | Resource-pack builder |
 | `S` | Copy share link |
+| `I` | Import PNG |
 | `E` | Download PNG |
 | `?` | Open this guide |
 
@@ -46,11 +47,24 @@ Single-letter shortcuts are ignored while typing in a field. Dialogs use labelle
 
 **Generate → choose → finish → auto-save → export**
 
-1. Describe a block and forge a tileable texture.
+1. Describe a block and forge a tileable texture — or import an existing Minecraft PNG.
 2. Pick one of six sibling seeds, or bring in an AI concept.
 3. Open the **Finisher** and paint the last few pixels by hand.
 4. Every distinct texture you make is silently archived in **Your Library**, with version snapshots.
 5. Share it as a link, or download a PNG, a texture set, or a drop-in resource pack.
+
+## Import existing textures
+
+Use **Import texture** in the left panel, press **I**, or drop a PNG onto the studio.
+
+- Square block/item textures from **1 to 512 px** keep their pixel dimensions.
+- Larger square images are nearest-neighbour scaled to 512 px.
+- Vertical animation strips import **frame 1** of the strip; the frame count is shown in the finisher meta. Full animation re-export is not implemented yet.
+- Non-square sheets (armor layers, GUI sheets) are rejected with a clear explanation.
+- The imported texture becomes side/top/bottom, opens directly in the finisher, is archived as **IMPORTED**, and can be edited, versioned, shared, and packed like any other work.
+- No AI or network is involved.
+
+![Imported texture in the studio](screenshots/blockloom-import.png)
 
 ## Texture generation
 
@@ -62,7 +76,8 @@ Single-letter shortcuts are ignored while typing in a field. Dialogs use labelle
 - Draggable CSS 3D block preview and a 2 × 2 tile check.
 - Six sibling-seed cuts and exact reproducibility by seed.
 - A shareable compressed link carrying the current pixels and recipe.
-- An offline app shell; after first load, generation, finishing, library, versions, sharing, and packs work with no network.
+- An offline app shell; after first load, generation, import, finishing, library, versions, sharing, and packs work with no network.
+- **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
 
 ## Texture finisher
 
@@ -284,6 +299,7 @@ At Minecraft resolution, texture quality comes from **palette discipline, contro
 ```text
 index.html          app shell and UI
 styles.css          design system, 3D cube, AI lab, library, finisher, responsive layouts
+js/importer.js     square/animation import planning and filename titles
 js/engine.js        noise, material recipes, prompt parser, isometric renderer
 js/ai.js            provider request client, recipe blend, palette snap, seam repair, AI cuts
 js/finisher.js      pixel editor: tools, history, faces, live preview
@@ -333,6 +349,7 @@ screenshots/        preview images
 - ZIP central-directory and payload integrity,
 - resource-pack target mappings and format profiles,
 - compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
+- square/animated/large import planning and filename titles,
 - installable manifest metadata and complete offline app-shell cache coverage.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.

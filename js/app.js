@@ -14,6 +14,7 @@ import {
 import { createZip } from './zip.js';
 import { createAiVariations, fetchAiStatus, generateAiConcept, processAiConcept } from './ai.js';
 import { makeShareUrl, readShareHash } from './share.js';
+import { importSummary, importTitle, planTextureImport } from './importer.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
 import { TextureFinisher } from './finisher.js';
 import {
@@ -65,6 +66,9 @@ const els = {
   aiBadgeLabel: $('#aiBadgeLabel'),
   finishBtn: $('#finishBtn'),
   shareBtn: $('#shareBtn'),
+  importBtn: $('#importBtn'),
+  importInput: $('#importInput'),
+  dropOverlay: $('#dropOverlay'),
   textureTitle: $('#textureTitle'),
   stageViewport: $('#stageViewport'),
   cube: $('#cube'),
@@ -222,6 +226,8 @@ const state = {
   packBuilding: false,
   packGrassTintFree: false,
   versionWorkId: null,
+  importing: false,
+  dragDepth: 0,
 };
 
 /* ---------- Prompt state ---------- */
@@ -294,7 +300,16 @@ function updateParsedTags(parsed) {
   if (state.ai) {
     els.parsedTags.append(chip('AI concept', 'ai'));
   } else if (state.loadedWork) {
-    els.parsedTags.append(chip(state.loadedWork.shared ? 'Shared texture' : state.loadedWork.edited ? 'Edited copy' : 'Saved work', 'library'));
+    els.parsedTags.append(chip(
+      state.loadedWork.imported
+        ? 'Imported texture'
+        : state.loadedWork.shared
+          ? 'Shared texture'
+          : state.loadedWork.edited
+            ? 'Edited copy'
+            : 'Saved work',
+      'library',
+    ));
   }
   if (parsed.materialId) {
     els.parsedTags.append(chip(getMaterial(parsed.materialId).name, 'material'));
@@ -442,9 +457,12 @@ function updateStageDetails(textures) {
   const aiActive = Boolean(state.ai);
   const savedActive = Boolean(state.loadedWork);
   const custom = hasCustomTexture();
-  const title = textureTitle(state.materialId, state.modifiers);
+  const title = state.ai
+    ? textureTitle(state.materialId, state.modifiers)
+    : state.loadedWork?.work?.title || textureTitle(state.materialId, state.modifiers);
+  const suffix = aiActive ? ' (AI)' : state.loadedWork?.imported ? ' (Imported)' : state.loadedWork?.shared ? ' (Shared)' : savedActive ? ' (Saved)' : '';
   els.textureTitle.textContent = title;
-  document.title = `${title}${aiActive ? ' (AI)' : savedActive ? ' (Saved)' : ''} — Blockloom`;
+  document.title = `${title}${suffix} — Blockloom`;
   els.dnaMaterial.textContent = textures.material.name;
   els.dnaFinishLabel.textContent = custom ? 'Origin' : 'Finish';
   els.dnaFinish.textContent = custom
@@ -452,9 +470,11 @@ function updateStageDetails(textures) {
       ? 'AI concept'
       : state.loadedWork?.shared
         ? 'Shared texture'
-        : state.loadedWork?.edited
-          ? 'Edited copy'
-          : 'Saved work'
+        : state.loadedWork?.imported
+          ? 'Imported texture'
+          : state.loadedWork?.edited
+            ? 'Edited copy'
+            : 'Saved work'
     : FINISHES.find((f) => f.id === state.finish)?.label || 'Balanced';
   els.aiBadge.hidden = !custom;
   els.aiBadge.classList.toggle('is-saved', savedActive);
@@ -463,20 +483,26 @@ function updateStageDetails(textures) {
       ? 'AI MODE'
       : state.loadedWork?.shared
         ? 'SHARED WORK'
-        : state.loadedWork?.edited
-          ? 'EDITED COPY'
-          : 'SAVED WORK';
+        : state.loadedWork?.imported
+          ? 'IMPORTED'
+          : state.loadedWork?.edited
+            ? 'EDITED COPY'
+            : 'SAVED WORK';
   }
   els.aiBadge.title = aiActive
     ? 'AI concept is active. Click to return to the procedural texture.'
-    : 'Saved library texture is active. Click to return to the procedural texture.';
+    : state.loadedWork?.imported
+      ? 'Imported texture is active. Click to return to the procedural texture.'
+      : 'Saved library texture is active. Click to return to the procedural texture.';
   els.variationsSub.textContent = aiActive
     ? 'AI cuts · local colour and orientation studies.'
     : state.loadedWork?.shared
       ? 'Local cuts · regenerated from shared pixels.'
-      : savedActive
-        ? 'Saved cuts · restored with this library piece.'
-        : 'Six sibling seeds. Same recipe, different surface.';
+      : state.loadedWork?.imported
+        ? 'Original pixels · no generated sibling cuts.'
+        : savedActive
+          ? 'Saved cuts · restored with this library piece.'
+          : 'Six sibling seeds. Same recipe, different surface.';
   if (document.activeElement !== els.seedInput) els.seedInput.value = state.seed;
 
   const palette = displayPalette(textures);
@@ -582,6 +608,13 @@ function renderVariationCards(variations) {
     state.variations.push({ seed, textures, accent });
   });
 
+  if (!variations.length) {
+    const empty = document.createElement('div');
+    empty.className = 'variation-empty';
+    empty.innerHTML = '<span>NO SIBLING CUTS</span><p>This texture keeps its original pixels. Edit all three faces in the finisher.</p>';
+    els.variationGrid.replaceChildren(empty);
+    return;
+  }
   els.variationGrid.replaceChildren(fragment);
 }
 
@@ -856,6 +889,9 @@ function closeAiDialog() {
 
 function clearAiMode({ rerender = true, silent = false } = {}) {
   if (!state.ai && !state.loadedWork) return false;
+  const oversized = !FINISHES.some((finish) => finish.id === state.finish);
+  if (oversized) state.finish = 'balanced';
+  if (![16, 32, 64].includes(state.size)) state.size = 64;
   state.ai = null;
   state.loadedWork = null;
   state.currentWorkId = null;
@@ -1240,13 +1276,14 @@ async function buildVariationsFromWork(work) {
 }
 
 function workOriginLabel(work) {
+  if (work.imported) return work.edited ? 'IMPORTED · EDIT' : 'IMPORTED';
   if (work.kind === 'ai') return work.edited ? 'AI · EDIT' : 'AI';
   if (work.edited) return 'EDITED';
   return 'PROCEDURAL';
 }
 
 function workOriginClass(work) {
-  return work.kind === 'ai' ? 'is-ai' : work.edited ? 'is-saved' : '';
+  return work.imported || work.edited ? 'is-saved' : work.kind === 'ai' ? 'is-ai' : '';
 }
 
 function formatWorkDate(value) {
@@ -1263,7 +1300,7 @@ function libraryFilteredWorks() {
     if (state.libraryFilter === 'favorite' && !work.favorite) return false;
     if (state.libraryFilter === 'procedural' && work.kind !== 'procedural') return false;
     if (state.libraryFilter === 'ai' && work.kind !== 'ai') return false;
-    if (state.libraryFilter === 'saved' && !work.edited) return false;
+    if (state.libraryFilter === 'saved' && !work.edited && !work.imported) return false;
     if (!query) return true;
     return [work.title, work.prompt, String(work.seed), work.materialName].some((value) => String(value || '').toLowerCase().includes(query));
   });
@@ -1376,7 +1413,7 @@ async function openLibraryWork(workId) {
     state.materialId = material.id;
     state.seed = work.seed;
     state.size = work.size;
-    state.finish = work.finish || 'balanced';
+    state.finish = FINISHES.some((finish) => finish.id === work.finish) ? work.finish : 'balanced';
     state.grain = work.grain ?? 58;
     state.contrast = work.contrast ?? 55;
     state.hue = work.hue ?? 0;
@@ -1408,6 +1445,8 @@ async function openLibraryWork(workId) {
         textures: set,
         variations,
         edited: Boolean(work.edited),
+        imported: Boolean(work.imported),
+        importNote: work.importNote || null,
       };
     }
     els.promptInput.value = work.prompt || '';
@@ -1589,7 +1628,7 @@ async function saveFinishedTexture({ faces, copy, size }) {
       materialName: material.name,
       seed: state.seed,
       size: state.size,
-      finish: state.ai ? 'ai-concept' : state.finish,
+      finish: state.ai ? 'ai-concept' : sourceWork?.imported ? 'imported' : state.finish,
       grain: state.grain,
       contrast: state.contrast,
       hue: state.hue,
@@ -1680,6 +1719,8 @@ async function saveFinishedTexture({ faces, copy, size }) {
       textures: set,
       variations: currentCustomVariations() || state.variations,
       edited: true,
+      imported: Boolean(sourceWork.imported),
+      importNote: state.loadedWork?.importNote || sourceWork.importNote || null,
     };
   }
   updateStageDetails(state.textures);
@@ -1705,7 +1746,7 @@ async function openFinisher() {
     textures: state.textures,
     palette: displayPalette(state.textures),
     title: els.textureTitle.textContent,
-    meta: `${state.size} × ${state.size} px · ${hasCustomTexture() ? 'saved copy' : 'procedural'}${state.ai ? ' · AI mode' : ''}`,
+    meta: `${state.size} × ${state.size} px · ${state.loadedWork?.imported ? `imported${state.loadedWork.importNote ? ` · ${state.loadedWork.importNote}` : ''}` : hasCustomTexture() ? 'saved copy' : 'procedural'}${state.ai ? ' · AI mode' : ''}`,
   });
 }
 
@@ -1725,7 +1766,7 @@ function packEntryFromCurrent() {
     materialName: getMaterial(state.materialId).name,
     seed: state.seed,
     size: state.size,
-    origin: state.ai ? 'ai' : state.loadedWork ? 'saved' : 'procedural',
+    origin: state.ai ? 'ai' : state.loadedWork?.imported ? 'imported' : state.loadedWork ? 'saved' : 'procedural',
     targetId: target,
     thumb: workThumb(state.textures),
   };
@@ -1733,6 +1774,7 @@ function packEntryFromCurrent() {
 
 function packOriginLabel(origin) {
   if (origin === 'ai') return 'AI';
+  if (origin === 'imported') return 'IMPORTED';
   if (origin === 'saved') return 'SAVED';
   return 'PROCEDURAL';
 }
@@ -1919,7 +1961,7 @@ async function addPackLibraryEntry() {
       materialName: work.materialName || getMaterial(work.materialId).name,
       seed: work.seed,
       size: work.size,
-      origin: work.kind,
+      origin: work.imported ? 'imported' : work.kind,
       targetId: target,
       thumb: work.thumb || work.faces?.side,
     });
@@ -2246,6 +2288,188 @@ async function loadSharedFromHash() {
 }
 
 
+/* ---------- Import existing textures ---------- */
+function readTextureFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      reject(new Error('No file selected.'));
+      return;
+    }
+    const imageLike = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name || '');
+    if (!imageLike) {
+      reject(new Error('Choose a PNG or other image file.'));
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      reject(new Error('That image is over 25 MB. Minecraft textures are normally tiny.'));
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('That image could not be decoded.'));
+    };
+    image.src = url;
+  });
+}
+
+function importedCanvas(image, plan) {
+  const canvas = document.createElement('canvas');
+  canvas.width = plan.targetSize;
+  canvas.height = plan.targetSize;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    plan.sourceWidth,
+    plan.cropHeight,
+    0,
+    0,
+    plan.targetSize,
+    plan.targetSize,
+  );
+  return canvas;
+}
+
+function setImportBusy(busy) {
+  state.importing = busy;
+  els.importBtn.disabled = busy;
+  els.importBtn.classList.toggle('is-loading', busy);
+  const small = els.importBtn.querySelector('small');
+  if (small) small.textContent = busy ? 'Reading texture…' : 'PNG · square 1–512 px';
+}
+
+async function importTextureFile(file) {
+  if (!file || state.importing) return;
+  setImportBusy(true);
+  try {
+    const image = await readTextureFile(file);
+    const plan = planTextureImport(image.naturalWidth || image.width, image.naturalHeight || image.height);
+    if (!plan.ok) {
+      toast(plan.reason, true);
+      return;
+    }
+    const canvas = importedCanvas(image, plan);
+    const palette = paletteFromFaces({ side: canvas, top: canvas, bottom: canvas }, plan.targetSize);
+    const material = getMaterial(state.materialId);
+    const set = buildTextureSetFromFaces({ side: canvas, top: canvas, bottom: canvas }, plan.targetSize, material, palette);
+    set.ai = false;
+    const faceUrls = faceUrlsFromSet(set);
+    const fingerprint = fingerprintFaces(faceUrls);
+    const title = importTitle(file.name);
+    const importNote = [
+      plan.animated ? `frame 1 of ${plan.frames}` : '',
+      plan.scaled ? `scaled to ${plan.targetSize} px` : '',
+    ].filter(Boolean).join(' · ') || 'original pixels';
+    const prompt = `Imported from ${file.name}`.slice(0, 90);
+    state.userHasActed = true;
+    state.size = plan.targetSize;
+    state.seed = randomSeed();
+    state.modifiers = [];
+    state.accent = null;
+    state.promptColor = null;
+    state.finish = 'balanced';
+    state.textures = set;
+    state.variations = [];
+    state.ai = null;
+    state.loadedWork = null;
+    state.currentWorkId = null;
+    els.promptInput.value = prompt;
+    updateCharCount();
+
+    let work = null;
+    if (state.libraryReady) {
+      work = await findByFingerprint(fingerprint);
+    }
+    if (!work) {
+      work = await buildWorkFromCurrent(faceUrls, fingerprint);
+      work.title = title;
+      work.prompt = prompt;
+      work.imported = true;
+      work.finish = 'imported';
+      work.edited = false;
+      work.variations = [];
+      work.palette = palette;
+      work.thumb = workThumb(set);
+      work.importNote = importNote;
+      if (state.libraryReady) await putWork(work);
+    }
+    state.currentWorkId = work?.id || null;
+    state.loadedWork = {
+      work: work || {
+        title,
+        prompt,
+        imported: true,
+        size: plan.targetSize,
+        kind: 'procedural',
+      },
+      textures: set,
+      variations: [],
+      edited: Boolean(work?.edited),
+      imported: true,
+      importNote,
+    };
+    state.variations = [];
+    renderVariationCards([]);
+    updateStageDetails(set);
+    updateParsedTags(parsePrompt(prompt));
+    syncControls();
+    updateActiveVariation();
+    pulseStage();
+    if (state.libraryReady) await refreshLibraryCount();
+    toast(`Imported ${title} · ${importSummary(plan)}`);
+    await openFinisher();
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not import that texture.', true);
+  } finally {
+    setImportBusy(false);
+    els.importInput.value = '';
+  }
+}
+
+function showDropOverlay(show) {
+  els.dropOverlay.hidden = !show;
+  document.body.classList.toggle('is-dragging-file', show);
+}
+
+function bindTextureDrop() {
+  window.addEventListener('dragenter', (event) => {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    state.dragDepth += 1;
+    showDropOverlay(true);
+  });
+  window.addEventListener('dragover', (event) => {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+  });
+  window.addEventListener('dragleave', (event) => {
+    if (!event.dataTransfer?.types?.includes('Files')) return;
+    state.dragDepth = Math.max(0, state.dragDepth - 1);
+    if (!state.dragDepth) showDropOverlay(false);
+  });
+  window.addEventListener('drop', (event) => {
+    const file = [...(event.dataTransfer?.files || [])].find((item) => item.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(item.name));
+    if (!file) return;
+    event.preventDefault();
+    state.dragDepth = 0;
+    showDropOverlay(false);
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open) return;
+    importTextureFile(file);
+  });
+}
+
+
 /* ---------- Seeds & camera ---------- */
 function randomSeed() {
   const values = new Uint32Array(1);
@@ -2349,8 +2573,9 @@ function canvasToBlob(canvas) {
 }
 
 function textureFilename(extension = 'png') {
-  const slug = getMaterial(state.materialId).name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const suffix = state.ai ? '_ai' : state.loadedWork ? '_saved' : '';
+  const base = state.loadedWork?.work?.title || getMaterial(state.materialId).name;
+  const slug = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'texture';
+  const suffix = state.ai ? '_ai' : state.loadedWork?.imported ? '_imported' : state.loadedWork ? '_saved' : '';
   return `blockloom_${slug}${suffix}_${state.seed}_${state.size}px.${extension}`;
 }
 
@@ -2425,19 +2650,21 @@ async function downloadTextureSet() {
     }
     const origin = state.ai
       ? 'AI concept (post-processed in browser)'
-      : state.loadedWork
-        ? 'Saved library work'
-        : 'Procedural studio';
+      : state.loadedWork?.imported
+        ? 'Imported Minecraft texture'
+        : state.loadedWork
+          ? 'Saved library work'
+          : 'Procedural studio';
     const readme = [
       'BLOCKLOOM TEXTURE SET',
       '=====================',
       '',
-      `Recipe:     ${getMaterial(state.materialId).name}`,
+      `Source:     ${state.loadedWork?.imported ? state.loadedWork.work.title : getMaterial(state.materialId).name}`,
       `Origin:     ${origin}`,
       `Prompt:     ${els.promptInput.value}`,
       `Seed:       ${state.seed}`,
       `Resolution: ${state.size} × ${state.size} px`,
-      `Finish:     ${state.ai ? 'AI concept' : state.loadedWork ? 'Saved / edited' : state.finish}`,
+      `Finish:     ${state.ai ? 'AI concept' : state.loadedWork?.imported ? 'Original imported pixels' : state.loadedWork ? 'Saved / edited' : state.finish}`,
       `Modifiers:  ${state.modifiers.join(', ') || 'none'}`,
       `Palette:    ${displayPalette(state.textures).join(' ')}`,
       state.ai ? `Provider:   ${state.ai.provider || 'unknown'} / ${state.ai.model || 'unknown'}` : '',
@@ -2732,6 +2959,14 @@ function bindEvents() {
     else if (action === 'favorite') toggleLibraryFavorite(card.dataset.id);
     else if (action === 'history') openVersionHistory(card.dataset.id);
   });
+  els.importBtn.addEventListener('click', () => {
+    if (!state.importing) els.importInput.click();
+  });
+  els.importInput.addEventListener('change', () => {
+    const file = els.importInput.files?.[0];
+    if (file) importTextureFile(file);
+  });
+  bindTextureDrop();
   els.finishBtn.addEventListener('click', openFinisher);
   els.shareBtn.addEventListener('click', copyShareLink);
   els.finisherDialog.addEventListener('close', () => {
@@ -2859,6 +3094,9 @@ function bindEvents() {
     } else if (key === 'a') {
       event.preventDefault();
       openAiDialog();
+    } else if (key === 'i') {
+      event.preventDefault();
+      if (!state.importing) els.importInput.click();
     } else if (key === 'p') {
       event.preventDefault();
       openPackBuilder();

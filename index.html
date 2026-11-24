@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0b0d09" />
-  <meta name="description" content="Blockloom is a local-first, offline-capable Minecraft texture studio with prompt generation, a pixel finisher, a versioned library, share links, and resource-pack export. AI is optional." />
+  <meta name="description" content="Blockloom is a local-first, offline-capable Minecraft texture studio with prompt generation, a pixel finisher, a versioned library, imported textures, share links, and resource-pack export. AI is optional." />
   <meta name="application-name" content="Blockloom" />
   <title>Blockloom — Minecraft texture studio</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
@@ -17,6 +17,13 @@
 <body>
   <noscript><div style="position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#090b07;color:#f0f1e8;font-family:sans-serif;text-align:center;padding:24px">Blockloom needs JavaScript to grow its pixels. Please enable JavaScript and reload.</div></noscript>
   <div class="noise" aria-hidden="true"></div>
+  <div class="drop-overlay" id="dropOverlay" hidden>
+    <div class="drop-card">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4-4 4M4 15v2.2A2.8 2.8 0 0 0 6.8 20h10.4a2.8 2.8 0 0 0 2.8-2.8V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <strong>Drop a texture to edit</strong>
+      <span>Square PNG · up to 512 px</span>
+    </div>
+  </div>
 
   <header class="topbar">
     <a class="brand" href="./" aria-label="Blockloom home">
@@ -87,6 +94,15 @@
           <button type="button" data-prompt="ancient gilded stone">Gilded ruins</button>
         </div>
       </form>
+
+      <div class="import-strip">
+        <button class="import-button" id="importBtn" type="button" title="Import an existing Minecraft texture (I)">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4-4 4M4 15v2.2A2.8 2.8 0 0 0 6.8 20h10.4a2.8 2.8 0 0 0 2.8-2.8V15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><strong>Import texture</strong><small>PNG · square 1–512 px</small></span>
+          <kbd>I</kbd>
+        </button>
+        <input id="importInput" type="file" accept="image/png,image/*" hidden />
+      </div>
 
       <section class="control-block material-block">
         <div class="control-title">
@@ -317,7 +333,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span>v1.7 · <span id="footerClock">LOCAL</span></span>
+    <span>v1.8 · <span id="footerClock">LOCAL</span></span>
   </footer>
 
   <!-- Material picker -->
@@ -348,7 +364,7 @@
         <article>
           <span>01</span>
           <h3>Read the prompt</h3>
-          <p>A small vocabulary maps materials, finishes, colours, and accents. “Mossy cobblestone with cyan crystals” becomes a recipe.</p>
+          <p>A small vocabulary maps materials, finishes, colours, and accents. “Mossy cobblestone with cyan crystals” becomes a recipe. Already have a texture? Import a square PNG and edit it instead.</p>
         </article>
         <article>
           <span>02</span>
@@ -386,6 +402,7 @@
         <div><kbd>A</kbd><span>AI lab</span></div>
         <div><kbd>P</kbd><span>Pack builder</span></div>
         <div><kbd>S</kbd><span>Share link</span></div>
+        <div><kbd>I</kbd><span>Import PNG</span></div>
         <div><kbd>E</kbd><span>PNG</span></div>
         <div><kbd>?</kbd><span>This guide</span></div>
       </div>

@@ -1,6 +1,6 @@
 {
   "name": "blockloom",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "private": true,
   "type": "module",
   "description": "A local-first Minecraft texture studio with prompt generation, AI candidates, pixel finisher, versioned library, shareable links, and resource-pack export.",
