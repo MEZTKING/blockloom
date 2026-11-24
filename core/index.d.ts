@@ -121,7 +121,22 @@ export function listMaterials(): MaterialRecipe[];
 export function listModifiers(): Modifier[];
 export function textureTitle(materialId: string, modifiers?: string[]): string;
 export function modifierLabel(id: string): string;
+export interface GeneratedFace {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+}
+
+export interface GeneratedTextureSet {
+  width: number;
+  height: number;
+  version: string;
+  recipe: ResolvedRecipe;
+  faces: { side: GeneratedFace; top: GeneratedFace; bottom: GeneratedFace };
+}
+
 export function generate(options?: GenerateOptions): GeneratedTexture;
+export function generateSet(options?: GenerateOptions): GeneratedTextureSet;
 export function renderTextureBuffer(params: Record<string, unknown>): {
   buffer: Uint8ClampedArray;
   size: number;

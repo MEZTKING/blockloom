@@ -1,6 +1,6 @@
 {
   "name": "@blockloom/core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Deterministic, DOM-free Minecraft texture generation core for Blockloom and other apps.",
   "type": "module",
   "main": "./index.js",
@@ -13,6 +13,9 @@
     "./data": {
       "types": "./index.d.ts",
       "import": "./data.js"
+    },
+    "./golden.json": {
+      "default": "./golden.json"
     }
   },
   "files": [
@@ -20,6 +23,7 @@
     "index.d.ts",
     "engine.js",
     "data.js",
+    "golden.json",
     "README.md",
     "LICENSE"
   ],

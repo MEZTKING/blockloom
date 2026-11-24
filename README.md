@@ -26,7 +26,7 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
-**Core package:** [@blockloom/core v1.0.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.0.0) — DOM-free generator, 89 recipes, types, and worker docs.
+**Core package:** [@blockloom/core v1.1.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.1.0) — DOM-free generator, 89 recipes, types, and worker docs.
 
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 

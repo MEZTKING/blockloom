@@ -3,6 +3,7 @@ export {
   ENGINE_VERSION,
   MODIFIERS,
   generate,
+  generateSet,
   listMaterials,
   listModifiers,
   modifierLabel,

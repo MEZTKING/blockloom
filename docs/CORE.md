@@ -1,4 +1,4 @@
-# @blockloom/core v1.0.0
+# @blockloom/core v1.1.0
 
 Deterministic Minecraft texture generation with **no DOM, canvas, network, or AI dependency**.
 
@@ -6,15 +6,17 @@ It is the same engine used by the Blockloom app, local bridge, and CLI. Same inp
 
 ## Install / import
 
-The package lives in [`core/`](../core) and is published with the `core-v1.0.0` tag. Install the release tarball:
+The package lives in [`core/`](../core) and is published with the `core-v1.1.0` tag. Install the release tarball:
 
 ```bash
-npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.0.0/blockloom-core-1.0.0.tgz
+npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.1.0/blockloom-core-1.1.0.tgz
 ```
 
 Or copy `core/` into your project. It is plain ESM with no dependencies.
 
 ## API
+
+`generate()` returns one face; `generateSet()` returns the same resolved recipe and all three faces from one seed.
 
 ```js
 import {
@@ -122,6 +124,15 @@ await writeFile('red_concrete.png', PNG.sync.write(png));
 
 No `pngjs` is included in core; any PNG encoder works. The Blockloom bridge includes a dependency-free one in `server/png.mjs`.
 
+## Golden hashes
+
+`core/golden.json` is the machine-readable source of truth used by the golden tests. MSM can read it for its own seed tests:
+
+```js
+import golden from '@blockloom/core/golden.json' with { type: 'json' };
+// { engineVersion, seed, hash: 'sha256', cases: [{ prompt, face, size, hash }] }
+```
+
 ## Determinism and versioning
 
 - Same `recipe`, `seed`, `size`, `face`, `finish`, `grain`, `contrast`, `hue`, and `ENGINE_VERSION` → identical bytes.
@@ -157,4 +168,4 @@ MIT. Credit: **Blockloom / Lelouch**. The MIT licence in the repository root app
 
 ## Release
 
-Tag: `core-v1.0.0`
+Tag: `core-v1.1.0`

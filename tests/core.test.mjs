@@ -8,6 +8,7 @@ import {
   MATERIAL_GROUPS,
   MATERIALS,
   generate,
+  generateSet,
   getMaterial,
   listMaterials,
   listModifiers,
@@ -81,5 +82,16 @@ test('core modules contain no DOM, canvas, network, or randomness', () => {
     const source = readFileSync(join(root, 'core', file), 'utf8');
     assert.doesNotMatch(source, /\bdocument\.|\bwindow\.|HTMLCanvasElement|\bfetch\s*\(/, file);
     assert.doesNotMatch(source, /Math\.random|Date\.now/, file);
+  }
+});
+
+test('generateSet returns side, top, and bottom from one recipe', () => {
+  const set = generateSet({ prompt: 'cutout leaves', seed: 11, size: 16 });
+  assert.equal(set.version, ENGINE_VERSION);
+  assert.equal(set.recipe.materialId, 'leaves_cutout');
+  assert.deepEqual(Object.keys(set.faces), ['side', 'top', 'bottom']);
+  for (const face of ['side', 'top', 'bottom']) {
+    const single = generate({ recipe: set.recipe, seed: 11, size: 16, face });
+    assert.deepEqual([...set.faces[face].rgba], [...single.rgba]);
   }
 });

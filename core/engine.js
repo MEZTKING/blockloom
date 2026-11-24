@@ -1194,6 +1194,38 @@ export function generate(options = {}) {
   };
 }
 
+export function generateSet(options = {}) {
+  const recipe = resolveRecipe({ ...options, face: 'side' });
+  const faces = {};
+  for (const face of ['side', 'top', 'bottom']) {
+    const texture = renderTextureBuffer({
+      materialId: recipe.materialId,
+      seed: recipe.seed,
+      size: recipe.size,
+      face,
+      finish: recipe.finish,
+      grain: recipe.grain,
+      contrast: recipe.contrast,
+      hue: recipe.hue,
+      modifiers: recipe.modifiers,
+      promptColor: recipe.promptColor,
+      overlayAccent: recipe.accent,
+    });
+    faces[face] = {
+      width: texture.size,
+      height: texture.size,
+      rgba: texture.buffer,
+    };
+  }
+  return {
+    width: recipe.size,
+    height: recipe.size,
+    version: ENGINE_VERSION,
+    recipe: { ...recipe, engineVersion: ENGINE_VERSION },
+    faces,
+  };
+}
+
 export function listMaterials() {
   return MATERIALS.map((material) => ({ ...material, keywords: [...material.keywords] }));
 }
