@@ -32,7 +32,9 @@ import {
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
-const IS_STATIC_DEMO = location.hostname.endsWith('.github.io') || new URLSearchParams(location.search).has('static');
+const PARAMS = new URLSearchParams(location.search);
+const IS_STATIC_DEMO = location.hostname.endsWith('.github.io') || PARAMS.has('static');
+const PROCEDURAL_ONLY = IS_STATIC_DEMO || PARAMS.has('noai') || PARAMS.has('procedural') || !navigator.onLine;
 
 const els = {
   promptForm: $('#promptForm'),
@@ -819,14 +821,16 @@ async function openAiDialog() {
     document.body.classList.add('dialog-open');
     els.aiDialog.showModal();
   }
-  if (IS_STATIC_DEMO) {
-    setAiProviderBadge('offline', 'STATIC');
-    els.aiProviderName.textContent = 'GitHub Pages demo';
-    els.aiProviderModel.textContent = 'procedural only';
-    setAiStatus('This static demo cannot run the AI backend. Clone the repo and run npm run dev for the AI layer.', 'error');
+  if (PROCEDURAL_ONLY) {
+    setAiProviderBadge('offline', IS_STATIC_DEMO ? 'STATIC' : 'PROCEDURAL');
+    els.aiProviderName.textContent = IS_STATIC_DEMO ? 'GitHub Pages demo' : 'Procedural mode';
+    els.aiProviderModel.textContent = 'AI disabled';
+    setAiStatus('AI is unavailable in this offline / procedural session. Everything else still works.', 'error');
     els.aiForm.hidden = true;
     els.aiUnavailable.hidden = false;
-    els.aiSetupMessage.textContent = 'The Pages build is the procedural studio only. The full AI provider proxy lives in server.mjs and runs locally or on your own host.';
+    els.aiSetupMessage.textContent = IS_STATIC_DEMO
+      ? 'The Pages build is the procedural studio only. The full AI provider proxy lives in server.mjs and runs locally or on your own host.'
+      : 'Remove ?noai / ?procedural or go online, then reload to enable the optional AI layer.';
     return;
   }
   try {
@@ -2877,14 +2881,23 @@ function bindEvents() {
 
 function updateClock() {
   const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
-  els.footerClock.textContent = `LOCAL · ${time}`;
+  els.footerClock.textContent = `${navigator.onLine ? 'LOCAL' : 'OFFLINE'} · ${time}`;
+}
+
+async function registerOfflineWorker() {
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  try {
+    await navigator.serviceWorker.register(new URL('../sw.js', import.meta.url));
+  } catch (error) {
+    console.warn('Offline worker registration failed', error);
+  }
 }
 
 function init() {
-  if (IS_STATIC_DEMO) {
+  if (PROCEDURAL_ONLY) {
     const mode = $('#engineMode');
-    if (mode) mode.textContent = 'STATIC DEMO';
-    els.aiBtn?.setAttribute('title', 'Static Pages demo — run the Node server for AI');
+    if (mode) mode.textContent = IS_STATIC_DEMO ? 'STATIC DEMO' : 'PROCEDURAL';
+    els.aiBtn?.setAttribute('title', 'Procedural-only session — AI is off');
   }
   els.materialCount.textContent = `${MATERIALS.length} recipes`;
   els.popoverCount.textContent = `${MATERIALS.length} materials`;
@@ -2912,6 +2925,15 @@ function init() {
   loadSharedFromHash().catch((error) => console.error('Share load failed', error));
   updateClock();
   setInterval(updateClock, 60000);
+  window.addEventListener('online', () => {
+    updateClock();
+    toast('Back online · reload to re-enable AI; the studio itself is unchanged');
+  });
+  window.addEventListener('offline', () => {
+    updateClock();
+    toast('Offline · procedural studio, finisher, library, versions, share links, and packs still work');
+  });
+  registerOfflineWorker();
 }
 
 init();

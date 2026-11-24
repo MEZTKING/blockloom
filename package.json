@@ -1,14 +1,15 @@
 {
   "name": "blockloom",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "type": "module",
   "description": "A local-first Minecraft texture studio with prompt generation, AI candidates, pixel finisher, versioned library, shareable links, and resource-pack export.",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "check": "npm test && node --check server.mjs && node --check js/engine.js && node --check js/app.js && node --check js/ai.js && node --check js/finisher.js && node --check js/library.js && node --check js/resourcepack.js && node --check js/zip.js && node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('syntax + manifest ok')\"",
-    "test": "node --test tests/*.test.mjs"
+    "check": "npm test && node --check server.mjs && node --check sw.js && node --check server.mjs && node --check js/engine.js && node --check js/app.js && node --check js/ai.js && node --check js/finisher.js && node --check js/library.js && node --check js/resourcepack.js && node --check js/zip.js && node -e \"JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('syntax + manifest ok')\"",
+    "test": "node --test tests/*.test.mjs",
+    "dev:noai": "AI_ENABLED=false node server.mjs"
   },
   "engines": {
     "node": ">=18"

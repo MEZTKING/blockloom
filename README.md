@@ -1,6 +1,6 @@
 # Blockloom
 
-A local-first **Minecraft texture studio**: prompt-driven generation, AI candidate comparison, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export.
+A local-first, offline-capable **Minecraft texture studio**: prompt-driven generation, a real pixel finisher, an automatically archived and versioned library, shareable links, and proper resource-pack export. AI is optional — every core feature works without it.
 
 No account, no build step, no framework. Procedural work runs entirely in the browser.
 
@@ -62,6 +62,7 @@ Single-letter shortcuts are ignored while typing in a field. Dialogs use labelle
 - Draggable CSS 3D block preview and a 2 × 2 tile check.
 - Six sibling-seed cuts and exact reproducibility by seed.
 - A shareable compressed link carrying the current pixels and recipe.
+- An offline app shell; after first load, generation, finishing, library, versions, sharing, and packs work with no network.
 
 ## Texture finisher
 
@@ -133,6 +134,21 @@ The share icon beside Finish copies a URL that carries the current texture in it
 - Links are size-bounded. A tested 64 px texture fits in roughly 27 KB; over-limit links tell you to export a texture set instead.
 
 ![Shared texture link](screenshots/blockloom-shared.png)
+
+## Offline and AI-free use
+
+Blockloom does not need a server, network, or AI provider for its core loop.
+
+- After one online load, a service worker caches the complete app shell.
+- The footer switches to **OFFLINE** when the browser loses network access.
+- Generation, the finisher, library search, version restore, share-link creation, and pack export all keep working offline.
+- AI/API requests are never cached and are skipped entirely in procedural-only mode.
+- **AI is optional**: leave it unconfigured, run `npm run dev:noai`, pass `?noai`, or use the static Pages build.
+- On supporting browsers, the app is installable as a home-screen/standalone app.
+
+![Offline procedural studio](screenshots/blockloom-offline.png)
+
+The cache version lives in `sw.js` and is checked against `package.json` by the test suite. Bump both together when deploying.
 
 ## AI concept layer (optional)
 
@@ -274,6 +290,8 @@ js/finisher.js      pixel editor: tools, history, faces, live preview
 js/library.js       IndexedDB work archive, versions, fingerprints, favorites, storage estimate
 js/resourcepack.js  vanilla target mapping, format profiles, and multi-block resource-pack ZIP builder
 js/share.js         gzip/base64url share links and URL-fragment decoding
+sw.js              offline app-shell worker
+manifest.webmanifest  installable PWA metadata
 js/app.js           state, interactions, library/version/share UI, finisher, pack builder, exports
 js/zip.js           dependency-free stored ZIP writer
 server.mjs          static server + AI provider proxy
@@ -314,7 +332,8 @@ screenshots/        preview images
 - 32 px / 64 px rendering,
 - ZIP central-directory and payload integrity,
 - resource-pack target mappings and format profiles,
-- compressed share-link round-trips, fragment URLs, oversize rejection, and version checks.
+- compressed share-link round-trips, fragment URLs, oversize rejection, and version checks,
+- installable manifest metadata and complete offline app-shell cache coverage.
 
 `npm run check` adds syntax checks for every module and package manifest. Browser-level smoke tests have also been run manually in Chromium across desktop, mobile, and GitHub Pages, including keyboard shortcuts, pack reorder, version restore, and share-link handoff.
 
