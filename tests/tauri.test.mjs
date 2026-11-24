@@ -52,6 +52,8 @@ test('native shell disables AI, service worker, and uses the web share origin', 
 });
 
 test('inactive CI templates are present for later workflow-scope activation', () => {
+  assert.ok(existsSync(join(root, '.github/workflows/windows-build.yml')));
+  assert.ok(existsSync(join(root, '.github/workflows/android-build.yml')));
   assert.ok(existsSync(join(root, 'ci/windows-build.yml')));
   assert.ok(existsSync(join(root, 'ci/android-build.yml')));
   assert.ok(existsSync(join(root, 'scripts/install-workflows.ps1')));

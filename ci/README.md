@@ -1,16 +1,12 @@
 # CI templates
 
-These are **inactive templates**, not active GitHub Actions workflows. The repository publishing token used during development lacks GitHub's `workflow` scope, so files under `.github/workflows/` cannot be pushed by it.
-
-After granting the scope:
+These files mirror the active workflows in `.github/workflows/`. They are kept here so the CI setup can be restored or reviewed without workflow-scope access.
 
 ```powershell
-gh auth refresh -s workflow
 .\scripts\install-workflows.ps1
-git add .github/workflows
-git commit -m "Enable Windows and Android CI"
-git push
 ```
 
 - `windows-build.yml` builds and uploads MSI/NSIS installers, optionally signs with `WINDOWS_CERT_BASE64` + `WINDOWS_CERT_PASSWORD`, and drafts a release on version tags.
-- `android-build.yml` is a draft Android runner template; it has not been exercised yet. Tauri Android generation and the SAF export adapter still need validation.
+- `android-build.yml` builds a universal APK, signs it with a debug keystore when no release secret is configured, and can use `ANDROID_KEYSTORE_BASE64` / `ANDROID_KEYSTORE_PASSWORD` / `ANDROID_KEY_ALIAS` / `ANDROID_KEY_PASSWORD` for a persistent release key.
+
+Android SAF export and Play Store AAB/signing still need validation.
