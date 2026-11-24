@@ -1,5 +1,7 @@
 # Blockloom
 
+[![MIT License](https://img.shields.io/badge/license-MIT-b9ee6a.svg)](LICENSE) [![GitHub](https://img.shields.io/badge/GitHub-MEZTKING%2Fblockloom-181717?logo=github)](https://github.com/MEZTKING/blockloom)
+
 A local, prompt-driven **Minecraft texture studio** — a Bloxal-like flow with a procedural core, an optional real AI concept layer, and a proper resource-pack export.
 
 Describe a block, choose a material, tune the finish, and get a tileable 16 × 16 / 32 × 32 / 64 × 64 texture, a 3D block preview, and files you can actually install in Minecraft.

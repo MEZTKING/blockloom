@@ -10,5 +10,14 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "author": "Lelouch",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MEZTKING/blockloom.git"
+  },
+  "homepage": "https://github.com/MEZTKING/blockloom#readme",
+  "bugs": {
+    "url": "https://github.com/MEZTKING/blockloom/issues"
   }
 }
