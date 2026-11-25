@@ -18,6 +18,7 @@ import { APP_VERSION } from './version.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
 import { ITEM_MATERIALS, ITEM_TYPES, generateItem } from '../core/index.js';
 import { buildItemResourcePack } from './itempack.js';
+import { buildAnyResourcePack } from './anypack.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -93,6 +94,19 @@ const els = {
   itemVariantsWrap: $('#itemVariantsWrap'),
   itemVariants: $('#itemVariants'),
   variantSheetBtn: $('#variantSheetBtn'),
+  anyPackBtn: $('#anyPackBtn'),
+  anyPackDialog: $('#anyPackDialog'),
+  closeAnyPackBtn: $('#closeAnyPackBtn'),
+  anyPackName: $('#anyPackName'),
+  anyPackNamespace: $('#anyPackNamespace'),
+  anyPackCategory: $('#anyPackCategory'),
+  anyPackFormat: $('#anyPackFormat'),
+  anyPackAddBtn: $('#anyPackAddBtn'),
+  anyPackInput: $('#anyPackInput'),
+  anyPackList: $('#anyPackList'),
+  anyPackEmpty: $('#anyPackEmpty'),
+  anyPackCount: $('#anyPackCount'),
+  anyPackExportBtn: $('#anyPackExportBtn'),
   variantSheetDialog: $('#variantSheetDialog'),
   variantSheetGrid: $('#variantSheetGrid'),
   closeVariantSheetBtn: $('#closeVariantSheetBtn'),
@@ -267,6 +281,11 @@ const state = {
   itemTarget: 'iron_sword',
   itemImported: false,
   itemVariantRoot: 42317,
+  anyPackEntries: [],
+  anyPackNamespace: 'minecraft',
+  anyPackCategory: 'block',
+  anyPackFormat: 'modern',
+  anyPackName: 'Blockloom Custom Pack',
   dragDepth: 0,
 };
 
@@ -436,7 +455,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2535,7 +2554,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -2878,6 +2897,176 @@ function openVariantSheet() {
 
 function closeVariantSheet() {
   if (els.variantSheetDialog.open) els.variantSheetDialog.close();
+}
+
+
+/* ---------- Universal texture packer ---------- */
+function anyPackSafeName(name) {
+  return String(name).replace(/[^a-zA-Z0-9_.-]+/g, '_').replace(/^_+|_+$/g, '') || 'texture.png';
+}
+
+function anyPackAutoPath(file) {
+  const namespace = state.anyPackNamespace.replace(/[^a-z0-9_.-]/gi, '_') || 'minecraft';
+  const category = state.anyPackCategory || 'block';
+  return `assets/${namespace}/textures/${category}/${anyPackSafeName(file.name)}`;
+}
+
+function anyPackUniquePath(path, ignoreId = null) {
+  const used = new Set(state.anyPackEntries.filter((entry) => entry.id !== ignoreId).map((entry) => entry.path));
+  if (!used.has(path)) return path;
+  const match = path.match(/^(.*?)(\.png(?:\.mcmeta)?)$/);
+  if (!match) return path;
+  let index = 2;
+  let candidate = `${match[1]}_${index}${match[2]}`;
+  while (used.has(candidate)) {
+    index += 1;
+    candidate = `${match[1]}_${index}${match[2]}`;
+  }
+  return candidate;
+}
+
+function renderAnyPackEntries() {
+  const fragment = document.createDocumentFragment();
+  for (const entry of state.anyPackEntries) {
+    const row = document.createElement('div');
+    row.className = 'any-entry';
+    row.dataset.id = entry.id;
+    const thumb = document.createElement('div');
+    thumb.className = 'any-entry-thumb';
+    if (entry.url) {
+      const image = document.createElement('img');
+      image.src = entry.url;
+      image.alt = '';
+      thumb.append(image);
+    } else {
+      const label = document.createElement('span');
+      label.textContent = 'MC';
+      thumb.append(label);
+    }
+    const main = document.createElement('div');
+    main.className = 'any-entry-main';
+    const path = document.createElement('input');
+    path.type = 'text';
+    path.value = entry.path;
+    path.spellcheck = false;
+    path.setAttribute('aria-label', `Path for ${entry.file.name}`);
+    path.addEventListener('input', () => {
+      entry.path = path.value.trim();
+    });
+    const detail = document.createElement('small');
+    detail.textContent = `${entry.width ? `${entry.width}×${entry.height} · ` : ''}${(entry.file.size / 1024).toFixed(1)} KB · ${entry.file.name}`;
+    main.append(path, detail);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'any-entry-remove';
+    remove.textContent = '×';
+    remove.title = 'Remove file';
+    remove.setAttribute('aria-label', `Remove ${entry.file.name}`);
+    remove.addEventListener('click', () => {
+      if (entry.url) URL.revokeObjectURL(entry.url);
+      state.anyPackEntries = state.anyPackEntries.filter((item) => item.id !== entry.id);
+      renderAnyPackEntries();
+    });
+    row.append(thumb, main, remove);
+    fragment.append(row);
+  }
+  els.anyPackList.replaceChildren(fragment);
+  els.anyPackEmpty.hidden = state.anyPackEntries.length > 0;
+  els.anyPackCount.textContent = `${state.anyPackEntries.length} file${state.anyPackEntries.length === 1 ? '' : 's'}`;
+  els.anyPackExportBtn.disabled = state.anyPackEntries.length === 0;
+}
+
+async function addAnyPackFiles(files) {
+  for (const file of files) {
+    const isMeta = file.name.toLowerCase().endsWith('.png.mcmeta');
+    const isPng = file.type === 'image/png' && file.name.toLowerCase().endsWith('.png');
+    if (!isMeta && !isPng) {
+      toast(`${file.name} is not a PNG or .png.mcmeta file.`, true);
+      continue;
+    }
+    let width = 0;
+    let height = 0;
+    if (isPng) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        width = bitmap.width;
+        height = bitmap.height;
+        bitmap.close?.();
+      } catch {
+        toast(`${file.name} could not be decoded.`, true);
+        continue;
+      }
+    }
+    const entry = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      file,
+      path: anyPackUniquePath(anyPackAutoPath(file)),
+      width,
+      height,
+      url: isPng ? URL.createObjectURL(file) : null,
+    };
+    state.anyPackEntries.push(entry);
+  }
+  renderAnyPackEntries();
+}
+
+function syncAnyPackSettings() {
+  state.anyPackName = els.anyPackName.value.trim() || 'Blockloom Custom Pack';
+  state.anyPackNamespace = els.anyPackNamespace.value.trim() || 'minecraft';
+  state.anyPackCategory = els.anyPackCategory.value;
+  state.anyPackFormat = els.anyPackFormat.value;
+}
+
+function openAnyPack() {
+  els.anyPackName.value = state.anyPackName;
+  els.anyPackNamespace.value = state.anyPackNamespace;
+  els.anyPackCategory.value = state.anyPackCategory;
+  els.anyPackFormat.replaceChildren();
+  for (const format of PACK_FORMATS) {
+    const option = document.createElement('option');
+    option.value = format.id;
+    option.textContent = `${format.label} · F${format.packFormat}`;
+    els.anyPackFormat.append(option);
+  }
+  els.anyPackFormat.value = state.anyPackFormat;
+  renderAnyPackEntries();
+  if (!els.anyPackDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.anyPackDialog.showModal();
+  }
+}
+
+function closeAnyPack() {
+  if (els.anyPackDialog.open) els.anyPackDialog.close();
+}
+
+async function exportAnyPack() {
+  if (!state.anyPackEntries.length || els.anyPackExportBtn.disabled) return;
+  const paths = new Set();
+  for (const entry of state.anyPackEntries) {
+    if (!entry.path || paths.has(entry.path)) {
+      toast(`Duplicate or empty path: ${entry.path || entry.file.name}`, true);
+      return;
+    }
+    paths.add(entry.path);
+  }
+  els.anyPackExportBtn.disabled = true;
+  const label = els.anyPackExportBtn.textContent;
+  els.anyPackExportBtn.textContent = 'Packing…';
+  try {
+    const { blob, filename } = await buildAnyResourcePack(state.anyPackEntries, {
+      formatId: state.anyPackFormat,
+      packName: state.anyPackName,
+    });
+    downloadBlob(blob, filename);
+    toast(`Universal pack exported · ${state.anyPackEntries.length} files`);
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not build the universal pack.', true);
+  } finally {
+    els.anyPackExportBtn.disabled = state.anyPackEntries.length === 0;
+    els.anyPackExportBtn.textContent = label;
+  }
 }
 
 
@@ -3433,6 +3622,22 @@ function bindEvents() {
     if (event.target === els.variantSheetDialog) closeVariantSheet();
   });
   els.variantSheetDialog.addEventListener('close', () => syncDialogBody());
+  els.anyPackBtn.addEventListener('click', openAnyPack);
+  els.closeAnyPackBtn.addEventListener('click', closeAnyPack);
+  els.anyPackDialog.addEventListener('click', (event) => {
+    if (event.target === els.anyPackDialog) closeAnyPack();
+  });
+  els.anyPackDialog.addEventListener('close', () => syncDialogBody());
+  els.anyPackAddBtn.addEventListener('click', () => els.anyPackInput.click());
+  els.anyPackInput.addEventListener('change', () => {
+    const files = [...(els.anyPackInput.files || [])];
+    els.anyPackInput.value = '';
+    if (files.length) addAnyPackFiles(files);
+  });
+  for (const input of [els.anyPackName, els.anyPackNamespace]) input.addEventListener('input', syncAnyPackSettings);
+  els.anyPackCategory.addEventListener('change', syncAnyPackSettings);
+  els.anyPackFormat.addEventListener('change', syncAnyPackSettings);
+  els.anyPackExportBtn.addEventListener('click', exportAnyPack);
   els.variantSheetGrid.addEventListener('click', (event) => {
     const card = event.target.closest('[data-seed]');
     if (!card) return;
@@ -3595,6 +3800,9 @@ function bindEvents() {
     } else if (key === 'w') {
       event.preventDefault();
       openItemStudio();
+    } else if (key === 'u') {
+      event.preventDefault();
+      openAnyPack();
     } else if (key === 's') {
       event.preventDefault();
       copyShareLink();

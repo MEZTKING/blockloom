@@ -202,6 +202,18 @@ This is separate from the block library/finisher for now: item sprites export di
 
 Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
 
+## Universal texture packer
+
+Open **Universal texture pack** in the left panel or press **U**.
+
+- Add any PNG or `.png.mcmeta` file.
+- Auto-paths under `assets/<namespace>/textures/<folder>/`.
+- Edit each full path independently.
+- Preserve non-square sheets and animation metadata byte-for-byte.
+- Choose pack format; export with `pack.mcmeta`, `pack.png`, README, and a JSON manifest.
+
+This is the packaging path for textures from Bloxal, other generators, or manual pixel art. It is texture-only: it does not add models, item definitions, blockstates, sounds, language files, or new blocks/items.
+
 ## Texture generation
 
 - 89 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
@@ -216,6 +228,7 @@ Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
 - A local HTTP API and CLI for generating block PNGs, full texture sets, and weapon/item sprites for MCSuperMods and other applications.
 - A **Weapon / item studio** for swords, axes, pickaxes, shovels, bows, and shields, with PNG and item-pack export.
+- A **Universal texture packer** for any PNG path under `assets/<namespace>/textures/`, including entity, armor, GUI, particle, painting, non-square sheets, and `.png.mcmeta` animation metadata.
 
 ## Texture finisher
 
@@ -474,6 +487,7 @@ screenshots/        preview images
 
 - Item sprites are export-only for now; they do not enter the block library, finisher, or block pack builder.
 - Item packs override item texture paths only; they do not add new items or item models.
+- The universal packer can package any texture path, but Blockloom still only generates blocks and a limited set of items/weapons procedurally.
 
 - The local bridge is procedural only; it never calls an AI provider.
 - The Tauri Windows/Android apps do **not** start the HTTP bridge. Run `npm run bridge` separately for MCSuperMods or other apps.

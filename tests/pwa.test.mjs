@@ -37,6 +37,7 @@ test('service worker caches the full app shell', () => {
     'core/data.js',
     'core/items.js',
     'js/itempack.js',
+    'js/anypack.js',
     'js/ai.js',
     'js/finisher.js',
     'js/library.js',

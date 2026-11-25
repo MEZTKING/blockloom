@@ -21,6 +21,7 @@ const ASSETS = [
   './core/data.js',
   './core/items.js',
   './js/itempack.js',
+  './js/anypack.js',
   './js/ai.js',
   './js/finisher.js',
   './js/library.js',
