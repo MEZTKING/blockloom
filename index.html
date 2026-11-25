@@ -312,6 +312,7 @@
           <div class="eyebrow"><span>03</span> Alternate cuts</div>
           <h2>Variations</h2>
         </div>
+        <button class="variant-sheet-btn" id="variantSheetBtn" type="button" title="Open a 16-variant contact sheet" aria-label="Open 16-variant sheet">16×</button>
         <button class="icon-button" id="rerollBtn" type="button" title="Reroll variations" aria-label="Reroll variations">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 5v5h-5M4 19v-5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.2 9A7 7 0 0 0 6.4 6.4L4 8.5m1.8 6.5A7 7 0 0 0 17.6 17.6L20 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
@@ -735,6 +736,18 @@
     </div>
   </dialog>
 
+
+  <!-- 16-variant block contact sheet -->
+  <dialog class="variant-sheet-dialog" id="variantSheetDialog" aria-labelledby="variantSheetTitle">
+    <div class="variant-sheet-shell">
+      <header class="variant-sheet-head">
+        <div><div class="variant-sheet-kicker"><span></span>ALTERNATE CUTS</div><h2 id="variantSheetTitle">16 variations.</h2><p>One recipe, sixteen sibling seeds. Pick a cut.</p></div>
+        <button class="icon-button" id="closeVariantSheetBtn" type="button" aria-label="Close variant sheet"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="variant-sheet-grid" id="variantSheetGrid"></div>
+      <footer class="variant-sheet-foot">Click any cut to load it into the studio.</footer>
+    </div>
+  </dialog>
 
   <!-- Item / weapon studio -->
   <dialog class="item-dialog" id="itemDialog" aria-labelledby="itemDialogTitle">

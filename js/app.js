@@ -92,6 +92,10 @@ const els = {
   itemTargetInput: $('#itemTargetInput'),
   itemVariantsWrap: $('#itemVariantsWrap'),
   itemVariants: $('#itemVariants'),
+  variantSheetBtn: $('#variantSheetBtn'),
+  variantSheetDialog: $('#variantSheetDialog'),
+  variantSheetGrid: $('#variantSheetGrid'),
+  closeVariantSheetBtn: $('#closeVariantSheetBtn'),
   importInput: $('#importInput'),
   dropOverlay: $('#dropOverlay'),
   textureTitle: $('#textureTitle'),
@@ -432,7 +436,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -512,6 +516,8 @@ function updateStageDetails(textures) {
             ? 'Edited copy'
             : 'Saved work'
     : FINISHES.find((f) => f.id === state.finish)?.label || 'Balanced';
+  els.variantSheetBtn.disabled = custom;
+  els.variantSheetBtn.title = custom ? 'Procedural recipes have 16 variations' : 'Open a 16-variant contact sheet';
   els.aiBadge.hidden = !custom;
   els.aiBadge.classList.toggle('is-saved', savedActive);
   if (els.aiBadgeLabel) {
@@ -2529,7 +2535,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -2820,6 +2826,58 @@ async function exportItemPack() {
     els.itemPackBtn.disabled = false;
     els.itemPackBtn.textContent = label;
   }
+}
+
+
+/* ---------- 16-variant block contact sheet ---------- */
+const SHEET_OFFSETS = [
+  211, 487, 881, 1327, 1879, 2473, 3191, 3943,
+  4733, 5557, 6421, 7319, 8243, 9203, 10193, 11213,
+];
+
+function variantSheetSeeds() {
+  return SHEET_OFFSETS.map((offset, index) => {
+    const seed = ((state.seed * 17 + offset * 37) % 900000) + 1000;
+    return seed === state.seed ? seed + index + 1 : seed;
+  });
+}
+
+function renderVariantSheet() {
+  const seeds = variantSheetSeeds();
+  const fragment = document.createDocumentFragment();
+  for (const seed of seeds) {
+    const textures = renderTextureSet(buildParams(seed));
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `variant-sheet-card${seed === state.seed ? ' is-current' : ''}`;
+    button.dataset.seed = String(seed);
+    button.setAttribute('aria-label', `Load variation ${seed}`);
+    const canvas = document.createElement('canvas');
+    canvas.width = 240;
+    canvas.height = 200;
+    drawIsoCube(canvas, { side: textures.side.canvas, top: textures.top.canvas }, { shadow: true, pad: 0.02 });
+    const label = document.createElement('span');
+    label.textContent = `#${seed}`;
+    button.append(canvas, label);
+    fragment.append(button);
+  }
+  els.variantSheetGrid.replaceChildren(fragment);
+}
+
+function openVariantSheet() {
+  if (hasCustomTexture()) {
+    toast('Variations are available for procedural recipes.', true);
+    return;
+  }
+  renderVariantSheet();
+  if (!els.variantSheetDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.variantSheetDialog.showModal();
+  }
+}
+
+function closeVariantSheet() {
+  if (els.variantSheetDialog.open) els.variantSheetDialog.close();
 }
 
 
@@ -3369,6 +3427,20 @@ function bindEvents() {
   els.itemDownloadBtn.addEventListener('click', downloadItemPng);
   els.itemCopyBtn.addEventListener('click', copyItemPng);
   els.itemPackBtn.addEventListener('click', exportItemPack);
+  els.variantSheetBtn.addEventListener('click', openVariantSheet);
+  els.closeVariantSheetBtn.addEventListener('click', closeVariantSheet);
+  els.variantSheetDialog.addEventListener('click', (event) => {
+    if (event.target === els.variantSheetDialog) closeVariantSheet();
+  });
+  els.variantSheetDialog.addEventListener('close', () => syncDialogBody());
+  els.variantSheetGrid.addEventListener('click', (event) => {
+    const card = event.target.closest('[data-seed]');
+    if (!card) return;
+    const seed = Number(card.dataset.seed);
+    closeVariantSheet();
+    setSeed(seed, { full: true });
+    toast('Loaded variation #' + seed);
+  });
   els.itemImportBtn.addEventListener('click', () => els.itemImportInput.click());
   els.itemImportInput.addEventListener('change', () => {
     const file = els.itemImportInput.files?.[0];

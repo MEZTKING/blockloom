@@ -194,11 +194,13 @@ Open **Weapon / item studio** in the left panel or press **W**.
 - Item pack path: `assets/minecraft/textures/item/<item>.png`.
 - Vanilla IDs are used for the five vanilla tool tiers; copper/emerald produce modded IDs.
 
+![16-variant block sheet](screenshots/blockloom-variant-sheet.png)
+
 ![Item studio](screenshots/blockloom-item-studio.png)
 
 This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive. Web-generated textures work through the same local import path; Blockloom does not scrape or log into external services.
 
-The 16-variant sheet is modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
+Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
 
 ## Texture generation
 
@@ -208,7 +210,7 @@ The 16-variant sheet is modeled on the workflow observed in Bloxal’s public st
 - Colour words are context-aware: `cyan crystals` becomes an accent; `blue stone` tints the base.
 - Rugged / Balanced / Smooth finish, grain, contrast, and hue controls.
 - Draggable CSS 3D block preview and a 2 × 2 tile check.
-- Six sibling-seed cuts and exact reproducibility by seed.
+- Six sibling-seed cuts, a 16-variant block contact sheet, and exact reproducibility by seed.
 - A shareable compressed link carrying the current pixels and recipe.
 - An offline app shell; after first load, generation, import, finishing, library, versions, sharing, and packs work with no network.
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
