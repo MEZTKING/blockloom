@@ -24,3 +24,5 @@ src-tauri/gen/
 
 # Local downloaded CI artifacts
 artifacts/
+
+inbox/
