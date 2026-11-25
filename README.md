@@ -207,6 +207,10 @@ Every card opens the relevant studio or format template.
 
 The Universal Packer autosaves its draft files and settings in IndexedDB. Reopen it after a reload to continue; **Clear draft** removes the stored work.
 
+**Snapshot** stores a manual restore point (latest 16 kept). **History** restores or deletes snapshots.
+
+**Share** puts the current workspace into a compressed URL when it fits under the link limit. The recipient opens the link and gets the same files, paths, and pack settings. Large packs should be exported as ZIP instead.
+
 ## Pixel editor
 
 ![Pixel editor](screenshots/blockloom-pixel-editor.png)

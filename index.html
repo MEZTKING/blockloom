@@ -881,7 +881,19 @@
         <div class="any-pack-list" id="anyPackList"></div>
         <div class="any-pack-empty" id="anyPackEmpty"><strong>No textures yet.</strong><span>Add a block, item, entity, armor, GUI, particle, painting, or animated texture.</span></div>
       </div>
-      <footer class="any-pack-foot"><span><span id="anyPackCount">0 files</span> · <span id="anyPackHealth">No format warnings</span> · <span id="anyPackDraftState">Draft</span></span><span class="any-pack-foot-actions"><button class="btn btn-outline" id="anyPackClearBtn" type="button">Clear draft</button><button class="btn btn-primary" id="anyPackExportBtn" type="button" disabled>Export universal pack</button></span></footer>
+      <footer class="any-pack-foot"><span><span id="anyPackCount">0 files</span> · <span id="anyPackHealth">No format warnings</span> · <span id="anyPackDraftState">Draft</span></span><span class="any-pack-foot-actions"><button class="btn btn-outline" id="anyPackSnapshotBtn" type="button">Snapshot</button><button class="btn btn-outline" id="anyPackHistoryBtn" type="button">History</button><button class="btn btn-outline" id="anyPackShareBtn" type="button">Share</button><button class="btn btn-outline" id="anyPackClearBtn" type="button">Clear draft</button><button class="btn btn-primary" id="anyPackExportBtn" type="button" disabled>Export universal pack</button></span></footer>
+    </div>
+  </dialog>
+
+  <!-- Universal pack snapshot history -->
+  <dialog class="pack-history-dialog" id="packHistoryDialog" aria-labelledby="packHistoryTitle">
+    <div class="pack-history-shell">
+      <header class="pack-history-head">
+        <div><div class="pack-history-kicker"><span></span>PACK SNAPSHOTS</div><h2 id="packHistoryTitle">Draft history</h2><p>Manual snapshots of the Universal Packer workspace. The latest 16 are kept.</p></div>
+        <button class="icon-button" id="closePackHistoryBtn" type="button" aria-label="Close snapshot history"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="pack-history-list" id="packHistoryList"></div>
+      <div class="pack-history-empty" id="packHistoryEmpty">No snapshots yet. Use **Snapshot** in the Universal Packer footer.</div>
     </div>
   </dialog>
 

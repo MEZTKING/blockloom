@@ -21,7 +21,7 @@ import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
 import { PixelEditor } from './pixedit.js';
-import { saveAnyPackDraft, loadAnyPackDraft, clearAnyPackDraft as clearAnyPackDraftStore } from './drafts.js';
+import { saveAnyPackDraft, loadAnyPackDraft, clearAnyPackDraft as clearAnyPackDraftStore, savePackSnapshot, listPackSnapshots, getPackSnapshot, deletePackSnapshot } from './drafts.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -122,6 +122,13 @@ const els = {
   anyPackHealth: $('#anyPackHealth'),
   anyPackDraftState: $('#anyPackDraftState'),
   anyPackClearBtn: $('#anyPackClearBtn'),
+  anyPackSnapshotBtn: $('#anyPackSnapshotBtn'),
+  anyPackShareBtn: $('#anyPackShareBtn'),
+  anyPackHistoryBtn: $('#anyPackHistoryBtn'),
+  packHistoryDialog: $('#packHistoryDialog'),
+  packHistoryList: $('#packHistoryList'),
+  packHistoryEmpty: $('#packHistoryEmpty'),
+  closePackHistoryBtn: $('#closePackHistoryBtn'),
   anyPackExportBtn: $('#anyPackExportBtn'),
   anyPackTemplate: $('#anyPackTemplate'),
   anyPackTemplateNote: $('#anyPackTemplateNote'),
@@ -481,7 +488,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog, els.pixelDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog, els.pixelDialog, els.packHistoryDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2343,6 +2350,10 @@ async function loadSharedFromHash() {
   try {
     const payload = await readShareHash(location.hash);
     if (!payload) return false;
+    if (payload.kind === 'anypack') {
+      await importAnyPackShare(payload);
+      return true;
+    }
     if (!payload.faces?.side || !payload.faces?.top || !payload.faces?.bottom || !payload.size) {
       throw new Error('The share link is missing texture faces.');
     }
@@ -2580,7 +2591,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open || els.pixelDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open || els.pixelDialog.open || els.packHistoryDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -3266,6 +3277,184 @@ async function clearAnyPackDraft() {
   renderAnyPackEntries();
   if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Draft empty';
   toast('Universal pack draft cleared');
+}
+
+function anyPackSettings() {
+  return {
+    name: state.anyPackName,
+    namespace: state.anyPackNamespace,
+    category: state.anyPackCategory,
+    format: state.anyPackFormat,
+  };
+}
+
+async function snapshotAnyPack() {
+  if (!state.anyPackEntries.length) {
+    toast('Add at least one file before snapshotting.', true);
+    return;
+  }
+  try {
+    await savePackSnapshot(state.anyPackEntries, anyPackSettings(), `${state.anyPackEntries.length} files`);
+    if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Snapshot saved';
+    toast('Pack snapshot saved');
+  } catch {
+    toast('Could not save snapshot.', true);
+  }
+}
+
+async function openPackHistory() {
+  if (!els.packHistoryDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.packHistoryDialog.showModal();
+  }
+  await renderPackHistory();
+}
+
+async function renderPackHistory() {
+  try {
+    const records = await listPackSnapshots();
+    els.packHistoryEmpty.hidden = records.length > 0;
+    const fragment = document.createDocumentFragment();
+    for (const record of records) {
+      const row = document.createElement('div');
+      row.className = 'pack-history-item';
+      const meta = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = `${record.count} file${record.count === 1 ? '' : 's'} · ${record.settings?.name || 'Pack'}`;
+      const sub = document.createElement('small');
+      sub.textContent = new Date(record.savedAt).toLocaleString();
+      meta.append(title, sub);
+      const actions = document.createElement('div');
+      actions.className = 'pack-history-actions';
+      const restore = document.createElement('button');
+      restore.type = 'button';
+      restore.className = 'btn btn-outline';
+      restore.textContent = 'Restore';
+      restore.addEventListener('click', () => restorePackSnapshot(record.id));
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'btn btn-outline';
+      remove.textContent = 'Delete';
+      remove.addEventListener('click', async () => {
+        await deletePackSnapshot(record.id);
+        await renderPackHistory();
+      });
+      actions.append(restore, remove);
+      row.append(meta, actions);
+      fragment.append(row);
+    }
+    els.packHistoryList.replaceChildren(fragment);
+  } catch {
+    els.packHistoryEmpty.hidden = false;
+    els.packHistoryEmpty.textContent = 'Snapshot history is unavailable in this browser.';
+  }
+}
+
+async function restorePackSnapshot(id) {
+  try {
+    const record = await getPackSnapshot(id);
+    if (!record) return;
+    for (const entry of state.anyPackEntries) if (entry.url) URL.revokeObjectURL(entry.url);
+    state.anyPackEntries = record.entries.map((entry) => ({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      file: entry.file,
+      path: entry.path,
+      width: entry.width,
+      height: entry.height,
+      alphaPct: entry.alphaPct,
+      colors: entry.colors,
+      url: entry.file?.type === 'image/png' ? URL.createObjectURL(entry.file) : null,
+    }));
+    if (record.settings) {
+      state.anyPackName = record.settings.name || state.anyPackName;
+      state.anyPackNamespace = record.settings.namespace || state.anyPackNamespace;
+      state.anyPackCategory = record.settings.category || state.anyPackCategory;
+      state.anyPackFormat = record.settings.format || state.anyPackFormat;
+      els.anyPackName.value = state.anyPackName;
+      els.anyPackNamespace.value = state.anyPackNamespace;
+      els.anyPackCategory.value = state.anyPackCategory;
+      els.anyPackFormat.value = state.anyPackFormat;
+    }
+    renderAnyPackEntries();
+    scheduleAnyPackDraft();
+    els.packHistoryDialog.close();
+    toast('Snapshot restored');
+  } catch {
+    toast('Could not restore snapshot.', true);
+  }
+}
+
+function fileDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function shareAnyPack() {
+  if (!state.anyPackEntries.length || els.anyPackShareBtn.disabled) return;
+  els.anyPackShareBtn.disabled = true;
+  try {
+    const entries = [];
+    for (const entry of state.anyPackEntries) {
+      entries.push({ path: entry.path, data: await fileDataUrl(entry.file) });
+    }
+    const payload = { v: 1, kind: 'anypack', name: state.anyPackName, format: state.anyPackFormat, entries };
+    const url = await makeShareUrl(payload, IS_TAURI
+      ? { origin: 'https://meztking.github.io', pathname: '/blockloom/', maxLength: 32000 }
+      : { maxLength: 32000 });
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(url);
+      toast('Pack share link copied');
+    } catch {
+      window.prompt('Copy this Blockloom pack share link:', url);
+      toast('Pack share link ready');
+    }
+  } catch (error) {
+    toast(error.message || 'This pack is too large for a share link. Use Snapshot or ZIP export.', true);
+  } finally {
+    els.anyPackShareBtn.disabled = false;
+  }
+}
+
+async function importAnyPackShare(payload) {
+  const entries = [];
+  for (const source of payload.entries || []) {
+    if (!source?.data || !source.path) continue;
+    const blob = await (await fetch(source.data)).blob();
+    const name = source.path.split('/').pop();
+    if (source.path.endsWith('.mcmeta')) {
+      entries.push({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        file: new File([blob], name, { type: 'application/json' }),
+        path: source.path, width: 0, height: 0, alphaPct: null, colors: 0, url: null,
+      });
+      continue;
+    }
+    const bitmap = await createImageBitmap(blob);
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0);
+    bitmap.close?.();
+    const stats = analyzeCanvas(canvas);
+    const file = new File([blob], name, { type: 'image/png' });
+    entries.push({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      file, path: source.path, ...stats, url: URL.createObjectURL(file),
+    });
+  }
+  if (!entries.length) throw new Error('The pack share link contained no files.');
+  state.anyPackEntries = entries;
+  state.anyPackName = payload.name || 'Shared Blockloom Pack';
+  state.anyPackFormat = payload.format || 'modern';
+  await openAnyPack();
+  renderAnyPackEntries();
+  scheduleAnyPackDraft();
+  history.replaceState(null, '', location.pathname + location.search);
 }
 
 async function openAnyPack(templateId = null) {
@@ -4035,6 +4224,12 @@ function bindEvents() {
   els.anyPackFormat.addEventListener('change', syncAnyPackSettings);
   els.anyPackExportBtn.addEventListener('click', exportAnyPack);
   els.anyPackClearBtn.addEventListener('click', clearAnyPackDraft);
+  els.anyPackSnapshotBtn.addEventListener('click', snapshotAnyPack);
+  els.anyPackHistoryBtn.addEventListener('click', openPackHistory);
+  els.anyPackShareBtn.addEventListener('click', shareAnyPack);
+  els.closePackHistoryBtn.addEventListener('click', () => els.packHistoryDialog.close());
+  els.packHistoryDialog.addEventListener('click', (event) => { if (event.target === els.packHistoryDialog) els.packHistoryDialog.close(); });
+  els.packHistoryDialog.addEventListener('close', () => syncDialogBody());
   els.anyPackTemplate.addEventListener('change', syncAnyPackTemplate);
   els.anyPackTemplateBlankBtn.addEventListener('click', () => downloadTemplate(false));
   els.anyPackTemplateGuideBtn.addEventListener('click', () => downloadTemplate(true));
