@@ -26,7 +26,7 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
-**Core package:** [@blockloom/core v1.3.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.4.0) — DOM-free block + item generator, 90 recipes, types, and worker docs.
+**Core package:** [@blockloom/core v1.4.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.4.0) — DOM-free block + item generator, 90 recipes, types, and worker docs.
 
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 
@@ -205,6 +205,37 @@ The front page maps every texture category and labels the honest mode for each:
 
 Every card opens the relevant studio or format template.
 
+## Pixel editor
+
+![Pixel editor](screenshots/blockloom-pixel-editor.png)
+
+Open **Universal texture pack → Edit** after choosing a format template.
+
+- Pencil, eraser, flood fill, eyedropper
+- Alpha colour, sampled palette
+- Undo / redo, grid, 256–768 px zoom
+- Checkerboard transparency
+- Animation frame timeline with add/remove, frame selection, and frame time
+- **Save to pack** or download PNG / `.mcmeta`
+
+Animation templates are written as a vertical strip plus matching `.png.mcmeta`; static templates go directly into the universal pack at their format path.
+
+## Format templates
+
+Blank and guided Java 26.3 templates are available from the Universal Packer:
+
+| Template | Size | Path |
+|---|---|---|
+| Armor layer | 64×32 | `entity/equipment/humanoid/` |
+| Leggings layer | 64×32 | `entity/equipment/humanoid_leggings/` |
+| Player skin | 64×64 | download only |
+| Entity skin | 64×64 | `entity/` |
+| GUI container | 256×256 | `gui/container/` |
+| Particle | 8×8 | `particle/` |
+| Animation strip | 16×64 | `block/` + `.mcmeta` |
+| Painting | 16×16 | `painting/` |
+| Sun | 32×32 | `environment/celestial/` |
+
 ## Texture generation
 
 - 90 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
@@ -225,6 +256,7 @@ Every card opens the relevant studio or format template.
 - A **front-page capability map** covering blocks, theme kits, items, mob/player skins, armor, GUI, animations, particles, paintings, environment, and universal packs.
 - A **Universal texture packer** for any PNG path under `assets/<namespace>/textures/`, including entity, armor, GUI, particle, painting, non-square sheets, and `.png.mcmeta` animation metadata.
 - **Blank and guided Java 26.3 format templates** for armor layers, player/entity skins, GUI containers, particles, animation strips, paintings, and the sun.
+- A built-in **pixel editor** with pencil, eraser, fill, eyedropper, undo/redo, grid, zoom, palette, and animation-frame timeline.
 
 ## Texture finisher
 
