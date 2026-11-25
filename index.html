@@ -104,9 +104,9 @@
         <input id="importInput" type="file" accept="image/png,image/*" hidden />
       </div>
 
-      <button class="import-button item-studio-button" id="itemStudioBtn" type="button" title="Open the weapon / item studio (W)">
+      <button class="import-button item-studio-button" id="itemStudioBtn" type="button" title="Import and package an item PNG (W)">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 4.5 5-1-1 5-8.6 8.6-3.9 1.2 1.2-3.9 8.3-8.3ZM4 20l3.2-3.2M13 6l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span><strong>Weapon / item studio</strong><small>Swords · axes · tools · bows</small></span>
+        <span><strong>Item pack studio</strong><small>Import · target · item pack</small></span>
         <kbd>W</kbd>
       </button>
 
@@ -352,7 +352,7 @@
   <footer class="site-footer">
     <span>BLOCKLOOM / PROCEDURAL PIXEL TOOLS</span>
     <span class="footer-center">Built for block builders. Not affiliated with Mojang or Microsoft.</span>
-    <span class="footer-version"><button class="footer-update" id="updateBtn" type="button" hidden>Check updates</button><a class="footer-api" id="footerApi" href="/api" target="_blank" rel="noopener" hidden>API</a><span>v1.10 · <span id="footerClock">LOCAL</span></span></span>
+    <span class="footer-version"><button class="footer-update" id="fontScaleBtn" type="button">Text 110%</button><button class="footer-update" id="updateBtn" type="button" hidden>Check updates</button><a class="footer-api" id="footerApi" href="/api" target="_blank" rel="noopener" hidden>API</a><span>v1.10 · <span id="footerClock">LOCAL</span></span></span>
   </footer>
 
   <!-- Material picker -->
@@ -827,14 +827,14 @@
     </div>
   </dialog>
 
-  <!-- Item / weapon studio -->
+  <!-- Item pack studio -->
   <dialog class="item-dialog" id="itemDialog" aria-labelledby="itemDialogTitle">
     <div class="item-shell">
       <header class="item-head">
         <div>
-          <div class="item-kicker"><span></span>ITEM STUDIO</div>
-          <h2 id="itemDialogTitle">Forge a weapon.</h2>
-          <p>Deterministic item sprites, exported as PNG or a drop-in item pack.</p>
+          <div class="item-kicker"><span></span>ITEM PACK STUDIO</div>
+          <h2 id="itemDialogTitle">Package an item.</h2>
+          <p>Import a transparent item PNG from Bloxal or any editor, set its target id, and export a drop-in item pack. No procedural weapon tiles.</p>
         </div>
         <button class="icon-button" id="closeItemBtn" type="button" aria-label="Close item studio">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -843,36 +843,23 @@
       <div class="item-body">
         <section class="item-controls" aria-label="Item settings">
           <div class="item-control-block">
-            <div class="item-control-head"><span>Weapon</span><span>6 types</span></div>
-            <div class="item-type-grid" id="itemTypes"></div>
-          </div>
-          <div class="item-control-block">
-            <label class="item-field"><span>Material</span><select id="itemMaterial" aria-label="Item material"></select></label>
+            <div class="item-control-head"><span>Package</span><span>import only</span></div>
             <label class="item-field"><span>Pack format</span><select id="itemFormat" aria-label="Item pack format"></select></label>
             <label class="item-field"><span>Target id</span><input id="itemTargetInput" type="text" maxlength="64" spellcheck="false" aria-label="Item target id" /></label>
           </div>
-          <div class="item-control-block item-inline">
-            <label class="item-field item-seed"><span>Seed</span><input id="itemSeed" type="number" min="1" max="999999999" inputmode="numeric" /></label>
-            <button class="item-dice" id="itemDice" type="button" title="Random seed" aria-label="Random seed">⚄</button>
-            <label class="item-field item-size"><span>Size</span><select id="itemSize" aria-label="Item texture size"><option>16</option><option>32</option><option>64</option></select></label>
-          </div>
-          <div class="item-note">Textures are transparent PNGs. The item pack overrides <code>assets/minecraft/textures/item/&lt;id&gt;.png</code>.</div>
+          <div class="item-note">The item pack overrides <code>assets/minecraft/textures/item/&lt;id&gt;.png</code>. Imported sprites keep their transparency.</div>
         </section>
         <section class="item-preview-panel" aria-label="Item preview">
           <div class="item-preview-frame"><canvas id="itemPreview" width="384" height="384" role="img" aria-label="Item sprite preview"></canvas></div>
           <div class="item-preview-meta">
-            <div><h3 id="itemTitle">Iron Sword</h3><p id="itemTarget">iron_sword</p></div>
+            <div><h3 id="itemTitle">No item selected</h3><p id="itemTarget">Import a PNG to begin</p></div>
             <div class="item-palette" id="itemPalette"></div>
           </div>
-          <div class="item-variants-wrap" id="itemVariantsWrap">
-            <div class="item-variants-head"><span>16 VARIANTS</span><span>Click a seed</span></div>
-            <div class="item-variants-grid" id="itemVariants"></div>
-          </div>
           <div class="item-actions">
-            <button class="btn btn-outline" id="itemDownloadBtn" type="button">Download PNG</button>
-            <button class="btn btn-outline" id="itemCopyBtn" type="button">Copy PNG</button>
-            <button class="btn btn-primary" id="itemPackBtn" type="button">Export item pack</button>
-            <button class="btn btn-outline" id="itemImportBtn" type="button">Import PNG</button>
+            <button class="btn btn-primary" id="itemImportBtn" type="button">Import PNG</button>
+            <button class="btn btn-outline" id="itemDownloadBtn" type="button" disabled>Download PNG</button>
+            <button class="btn btn-outline" id="itemCopyBtn" type="button" disabled>Copy PNG</button>
+            <button class="btn btn-outline" id="itemPackBtn" type="button" disabled>Export item pack</button>
             <input id="itemImportInput" type="file" accept="image/png,image/*" hidden />
           </div>
         </section>

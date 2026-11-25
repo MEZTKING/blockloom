@@ -3032,3 +3032,6 @@ body.is-dragging-file .drop-overlay { display: grid; }
 .any-pack-template-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
 .any-pack-template-row select { flex: 1 1 220px; height: 29px; border: 1px solid var(--line); border-radius: 4px; background: #0c0f09; color: var(--text-soft); font-family: var(--font-mono); font-size: 6.5px; padding: 0 6px; }
 .any-pack-template-row .btn { height: 29px; font-size: 7px; }
+
+/* ---------- Global UI text scale ---------- */
+body { zoom: var(--ui-zoom, 1.1); }

@@ -181,66 +181,16 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 
 ![Imported texture in the studio](screenshots/blockloom-import.png)
 
-## Item / weapon studio
+## Item pack studio
 
-Open **Weapon / item studio** in the left panel or press **W**.
+Open **Item pack studio** in the left panel or press **W**.
 
-- Six item types: sword, axe, pickaxe, shovel, bow, shield.
-- **16 seed variants** per type/material, click to compare and select.
-- Eight material palettes: wood, stone, iron, gold, diamond, netherite, copper, emerald.
-- Deterministic 16 px sprites, scalable to 32/64 px, with transparent backgrounds.
-- Download PNG, copy PNG, or export a drop-in **item resource pack**.
-- **Import PNG** loads an existing item sprite (including one downloaded from a web generator); edit the target id and package it.
-- Item pack path: `assets/minecraft/textures/item/<item>.png`.
-- Vanilla IDs are used for the five vanilla tool tiers; copper/emerald produce modded IDs.
+- Import an existing transparent item PNG.
+- Set the target id, e.g. `diamond_sword` or `my_mod_blade`.
+- Download/copy the PNG or export an item resource pack.
+- Pack path: `assets/minecraft/textures/item/<id>.png`.
 
-![Theme studio](screenshots/blockloom-theme-studio.png)
-
-![Celestial marble](screenshots/blockloom-celestial.png)
-
-![16-variant block sheet](screenshots/blockloom-variant-sheet.png)
-
-![Item studio](screenshots/blockloom-item-studio.png)
-
-This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive. Web-generated textures work through the same local import path; Blockloom does not scrape or log into external services.
-
-Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
-
-## Prompt coverage
-
-![Prompt coverage](screenshots/blockloom-prompt-suite.png)
-
-Material + modifier prompts are strong. Architectural motifs, secondary accents, and plant/entity prompts are the current weak spots. See `screenshots/blockloom-prompt-suite.png`.
-
-## Format templates
-
-The universal packer includes blank and guided templates for **Java 26.3**:
-
-| Template | Size | Path |
-|---|---|---|
-| Armor layer | 64×32 | `entity/equipment/humanoid/` |
-| Leggings layer | 64×32 | `entity/equipment/humanoid_leggings/` |
-| Player skin | 64×64 | download only |
-| Entity skin | 64×64 | `entity/` |
-| GUI container | 256×256 | `gui/container/` |
-| Particle | 8×8 | `particle/` |
-| Animation strip | 16×64 | `block/` + `.mcmeta` |
-| Painting | 16×16 | `painting/` |
-| Sun | 32×32 | `environment/celestial/` |
-
-Choose **Blank PNG** for a transparent canvas, or **Guided PNG** for a transparent overlay with grid, part labels, frame divisions, and slot pitch. The guided image is intended as a reference layer, not as a finished packed texture.
-
-## Universal texture packer
-
-Open **Universal texture pack** in the left panel or press **U**.
-
-- Add any PNG or `.png.mcmeta` file.
-- Auto-paths under `assets/<namespace>/textures/<folder>/`.
-- Edit each full path independently.
-- Preserve non-square sheets and animation metadata byte-for-byte.
-- Choose pack format; export with `pack.mcmeta`, `pack.png`, README, and a JSON manifest.
-
-This is the packaging path for textures from Bloxal, other generators, or manual pixel art. It is texture-only: it does not add models, item definitions, blockstates, sounds, language files, or new blocks/items.
+The old procedural sword/axe/bow/shield generator was removed because its silhouettes were not good enough. Import and package external item art instead.
 
 ## Texture generation
 
@@ -258,7 +208,7 @@ This is the packaging path for textures from Bloxal, other generators, or manual
 - An offline app shell; after first load, generation, import, finishing, library, versions, sharing, and packs work with no network.
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
 - A local HTTP API and CLI for generating block PNGs, full texture sets, and weapon/item sprites for MCSuperMods and other applications.
-- A **Weapon / item studio** for swords, axes, pickaxes, shovels, bows, and shields, with PNG and item-pack export.
+- An **Item pack studio** for importing a transparent item sprite, setting its target id, and exporting a drop-in item pack.
 - A **Universal texture packer** for any PNG path under `assets/<namespace>/textures/`, including entity, armor, GUI, particle, painting, non-square sheets, and `.png.mcmeta` animation metadata.
 - **Blank and guided Java 26.3 format templates** for armor layers, player/entity skins, GUI containers, particles, animation strips, paintings, and the sun.
 

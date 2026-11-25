@@ -16,7 +16,7 @@ import { importSummary, importTitle, planTextureImport } from './importer.js';
 import { releaseInfo } from './update.js';
 import { APP_VERSION } from './version.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
-import { ITEM_MATERIALS, ITEM_TYPES, generateItem, THEMES, detectTheme, generateThemeSheet } from '../core/index.js';
+import { THEMES, detectTheme, generateThemeSheet } from '../core/index.js';
 import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
@@ -73,15 +73,11 @@ const els = {
   finishBtn: $('#finishBtn'),
   shareBtn: $('#shareBtn'),
   importBtn: $('#importBtn'),
+  fontScaleBtn: $('#fontScaleBtn'),
   itemStudioBtn: $('#itemStudioBtn'),
   itemDialog: $('#itemDialog'),
   closeItemBtn: $('#closeItemBtn'),
-  itemTypes: $('#itemTypes'),
-  itemMaterial: $('#itemMaterial'),
   itemFormat: $('#itemFormat'),
-  itemSeed: $('#itemSeed'),
-  itemDice: $('#itemDice'),
-  itemSize: $('#itemSize'),
   itemPreview: $('#itemPreview'),
   itemTitle: $('#itemTitle'),
   itemTarget: $('#itemTarget'),
@@ -92,8 +88,6 @@ const els = {
   itemImportBtn: $('#itemImportBtn'),
   itemImportInput: $('#itemImportInput'),
   itemTargetInput: $('#itemTargetInput'),
-  itemVariantsWrap: $('#itemVariantsWrap'),
-  itemVariants: $('#itemVariants'),
   variantSheetBtn: $('#variantSheetBtn'),
   anyPackBtn: $('#anyPackBtn'),
   themeStudioBtn: $('#themeStudioBtn'),
@@ -294,15 +288,11 @@ const state = {
   packGrassTintFree: false,
   versionWorkId: null,
   importing: false,
-  itemType: 'sword',
-  itemMaterial: 'iron',
-  itemSeed: 42317,
   itemSize: 16,
   itemFormat: 'modern',
   itemCurrent: null,
   itemTarget: 'iron_sword',
   itemImported: false,
-  itemVariantRoot: 42317,
   anyPackEntries: [],
   anyPackNamespace: 'minecraft',
   anyPackCategory: 'block',
@@ -2587,102 +2577,9 @@ function bindTextureDrop() {
 }
 
 
-/* ---------- Item / weapon studio ---------- */
-function itemTypeInfo() {
-  return ITEM_TYPES.find((type) => type.id === state.itemType) || ITEM_TYPES[0];
-}
-
-function itemMaterialInfo() {
-  return ITEM_MATERIALS.find((material) => material.id === state.itemMaterial) || ITEM_MATERIALS[2];
-}
-
+/* ---------- Item pack studio (import only) ---------- */
 function itemFilename(extension = 'png') {
-  const type = itemTypeInfo();
-  const material = itemMaterialInfo();
-  if (state.itemImported) return `blockloom_${state.itemTarget.replace(/[^a-z0-9_-]+/gi, '-')}_${state.itemSize}px.${extension}`;
-  return `blockloom_${material.id}_${type.id}_${state.itemSeed}_${state.itemSize}px.${extension}`;
-}
-
-function renderItemTypeButtons() {
-  els.itemTypes.replaceChildren();
-  const fragment = document.createDocumentFragment();
-  for (const type of ITEM_TYPES) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.type = type.id;
-    button.textContent = type.name;
-    button.className = type.id === state.itemType ? 'active' : '';
-    fragment.append(button);
-  }
-  els.itemTypes.append(fragment);
-}
-
-function itemVariantSeeds() {
-  return Array.from({ length: 16 }, (_, index) => {
-    if (index === 0) return state.itemVariantRoot;
-    return ((state.itemVariantRoot + index * 7919) % 999999999) + 1;
-  });
-}
-
-function renderItemVariants() {
-  if (state.itemImported) {
-    els.itemVariantsWrap.hidden = true;
-    els.itemVariants.replaceChildren();
-    return;
-  }
-  els.itemVariantsWrap.hidden = false;
-  const seeds = itemVariantSeeds();
-  const fragment = document.createDocumentFragment();
-  for (const seed of seeds) {
-    const result = generateItem({
-      type: state.itemType,
-      material: state.itemMaterial,
-      seed,
-      size: 16,
-    });
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = `item-variant${seed === state.itemSeed ? ' is-current' : ''}`;
-    button.dataset.seed = String(seed);
-    button.setAttribute('aria-label', `Use item seed ${seed}`);
-    const canvas = document.createElement('canvas');
-    canvas.width = 32;
-    canvas.height = 32;
-    const context = canvas.getContext('2d');
-    context.imageSmoothingEnabled = false;
-    context.drawImage(itemCanvasFromResult(result), 0, 0, 32, 32);
-    button.append(canvas);
-    fragment.append(button);
-  }
-  els.itemVariants.replaceChildren(fragment);
-}
-
-function updateItemVariantSelection() {
-  for (const button of $$('.item-variant', els.itemVariants)) {
-    button.classList.toggle('is-current', Number(button.dataset.seed) === state.itemSeed);
-  }
-}
-
-function renderItemSelectors() {
-  els.itemMaterial.replaceChildren();
-  for (const material of ITEM_MATERIALS) {
-    const option = document.createElement('option');
-    option.value = material.id;
-    option.textContent = material.name;
-    els.itemMaterial.append(option);
-  }
-  els.itemMaterial.value = state.itemMaterial;
-  els.itemFormat.replaceChildren();
-  for (const format of PACK_FORMATS) {
-    const option = document.createElement('option');
-    option.value = format.id;
-    option.textContent = `${format.label} · F${format.packFormat}`;
-    els.itemFormat.append(option);
-  }
-  els.itemFormat.value = state.itemFormat;
-  els.itemSeed.value = state.itemSeed;
-  els.itemSize.value = String(state.itemSize);
-  renderItemTypeButtons();
+  return `blockloom_${state.itemTarget.replace(/[^a-z0-9_-]+/gi, '-')}_${state.itemSize}px.${extension}`;
 }
 
 function drawItemPreviewCanvas() {
@@ -2708,58 +2605,22 @@ function sampleCanvasPalette(canvas) {
     .map(([key]) => `#${key.split(',').map((value) => Number(value).toString(16).padStart(2, '0')).join('')}`);
 }
 
-function itemCanvasFromResult(result) {
-  const canvas = document.createElement('canvas');
-  canvas.width = result.width;
-  canvas.height = result.height;
-  const context = canvas.getContext('2d');
-  const imageData = context.createImageData(result.width, result.height);
-  imageData.data.set(result.rgba);
-  context.putImageData(imageData, 0, 0);
-  return canvas;
+function setItemButtons(enabled) {
+  els.itemDownloadBtn.disabled = !enabled;
+  els.itemCopyBtn.disabled = !enabled;
+  els.itemPackBtn.disabled = !enabled;
 }
 
-function sampleItemPalette(result) {
-  const counts = new Map();
-  for (let i = 0; i < result.rgba.length; i += 4) {
-    if (result.rgba[i + 3] < 24) continue;
-    const key = `${result.rgba[i]},${result.rgba[i + 1]},${result.rgba[i + 2]}`;
-    counts.set(key, (counts.get(key) || 0) + 1);
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7)
-    .map(([key]) => `#${key.split(',').map((value) => Number(value).toString(16).padStart(2, '0')).join('')}`);
-}
-
-function renderItemStudio() {
-  const type = itemTypeInfo();
-  const material = itemMaterialInfo();
-  const result = generateItem({
-    type: state.itemType,
-    material: state.itemMaterial,
-    seed: state.itemSeed,
-    size: state.itemSize,
-  });
-  state.itemCurrent = result;
-  state.itemTarget = result.recipe.itemId;
-  state.itemImported = false;
-  if (els.itemVariantsWrap) els.itemVariantsWrap.hidden = false;
-  state.itemCanvas = itemCanvasFromResult(result);
+function renderItemEmptyState() {
+  state.itemCanvas = null;
+  state.itemTarget = '';
+  state.itemSize = 16;
   drawItemPreviewCanvas();
-  els.itemTitle.textContent = `${material.name} ${type.name}`;
-  els.itemTarget.textContent = state.itemTarget;
-  els.itemTargetInput.value = state.itemTarget;
-  const palette = sampleItemPalette(result);
+  els.itemTitle.textContent = 'No item selected';
+  els.itemTarget.textContent = 'Import a PNG to begin';
+  els.itemTargetInput.value = '';
   els.itemPalette.replaceChildren();
-  for (const color of palette) {
-    const swatch = document.createElement('span');
-    swatch.style.backgroundColor = color;
-    swatch.title = color.toUpperCase();
-    els.itemPalette.append(swatch);
-  }
-  if (document.activeElement !== els.itemSeed) els.itemSeed.value = state.itemSeed;
-  updateItemVariantSelection();
+  setItemButtons(false);
 }
 
 async function importItemTexture(file) {
@@ -2777,13 +2638,9 @@ async function importItemTexture(file) {
     context.clearRect(0, 0, targetSize, targetSize);
     context.drawImage(image, 0, 0, plan.sourceWidth, plan.cropHeight, 0, 0, targetSize, targetSize);
     state.itemImported = true;
-    els.itemVariantsWrap.hidden = true;
-    els.itemVariants.replaceChildren();
     state.itemCanvas = canvas;
     state.itemSize = targetSize;
     state.itemTarget = importTitle(file.name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'imported_item';
-    state.itemCurrent = { width: targetSize, height: targetSize, recipe: { itemId: state.itemTarget }, version: 'imported' };
-    els.itemSize.value = String(targetSize);
     els.itemTitle.textContent = importTitle(file.name);
     els.itemTarget.textContent = state.itemTarget;
     els.itemTargetInput.value = state.itemTarget;
@@ -2796,6 +2653,7 @@ async function importItemTexture(file) {
       swatch.title = color.toUpperCase();
       els.itemPalette.append(swatch);
     }
+    setItemButtons(true);
     toast('Imported item texture · set the target id if needed');
   } catch (error) {
     console.error(error);
@@ -2806,10 +2664,21 @@ async function importItemTexture(file) {
 }
 
 function openItemStudio() {
-  state.itemVariantRoot = state.itemSeed;
-  renderItemSelectors();
-  renderItemStudio();
-  renderItemVariants();
+  els.itemFormat.replaceChildren();
+  for (const format of PACK_FORMATS) {
+    const option = document.createElement('option');
+    option.value = format.id;
+    option.textContent = `${format.label} · F${format.packFormat}`;
+    els.itemFormat.append(option);
+  }
+  els.itemFormat.value = state.itemFormat;
+  if (state.itemCanvas) {
+    els.itemTargetInput.value = state.itemTarget;
+    drawItemPreviewCanvas();
+    setItemButtons(true);
+  } else {
+    renderItemEmptyState();
+  }
   if (!els.itemDialog.open) {
     document.body.classList.add('dialog-open');
     els.itemDialog.showModal();
@@ -2821,7 +2690,7 @@ function closeItemStudio() {
 }
 
 async function downloadItemPng() {
-  if (!state.itemCurrent) return;
+  if (!state.itemCanvas) return;
   try {
     const blob = await new Promise((resolve, reject) => state.itemCanvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
     downloadBlob(blob, itemFilename());
@@ -2841,26 +2710,25 @@ async function copyItemPng() {
     const blob = await new Promise((resolve, reject) => state.itemCanvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
     toast('Item PNG copied');
-  } catch (error) {
-    toast('Clipboard blocked by the browser — use Download.', true);
+  } catch {
+    toast('Clipboard blocked — use Download.', true);
   }
 }
 
 async function exportItemPack() {
-  if (!state.itemCurrent || els.itemPackBtn.disabled) return;
+  if (!state.itemCanvas || els.itemPackBtn.disabled) return;
   els.itemPackBtn.disabled = true;
   const label = els.itemPackBtn.textContent;
   els.itemPackBtn.textContent = 'Packing…';
   try {
-    const result = state.itemCurrent;
     const { blob, filename } = await buildItemResourcePack({
       canvas: state.itemCanvas,
       itemId: state.itemTarget,
       title: els.itemTitle.textContent,
-      seed: state.itemSeed,
+      seed: 0,
       size: state.itemSize,
-      material: state.itemImported ? 'imported' : state.itemMaterial,
-      type: state.itemImported ? 'item' : state.itemType,
+      material: 'imported',
+      type: 'item',
       formatId: state.itemFormat,
     });
     downloadBlob(blob, filename);
@@ -2873,7 +2741,6 @@ async function exportItemPack() {
     els.itemPackBtn.textContent = label;
   }
 }
-
 
 /* ---------- 16-variant block contact sheet ---------- */
 const SHEET_OFFSETS = [
@@ -3834,44 +3701,9 @@ function bindEvents() {
     if (event.target === els.itemDialog) closeItemStudio();
   });
   els.itemDialog.addEventListener('close', () => syncDialogBody());
-  els.itemTypes.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-type]');
-    if (!button) return;
-    state.itemType = button.dataset.type;
-    renderItemTypeButtons();
-    renderItemStudio();
-    renderItemVariants();
-  });
-  els.itemMaterial.addEventListener('change', () => {
-    state.itemMaterial = els.itemMaterial.value;
-    renderItemStudio();
-    renderItemVariants();
-  });
-  els.itemFormat.addEventListener('change', () => {
-    state.itemFormat = els.itemFormat.value;
-  });
-  els.itemSeed.addEventListener('input', () => {
-    const value = Number(els.itemSeed.value);
-    if (Number.isFinite(value) && value >= 1) {
-      state.itemSeed = Math.min(999999999, Math.round(value));
-      state.itemVariantRoot = state.itemSeed;
-      renderItemStudio();
-      renderItemVariants();
-    }
-  });
-  els.itemDice.addEventListener('click', () => {
-    state.itemSeed = randomSeed();
-    state.itemVariantRoot = state.itemSeed;
-    els.itemSeed.value = state.itemSeed;
-    renderItemStudio();
-    renderItemVariants();
-  });
-  els.itemSize.addEventListener('change', () => {
-    state.itemSize = Number(els.itemSize.value) || 16;
-    renderItemStudio();
-  });
   els.itemDownloadBtn.addEventListener('click', downloadItemPng);
   els.itemCopyBtn.addEventListener('click', copyItemPng);
+  els.itemFormat.addEventListener('change', () => { state.itemFormat = els.itemFormat.value; });
   els.itemPackBtn.addEventListener('click', exportItemPack);
   els.variantSheetBtn.addEventListener('click', openVariantSheet);
   els.closeVariantSheetBtn.addEventListener('click', closeVariantSheet);
@@ -3938,14 +3770,6 @@ function bindEvents() {
   els.itemImportInput.addEventListener('change', () => {
     const file = els.itemImportInput.files?.[0];
     if (file) importItemTexture(file);
-  });
-  els.itemVariants.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-seed]');
-    if (!button) return;
-    state.itemSeed = Number(button.dataset.seed);
-    els.itemSeed.value = state.itemSeed;
-    renderItemStudio();
-    updateItemVariantSelection();
   });
   els.itemTargetInput.addEventListener('input', () => {
     const value = els.itemTargetInput.value.toLowerCase().replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
@@ -4155,7 +3979,29 @@ async function registerOfflineWorker() {
   }
 }
 
+function initUiZoom() {
+  const key = 'blockloom-ui-zoom';
+  const steps = [1, 1.1, 1.2];
+  let value = 1.1;
+  try {
+    const stored = Number(localStorage.getItem(key));
+    if (steps.includes(stored)) value = stored;
+  } catch { /* private mode */ }
+  const apply = () => {
+    document.documentElement.style.setProperty('--ui-zoom', String(value));
+    if (els.fontScaleBtn) els.fontScaleBtn.textContent = `Text ${Math.round(value * 100)}%`;
+  };
+  apply();
+  els.fontScaleBtn?.addEventListener('click', () => {
+    value = steps[(steps.indexOf(value) + 1) % steps.length];
+    try { localStorage.setItem(key, String(value)); } catch { /* private mode */ }
+    apply();
+    toast(`UI text ${Math.round(value * 100)}%`);
+  });
+}
+
 function init() {
+  initUiZoom();
   if (PROCEDURAL_ONLY) {
     const mode = $('#engineMode');
     if (mode) mode.textContent = IS_TAURI ? 'DESKTOP' : IS_STATIC_DEMO ? 'STATIC DEMO' : 'PROCEDURAL';
