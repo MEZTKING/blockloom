@@ -20,6 +20,7 @@ import { THEMES, detectTheme, generateThemeSheet } from '../core/index.js';
 import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
+import { PixelEditor } from './pixedit.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -124,6 +125,8 @@ const els = {
   anyPackTemplateBlankBtn: $('#anyPackTemplateBlankBtn'),
   anyPackTemplateGuideBtn: $('#anyPackTemplateGuideBtn'),
   anyPackTemplateMetaBtn: $('#anyPackTemplateMetaBtn'),
+  anyPackTemplateEditBtn: $('#anyPackTemplateEditBtn'),
+  pixelDialog: $('#pixelDialog'),
   variantSheetDialog: $('#variantSheetDialog'),
   variantSheetGrid: $('#variantSheetGrid'),
   closeVariantSheetBtn: $('#closeVariantSheetBtn'),
@@ -473,7 +476,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog, els.pixelDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2572,7 +2575,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open || els.pixelDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -2962,7 +2965,7 @@ async function addAnyPackFiles(files) {
             palette.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
           }
         }
-        alphaPct = Math.round((visible / (width * height)) * 100);
+        alphaPct = Math.round((visible / (width * height)) * 10000) / 100;
         colorCount = palette.size;
         bitmap.close?.();
       } catch {
@@ -3032,6 +3035,7 @@ function syncAnyPackTemplate() {
     els.anyPackTemplateMetaBtn.hidden = true;
     els.anyPackTemplateBlankBtn.disabled = true;
     els.anyPackTemplateGuideBtn.disabled = true;
+    els.anyPackTemplateEditBtn.disabled = true;
     return;
   }
   const preset = getTemplatePreset(id);
@@ -3040,6 +3044,7 @@ function syncAnyPackTemplate() {
   els.anyPackTemplateMetaBtn.hidden = !preset.meta;
   els.anyPackTemplateBlankBtn.disabled = false;
   els.anyPackTemplateGuideBtn.disabled = false;
+  els.anyPackTemplateEditBtn.disabled = false;
 }
 
 async function downloadTemplate(guide) {
@@ -3057,6 +3062,74 @@ function downloadTemplateMeta() {
   if (!meta) return;
   downloadBlob(new Blob([meta], { type: 'application/json' }), 'template.png.mcmeta');
   toast('Animation .mcmeta template');
+}
+
+let pixelEditor = null;
+
+function initPixelEditor() {
+  pixelEditor = new PixelEditor();
+  els.pixelDialog.addEventListener('close', () => syncDialogBody());
+}
+
+function addAnyPackCanvas(canvas, path, name, blob) {
+  const context = canvas.getContext('2d');
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  let visible = 0;
+  const palette = new Set();
+  for (let i = 0; i < pixels.length; i += 4) {
+    if (pixels[i + 3] > 0) {
+      visible++;
+      palette.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
+    }
+  }
+  const file = new File([blob], name, { type: 'image/png' });
+  state.anyPackEntries.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    file,
+    path,
+    width: canvas.width,
+    height: canvas.height,
+    alphaPct: Math.round((visible / (canvas.width * canvas.height)) * 10000) / 100,
+    colors: palette.size,
+    url: URL.createObjectURL(file),
+  });
+}
+
+async function editAnyPackTemplate() {
+  if (!els.anyPackTemplate.value) { toast('Pick a template first.', true); return; }
+  const preset = getTemplatePreset(els.anyPackTemplate.value);
+  const canvas = createTemplateCanvas(preset, { guide: false });
+  pixelEditor.open({
+    canvas,
+    title: preset.name,
+    path: preset.path || '',
+    animation: preset.id === 'animation',
+    onSave: async ({ canvas: result, meta, path, name }) => {
+      const blob = await new Promise((resolve, reject) => result.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
+      if (!path) {
+        downloadBlob(blob, name);
+        toast('Template downloaded');
+        return;
+      }
+      addAnyPackCanvas(result, path, name, blob);
+      if (meta) {
+        const metaPath = `${path}.mcmeta`;
+        const metaFile = new File([meta], name + '.mcmeta', { type: 'application/json' });
+        state.anyPackEntries.push({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          file: metaFile,
+          path: metaPath,
+          width: 0,
+          height: 0,
+          alphaPct: null,
+          colors: 0,
+          url: null,
+        });
+      }
+      renderAnyPackEntries();
+      toast('Template saved to the universal pack');
+    },
+  });
 }
 
 function openAnyPack(templateId = null) {
@@ -3827,6 +3900,7 @@ function bindEvents() {
   els.anyPackTemplate.addEventListener('change', syncAnyPackTemplate);
   els.anyPackTemplateBlankBtn.addEventListener('click', () => downloadTemplate(false));
   els.anyPackTemplateGuideBtn.addEventListener('click', () => downloadTemplate(true));
+  els.anyPackTemplateEditBtn.addEventListener('click', editAnyPackTemplate);
   els.anyPackTemplateMetaBtn.addEventListener('click', downloadTemplateMeta);
   els.themeStudioBtn.addEventListener('click', openThemeStudio);
   els.closeThemeBtn.addEventListener('click', closeThemeStudio);
@@ -4100,6 +4174,7 @@ function initUiZoom() {
 
 function init() {
   initUiZoom();
+  initPixelEditor();
   document.querySelector('.make-grid')?.addEventListener('click', (event) => {
     const card = event.target.closest('[data-make]');
     if (!card) return;

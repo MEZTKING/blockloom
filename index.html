@@ -874,6 +874,7 @@
             <select id="anyPackTemplate" aria-label="Minecraft format template"></select>
             <button class="btn btn-outline" id="anyPackTemplateBlankBtn" type="button">Blank PNG</button>
             <button class="btn btn-outline" id="anyPackTemplateGuideBtn" type="button">Guided PNG</button>
+            <button class="btn btn-primary" id="anyPackTemplateEditBtn" type="button">Edit</button>
             <button class="btn btn-outline" id="anyPackTemplateMetaBtn" type="button" hidden>.mcmeta</button>
           </div>
         </div>
@@ -881,6 +882,49 @@
         <div class="any-pack-empty" id="anyPackEmpty"><strong>No textures yet.</strong><span>Add a block, item, entity, armor, GUI, particle, painting, or animated texture.</span></div>
       </div>
       <footer class="any-pack-foot"><span><span id="anyPackCount">0 files</span> · <span id="anyPackHealth">No format warnings</span></span><button class="btn btn-primary" id="anyPackExportBtn" type="button" disabled>Export universal pack</button></footer>
+    </div>
+  </dialog>
+
+  <!-- Pixel editor -->
+  <dialog class="pixel-dialog" id="pixelDialog" aria-labelledby="pixelTitle">
+    <div class="pixel-shell">
+      <header class="pixel-head">
+        <div><div class="pixel-kicker"><span></span>PIXEL EDITOR</div><h2 id="pixelTitle">Edit texture</h2><p id="pixelPath">Download only</p></div>
+        <button class="icon-button" id="closePixelBtn" type="button" aria-label="Close pixel editor"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="pixel-body">
+        <aside class="pixel-tools" id="pixelTools" aria-label="Drawing tools">
+          <button type="button" data-tool="pencil" class="active" title="Pencil">✎</button>
+          <button type="button" data-tool="eraser" title="Eraser">⌫</button>
+          <button type="button" data-tool="fill" title="Fill">▨</button>
+          <button type="button" data-tool="picker" title="Eyedropper">⊙</button>
+          <span class="pixel-tools-sep"></span>
+          <button type="button" id="pixelUndoBtn" title="Undo">↶</button>
+          <button type="button" id="pixelRedoBtn" title="Redo">↷</button>
+          <button type="button" id="pixelGridBtn" class="active" title="Grid">▦</button>
+          <button type="button" id="pixelZoomOutBtn" title="Zoom out">−</button>
+          <button type="button" id="pixelZoomInBtn" title="Zoom in">+</button>
+        </aside>
+        <div class="pixel-stage"><canvas id="pixelCanvas" width="384" height="384" aria-label="Editable texture canvas"></canvas></div>
+        <aside class="pixel-side">
+          <div class="pixel-section">
+            <div class="pixel-section-head"><span>Colour</span><span id="pixelAlphaValue">100%</span></div>
+            <div class="pixel-color-row"><input id="pixelColor" type="color" value="#b9ee6a" aria-label="Colour" /><input id="pixelAlpha" type="range" min="0" max="100" value="100" aria-label="Alpha" /></div>
+            <div class="pixel-palette" id="pixelPalette"></div>
+          </div>
+          <div class="pixel-section" id="pixelTimeline" hidden>
+            <div class="pixel-section-head"><span>Frames</span><span>timeline</span></div>
+            <div class="pixel-frames" id="pixelFrames"></div>
+            <div class="pixel-frame-actions"><button class="btn btn-outline" id="pixelAddFrameBtn" type="button">+ Frame</button><button class="btn btn-outline" id="pixelRemoveFrameBtn" type="button">− Frame</button></div>
+            <label class="item-field"><span>Frame time</span><input id="pixelFrameTime" type="number" min="1" max="100" value="2" /></label>
+          </div>
+          <div class="pixel-actions">
+            <button class="btn btn-outline" id="pixelDownloadBtn" type="button">Download</button>
+            <button class="btn btn-primary" id="pixelSaveBtn" type="button">Save to pack</button>
+          </div>
+        </aside>
+      </div>
+      <footer class="pixel-foot"><span id="pixelStatus">pencil · 384px</span><span id="pixelZoomLabel">384px</span></footer>
     </div>
   </dialog>
 
