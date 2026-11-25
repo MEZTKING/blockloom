@@ -1,5 +1,6 @@
 const BASE_MATERIALS = [
   { id: 'stone', name: 'Stone', group: 'Stone', base: '#858585', type: 'stone', keywords: ['stone', 'rock', 'boulder'] },
+  { id: 'marble', name: 'Marble', group: 'Stone', base: '#bfbcb8', type: 'stone', accent: '#8fc8f5', keywords: ['marble', 'alabaster', 'cloudstone', 'heavenstone'] },
   { id: 'cobblestone', name: 'Cobblestone', group: 'Stone', base: '#81837d', type: 'cobble', keywords: ['cobblestone', 'cobble', 'rocky'] },
   { id: 'deepslate', name: 'Deepslate', group: 'Stone', base: '#4d4e55', type: 'deepslate', keywords: ['deepslate', 'slate', 'deep stone'] },
   { id: 'gravel', name: 'Gravel', group: 'Stone', base: '#898680', type: 'gravel', keywords: ['gravel', 'pebbles', 'pebble'] },
@@ -153,3 +154,7 @@ export const FINISH_CONFIG = {
   balanced: { grain: 1, depth: 1, dither: 1, clutter: 1 },
   smooth: { grain: 0.38, depth: 0.82, dither: 0.35, clutter: 0.7 },
 };
+
+export const THEME_WORDS = [
+  { id: 'celestial', words: ['heaven', 'celestial', 'sky city', 'above the clouds', 'angelic', 'nimbus', 'halo', 'cloud city'] },
+];

@@ -51,6 +51,8 @@ const TARGETS = {
   lapis_ore: { label: 'Lapis Ore', files: [{ path: 'lapis_ore', face: 'side' }] },
 };
 
+TARGETS.marble = { label: 'Marble (modded)', group: 'Stone', files: [{ path: 'marble', face: 'side' }] };
+
 /* New recipe families map to their real vanilla block IDs. */
 function familyTargetPath(material) {
   if (material.type === 'stained_glass') return `${material.id.replace('stained_glass_', '')}_stained_glass`;

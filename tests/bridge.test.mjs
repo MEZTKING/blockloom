@@ -69,7 +69,7 @@ test('batch ZIP namespaces textures and writes a manifest', async () => {
 
 test('capabilities list the recipe vocabulary', () => {
   const caps = capabilities();
-  assert.equal(caps.materials.length, 89);
+  assert.equal(caps.materials.length, 90);
   assert.equal(caps.modifiers.length, 11);
   assert.deepEqual(caps.faces, ['side', 'top', 'bottom']);
   assert.deepEqual(caps.formats, ['png', 'json', 'zip']);

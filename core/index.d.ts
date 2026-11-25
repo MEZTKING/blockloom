@@ -23,6 +23,7 @@ export interface MaterialRecipe {
 
 export interface ResolvedRecipe {
   prompt: string;
+  theme: string | null;
   materialId: string;
   materialName: string;
   modifiers: string[];
@@ -79,6 +80,8 @@ export interface GeneratedTexture {
 
 export interface ParsedPrompt {
   materialId: string | null;
+  theme: string | null;
+  accent: string | null;
   modifiers: string[];
   color: { name: string; hex: string; hue: number; sat: number; light: number } | null;
   colorAsAccent: boolean;

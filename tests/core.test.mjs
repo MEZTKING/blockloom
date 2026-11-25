@@ -52,7 +52,7 @@ test('explicit recipes and prompt recipes resolve the same way', () => {
 });
 
 test('new families are present and parseable', () => {
-  assert.equal(MATERIALS.length, 89);
+  assert.equal(MATERIALS.length, 90);
   assert.ok(MATERIAL_GROUPS.includes('Glass'));
   assert.ok(MATERIAL_GROUPS.includes('Wool'));
   assert.ok(MATERIAL_GROUPS.includes('Concrete'));

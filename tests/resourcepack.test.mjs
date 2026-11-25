@@ -12,8 +12,8 @@ import {
 import { MATERIALS } from '../core/index.js';
 
 test('pack targets cover all vanilla texture mappings', () => {
-  assert.equal(PACK_TARGETS.length, 88);
-  assert.equal(new Set(PACK_TARGETS.map((target) => target.id)).size, 88);
+  assert.equal(PACK_TARGETS.length, 89);
+  assert.equal(new Set(PACK_TARGETS.map((target) => target.id)).size, 89);
   assert.ok(PACK_TARGETS.every((target) => target.group));
   for (const target of PACK_TARGETS) {
     assert.ok(target.label);
@@ -59,7 +59,7 @@ test('tint-free grass override is a complete vanilla model with no tint indices'
   assert.ok(!JSON.stringify(GRASS_TINT_FREE_MODEL).includes('tintindex'));
 });
 
-test('all 89 recipe families map to a real target', () => {
+test('all 90 recipe families map to a real target', () => {
   for (const material of MATERIALS) {
     const target = packTargetFor(material.id);
     assert.ok(target, material.id);

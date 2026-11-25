@@ -26,7 +26,7 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
-**Core package:** [@blockloom/core v1.2.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.2.0) — DOM-free block + item generator, 89 recipes, types, and worker docs.
+**Core package:** [@blockloom/core v1.3.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.3.0) — DOM-free block + item generator, 90 recipes, types, and worker docs.
 
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 
@@ -194,6 +194,8 @@ Open **Weapon / item studio** in the left panel or press **W**.
 - Item pack path: `assets/minecraft/textures/item/<item>.png`.
 - Vanilla IDs are used for the five vanilla tool tiers; copper/emerald produce modded IDs.
 
+![Celestial marble](screenshots/blockloom-celestial.png)
+
 ![16-variant block sheet](screenshots/blockloom-variant-sheet.png)
 
 ![Item studio](screenshots/blockloom-item-studio.png)
@@ -216,7 +218,8 @@ This is the packaging path for textures from Bloxal, other generators, or manual
 
 ## Texture generation
 
-- 89 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
+- 90 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
+- A **Celestial prompt theme** for heaven/sky-city prompts, resolving to pale Marble with blue veining.
 - Natural-language parser: `mossy cobblestone with tiny cyan crystals`, `cracked deepslate with glowing amber veins`, `frosted oak planks`.
 - Effects: mossy, cracked, glowing, frosted, ancient, charred, gilded, flecked, wet, flowery, crystals.
 - Colour words are context-aware: `cyan crystals` becomes an accent; `blue stone` tints the base.
@@ -414,7 +417,7 @@ blockloom_<material>_<seed>_<px>px.zip
 ### Resource pack (.zip) — interactive builder
 Open **Resource pack** in the export row. The builder lets you:
 
-- choose the **vanilla target** for every block (88 targets, including multi-face grass and log mappings),
+- choose the **vanilla target** for every block (89 targets, including multi-face grass and log mappings),
 - add more works from your library to build a **multi-block pack**,
 - pick a **pack format profile** — broad 1.20+, modern 1.21+, or current 1.21.9+,
 - reorder entries with the arrow controls — the first entry supplies the pack icon,
@@ -435,7 +438,7 @@ blockloom_resourcepack_<n>blocks_<date>.zip          # multi-block
 
 Drop the zip into `.minecraft/resourcepacks/`, then enable **Blockloom** in Options → Resource Packs. It overrides existing vanilla block texture paths; it does not create a new block.
 
-- All 89 recipes map to their actual vanilla texture paths; the builder exposes 88 target descriptors grouped by family.
+- All 90 recipes map to their actual vanilla texture paths; the builder exposes 89 target descriptors grouped by family.
 - Grass includes top, side, and a transparent side overlay so the authored side is not double-tinted. With a 1.21+/1.21.9+ profile, **Untint grass top** adds an official-style grass model with `tintindex` removed.
 - Oak leaves always keep vanilla's biome tint, so in-game colour may differ.
 - Logs receive side + top textures.
@@ -516,7 +519,7 @@ screenshots/        preview images
 `npm test` runs a dependency-free suite with the Node test runner:
 
 - prompt parsing for materials, tints, accents, and effects,
-- all 89 block materials across side/top/bottom faces,
+- all 90 block materials across side/top/bottom faces,
 - deterministic item/weapon sprites, item golden hashes, and target IDs,
 - item PNG and item-pack export paths,
 - RGBA completeness and deterministic seeds,

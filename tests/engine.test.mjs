@@ -51,7 +51,7 @@ function seamRatio(buffer, size) {
 }
 
 test('the recipe library is complete', () => {
-  assert.equal(MATERIALS.length, 89);
+  assert.equal(MATERIALS.length, 90);
   assert.equal(new Set(MATERIALS.map((material) => material.id)).size, MATERIALS.length);
   assert.equal(FINISHES.length, 3);
   assert.ok(MODIFIERS.length >= 10);

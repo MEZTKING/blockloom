@@ -6,10 +6,10 @@ It is the same engine used by the Blockloom app, local bridge, and CLI. Same inp
 
 ## Install / import
 
-The package lives in [`core/`](../core) and is published with the `core-v1.2.0` tag. Install the release tarball:
+The package lives in [`core/`](../core) and is published with the `core-v1.3.0` tag. Install the release tarball:
 
 ```bash
-npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.2.0/blockloom-core-1.2.0.tgz
+npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.3.0/blockloom-core-1.3.0.tgz
 ```
 
 Or copy `core/` into your project. It is plain ESM with no dependencies.
@@ -87,13 +87,23 @@ item.version;          // ITEM_ENGINE_VERSION
 
 Item sprites are deterministic 16×16 templates scaled to 16/32/64. `core/item-golden.json` pins 12 item hashes. `ITEM_ENGINE_VERSION` is separate from the block `ENGINE_VERSION`.
 
+## Prompt themes
+
+The parser recognises a small semantic theme layer:
+
+- `celestial` — words such as `heaven`, `city of heaven`, `celestial`, `sky city`, `above the clouds`, `angelic`, `nimbus`, `halo`.
+- If no material is named, it resolves to **Marble** (`#bfbcb8` base) and adds a sky-blue accent plus a restrained blue-white vein overlay.
+- The resolved `recipe.theme` is recorded in JSON and cache metadata.
+
+This is the first theme-specific path. It is not yet a full 16-motif architectural generator.
+
 ## Other exports
 
 ```js
 parsePrompt('oxidized copper block');
 // { materialId: 'oxidized_copper', modifiers: [], color: null, ... }
 
-listMaterials(); // 89 recipes: stone, glass, stained glass, wool, concrete, metals, copper stages, leaves…
+listMaterials(); // 90 recipes: stone, glass, stained glass, wool, concrete, metals, copper stages, leaves…
 listModifiers(); // effect vocabulary
 listItemTypes();
 listItemMaterials();
@@ -164,7 +174,7 @@ import golden from '@blockloom/core/golden.json' with { type: 'json' };
 
 [`core/data.js`](../core/data.js) contains the recipe vocabulary:
 
-- 89 materials
+- 90 materials
 - 9 UI families
 - 11 effects
 - 19 colour words
@@ -188,4 +198,4 @@ MIT. Credit: **Blockloom / Lelouch**. The MIT licence in the repository root app
 
 ## Release
 
-Tag: `core-v1.2.0`
+Tag: `core-v1.3.0`

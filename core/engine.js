@@ -218,6 +218,7 @@ import {
   MATERIAL_GROUPS,
   MATERIAL_WORDS,
   MODIFIER_WORDS,
+  THEME_WORDS,
   getMaterial,
 } from './data.js';
 
@@ -235,6 +236,12 @@ export function parsePrompt(raw) {
       if (!best || score > best.score) best = { id: candidate.id, score };
     }
   }
+
+  let theme = null;
+  for (const item of THEME_WORDS) {
+    if (item.words.some((word) => wordInText(word, text))) theme = item.id;
+  }
+  if (theme === 'celestial' && !best) best = { id: 'marble', score: 0 };
 
   const mods = [];
   for (const mod of MODIFIER_WORDS) {
@@ -255,8 +262,11 @@ export function parsePrompt(raw) {
     }
   }
 
+  const accentColor = theme && color?.name !== 'Blue' ? COLOR_WORDS.find((c) => c.name === 'Blue') : null;
   return {
     materialId: best?.id || null,
+    theme,
+    accent: accentColor ? accentColor.hex : null,
     modifiers: mods,
     color: color ? { name: color.name, hex: color.hex, hue: color.hue, sat: color.sat, light: color.light || 0 } : null,
     colorAsAccent,
@@ -308,6 +318,22 @@ function renderStone(ctx) {
   if (hash2(ctx.x, ctx.y, ctx.seed + 3) < 0.045 * ctx.clutter) t -= 0.17;
   else if (grain > 0.44) t += 0.055;
   return pick(ctx, ctx.palette, tune(ctx, t));
+}
+
+function celestialOverlay(buf, ctx, accent) {
+  for (let y = 0; y < ctx.size; y++) {
+    for (let x = 0; x < ctx.size; x++) {
+      const i = (y * ctx.size + x) * 4;
+      if (buf[i + 3] === 0) continue;
+      const v = fbm(x / ctx.size, y / ctx.size, 3, 3, ctx.seed + 311, 4, 0.55);
+      const d = fbm(x / ctx.size, y / ctx.size, 8, 8, ctx.seed + 377, 2, 0.5);
+      if (v > 0.6 && d > 0.43 && hash2(x, y, ctx.seed + 404) > 0.42) {
+        const base = [buf[i], buf[i + 1], buf[i + 2]];
+        const mixed = mixRgb(base, accent[2] || [120, 170, 220], 0.36);
+        buf[i] = mixed[0]; buf[i + 1] = mixed[1]; buf[i + 2] = mixed[2];
+      }
+    }
+  }
 }
 
 function renderCobble(ctx) {
@@ -893,6 +919,7 @@ export function renderTextureBuffer(params = {}) {
   const mods = new Set(params.modifiers || []);
   const promptColor = params.promptColor || null;
   const accentHex = params.accent || material.accent || '#b8e264';
+  const theme = params.theme || null;
 
   const hueTarget = promptColor ? promptColor.hue : null;
   const satTarget = promptColor ? Math.max(promptColor.sat, 0.24) : null;
@@ -1028,6 +1055,7 @@ export function renderTextureBuffer(params = {}) {
   if (mods.has('gilded')) gildedOverlay(buf, ctx, overlayAccent);
   if (mods.has('flecked')) fleckOverlay(buf, ctx, overlayAccent);
   if (mods.has('crystal')) crystalOverlay(buf, ctx, overlayAccent);
+  if (theme === 'celestial') celestialOverlay(buf, ctx, accent);
   if (mods.has('wet')) wetOverlay(buf, ctx);
   if (mods.has('flowery')) flowerOverlay(buf, ctx);
 
@@ -1119,7 +1147,7 @@ function resolveRecipe(options = {}) {
   let promptColor = supplied.promptColor && typeof supplied.promptColor === 'object'
     ? { ...supplied.promptColor }
     : tint ? hexToHsl(tint) : null;
-  let accent = normalizeHex(supplied.accent ?? options.accent);
+  let accent = normalizeHex(supplied.accent ?? options.accent ?? parsed.accent);
   if (parsed.color) {
     if (parsed.colorAsAccent) accent ||= parsed.color.hex;
     else if (!promptColor) {
@@ -1141,6 +1169,7 @@ function resolveRecipe(options = {}) {
 
   return {
     prompt,
+    theme: parsed.theme || supplied.theme || options.theme || null,
     materialId,
     materialName: material.name,
     modifiers,
@@ -1184,6 +1213,7 @@ export function generate(options = {}) {
     modifiers: recipe.modifiers,
     promptColor: recipe.promptColor,
     overlayAccent: recipe.accent,
+    theme: recipe.theme,
   });
   return {
     width: texture.size,
@@ -1210,6 +1240,7 @@ export function generateSet(options = {}) {
       modifiers: recipe.modifiers,
       promptColor: recipe.promptColor,
       overlayAccent: recipe.accent,
+      theme: recipe.theme,
     });
     faces[face] = {
       width: texture.size,
