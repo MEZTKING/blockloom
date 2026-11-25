@@ -22,6 +22,7 @@ const ASSETS = [
   './core/items.js',
   './core/themes.js',
   './js/itempack.js',
+  './js/templates.js',
   './js/anypack.js',
   './js/ai.js',
   './js/finisher.js',

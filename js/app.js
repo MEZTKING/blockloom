@@ -19,6 +19,7 @@ import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FO
 import { ITEM_MATERIALS, ITEM_TYPES, generateItem, THEMES, detectTheme, generateThemeSheet } from '../core/index.js';
 import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
+import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -123,6 +124,11 @@ const els = {
   anyPackEmpty: $('#anyPackEmpty'),
   anyPackCount: $('#anyPackCount'),
   anyPackExportBtn: $('#anyPackExportBtn'),
+  anyPackTemplate: $('#anyPackTemplate'),
+  anyPackTemplateNote: $('#anyPackTemplateNote'),
+  anyPackTemplateBlankBtn: $('#anyPackTemplateBlankBtn'),
+  anyPackTemplateGuideBtn: $('#anyPackTemplateGuideBtn'),
+  anyPackTemplateMetaBtn: $('#anyPackTemplateMetaBtn'),
   variantSheetDialog: $('#variantSheetDialog'),
   variantSheetGrid: $('#variantSheetGrid'),
   closeVariantSheetBtn: $('#closeVariantSheetBtn'),
@@ -3055,6 +3061,42 @@ function syncAnyPackSettings() {
   state.anyPackFormat = els.anyPackFormat.value;
 }
 
+function renderAnyPackTemplates() {
+  els.anyPackTemplate.replaceChildren();
+  for (const preset of TEMPLATE_PRESETS) {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = preset.name;
+    els.anyPackTemplate.append(option);
+  }
+  els.anyPackTemplate.value = TEMPLATE_PRESETS[0].id;
+  syncAnyPackTemplate();
+}
+
+function syncAnyPackTemplate() {
+  const preset = getTemplatePreset(els.anyPackTemplate.value);
+  els.anyPackTemplateNote.textContent = `${preset.width}×${preset.height}${preset.path ? ' · ' + preset.path : ' · download only'}`;
+  els.anyPackTemplateNote.title = preset.note;
+  els.anyPackTemplateMetaBtn.hidden = !preset.meta;
+}
+
+async function downloadTemplate(guide) {
+  const preset = getTemplatePreset(els.anyPackTemplate.value);
+  const canvas = createTemplateCanvas(preset, { guide });
+  const blob = await new Promise((resolve, reject) => canvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
+  const mode = guide ? 'guide' : 'blank';
+  downloadBlob(blob, `blockloom_${preset.id}_${mode}_${preset.width}x${preset.height}.png`);
+  toast(`${preset.name} · ${mode} template`);
+}
+
+function downloadTemplateMeta() {
+  const preset = getTemplatePreset(els.anyPackTemplate.value);
+  const meta = templateMeta(preset);
+  if (!meta) return;
+  downloadBlob(new Blob([meta], { type: 'application/json' }), 'template.png.mcmeta');
+  toast('Animation .mcmeta template');
+}
+
 function openAnyPack() {
   els.anyPackName.value = state.anyPackName;
   els.anyPackNamespace.value = state.anyPackNamespace;
@@ -3067,6 +3109,7 @@ function openAnyPack() {
     els.anyPackFormat.append(option);
   }
   els.anyPackFormat.value = state.anyPackFormat;
+  renderAnyPackTemplates();
   renderAnyPackEntries();
   if (!els.anyPackDialog.open) {
     document.body.classList.add('dialog-open');
@@ -3852,6 +3895,10 @@ function bindEvents() {
   els.anyPackCategory.addEventListener('change', syncAnyPackSettings);
   els.anyPackFormat.addEventListener('change', syncAnyPackSettings);
   els.anyPackExportBtn.addEventListener('click', exportAnyPack);
+  els.anyPackTemplate.addEventListener('change', syncAnyPackTemplate);
+  els.anyPackTemplateBlankBtn.addEventListener('click', () => downloadTemplate(false));
+  els.anyPackTemplateGuideBtn.addEventListener('click', () => downloadTemplate(true));
+  els.anyPackTemplateMetaBtn.addEventListener('click', downloadTemplateMeta);
   els.themeStudioBtn.addEventListener('click', openThemeStudio);
   els.closeThemeBtn.addEventListener('click', closeThemeStudio);
   els.themeDialog.addEventListener('click', (event) => { if (event.target === els.themeDialog) closeThemeStudio(); });

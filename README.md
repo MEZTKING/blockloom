@@ -212,6 +212,24 @@ Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public
 
 Material + modifier prompts are strong. Architectural motifs, secondary accents, and plant/entity prompts are the current weak spots. See `screenshots/blockloom-prompt-suite.png`.
 
+## Format templates
+
+The universal packer includes blank and guided templates for **Java 26.3**:
+
+| Template | Size | Path |
+|---|---|---|
+| Armor layer | 64×32 | `entity/equipment/humanoid/` |
+| Leggings layer | 64×32 | `entity/equipment/humanoid_leggings/` |
+| Player skin | 64×64 | download only |
+| Entity skin | 64×64 | `entity/` |
+| GUI container | 256×256 | `gui/container/` |
+| Particle | 8×8 | `particle/` |
+| Animation strip | 16×64 | `block/` + `.mcmeta` |
+| Painting | 16×16 | `painting/` |
+| Sun | 32×32 | `environment/celestial/` |
+
+Choose **Blank PNG** for a transparent canvas, or **Guided PNG** for a transparent overlay with grid, part labels, frame divisions, and slot pitch. The guided image is intended as a reference layer, not as a finished packed texture.
+
 ## Universal texture packer
 
 Open **Universal texture pack** in the left panel or press **U**.
@@ -242,6 +260,7 @@ This is the packaging path for textures from Bloxal, other generators, or manual
 - A local HTTP API and CLI for generating block PNGs, full texture sets, and weapon/item sprites for MCSuperMods and other applications.
 - A **Weapon / item studio** for swords, axes, pickaxes, shovels, bows, and shields, with PNG and item-pack export.
 - A **Universal texture packer** for any PNG path under `assets/<namespace>/textures/`, including entity, armor, GUI, particle, painting, non-square sheets, and `.png.mcmeta` animation metadata.
+- **Blank and guided Java 26.3 format templates** for armor layers, player/entity skins, GUI containers, particles, animation strips, paintings, and the sun.
 
 ## Texture finisher
 

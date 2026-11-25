@@ -3026,3 +3026,9 @@ body.is-dragging-file .drop-overlay { display: grid; }
 .theme-seed-row .item-field > span { flex: 0 0 auto; }
 .theme-format { flex: 0 0 140px !important; }
 @media (max-width: 760px) { .theme-dialog { width: calc(100vw - 12px); max-height: 94vh; border-radius: 16px; } .theme-shell { max-height: 94vh; } .theme-head { padding: 16px 14px 11px; } .theme-head h2 { font-size: 22px; } .theme-tabs { padding: 8px 14px; } .theme-body { grid-template-columns: 1fr; padding: 11px 14px 15px; } .theme-preview-frame { min-height: 220px; } .theme-grid { grid-template-columns: repeat(4,1fr); } .theme-format { flex: 1 1 auto !important; } }
+.any-pack-template { padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: rgba(8,10,6,.35); }
+.any-pack-template-head { display: flex; justify-content: space-between; gap: 8px; color: #8ab7ff; font-family: var(--font-mono); font-size: 6.2px; letter-spacing: .08em; margin-bottom: 6px; }
+.any-pack-template-head span:last-child { color: var(--dim); letter-spacing: 0; text-transform: none; }
+.any-pack-template-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.any-pack-template-row select { flex: 1 1 220px; height: 29px; border: 1px solid var(--line); border-radius: 4px; background: #0c0f09; color: var(--text-soft); font-family: var(--font-mono); font-size: 6.5px; padding: 0 6px; }
+.any-pack-template-row .btn { height: 29px; font-size: 7px; }
