@@ -118,6 +118,7 @@ const els = {
   anyPackFormat: $('#anyPackFormat'),
   anyPackAddBtn: $('#anyPackAddBtn'),
   anyPackInput: $('#anyPackInput'),
+  anyPackOrigNote: $('#anyPackOrigNote'),
   anyPackList: $('#anyPackList'),
   anyPackEmpty: $('#anyPackEmpty'),
   anyPackCount: $('#anyPackCount'),
@@ -3016,6 +3017,8 @@ async function addAnyPackFiles(files) {
         toast(`${file.name} could not be decoded.`, true);
         continue;
       }
+      const expected = { 'entity/equipment/humanoid': [64, 32], 'entity/equipment/humanoid_leggings': [64, 32], 'gui/container': [256, 256], particle: [8, 8] }[state.anyPackCategory];
+      if (expected && (width !== expected[0] || height !== expected[1])) toast(`${file.name} is ${width}×${height}; expected ${expected[0]}×${expected[1]} for this folder.`, true);
     }
     const entry = {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -3030,7 +3033,22 @@ async function addAnyPackFiles(files) {
   renderAnyPackEntries();
 }
 
+const ANY_PACK_HINTS = {
+  block: 'Block textures: 16×16, opaque; cut-outs need alpha.',
+  item: 'Item icons: 16×16 with transparency.',
+  entity: 'Entity skins are usually 64×64 or 64×32.',
+  'entity/equipment/humanoid': 'Modern armor layer: 64×32, one image for helmet/chest/boots.',
+  'entity/equipment/humanoid_leggings': 'Modern leggings layer: 64×32.',
+  'gui/container': 'Container GUI sheets are usually 256×256.',
+  'gui/sprites': 'GUI sprites can be any size; .mcmeta controls nine-slice/tile scaling.',
+  particle: 'Particles are usually 8×8.',
+  painting: 'Painting sizes vary; match the target canvas.',
+  environment: 'Environment textures are fixed-size vanilla assets.',
+  misc: 'Any texture path under assets/<namespace>/textures/.',
+};
+
 function syncAnyPackSettings() {
+  els.anyPackOrigNote.textContent = ANY_PACK_HINTS[els.anyPackCategory.value] || 'Paths are editable after import.';
   state.anyPackName = els.anyPackName.value.trim() || 'Blockloom Custom Pack';
   state.anyPackNamespace = els.anyPackNamespace.value.trim() || 'minecraft';
   state.anyPackCategory = els.anyPackCategory.value;
