@@ -90,6 +90,8 @@ const els = {
   itemImportBtn: $('#itemImportBtn'),
   itemImportInput: $('#itemImportInput'),
   itemTargetInput: $('#itemTargetInput'),
+  itemVariantsWrap: $('#itemVariantsWrap'),
+  itemVariants: $('#itemVariants'),
   importInput: $('#importInput'),
   dropOverlay: $('#dropOverlay'),
   textureTitle: $('#textureTitle'),
@@ -260,6 +262,7 @@ const state = {
   itemCurrent: null,
   itemTarget: 'iron_sword',
   itemImported: false,
+  itemVariantRoot: 42317,
   dragDepth: 0,
 };
 
@@ -2562,6 +2565,52 @@ function renderItemTypeButtons() {
   els.itemTypes.append(fragment);
 }
 
+function itemVariantSeeds() {
+  return Array.from({ length: 16 }, (_, index) => {
+    if (index === 0) return state.itemVariantRoot;
+    return ((state.itemVariantRoot + index * 7919) % 999999999) + 1;
+  });
+}
+
+function renderItemVariants() {
+  if (state.itemImported) {
+    els.itemVariantsWrap.hidden = true;
+    els.itemVariants.replaceChildren();
+    return;
+  }
+  els.itemVariantsWrap.hidden = false;
+  const seeds = itemVariantSeeds();
+  const fragment = document.createDocumentFragment();
+  for (const seed of seeds) {
+    const result = generateItem({
+      type: state.itemType,
+      material: state.itemMaterial,
+      seed,
+      size: 16,
+    });
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `item-variant${seed === state.itemSeed ? ' is-current' : ''}`;
+    button.dataset.seed = String(seed);
+    button.setAttribute('aria-label', `Use item seed ${seed}`);
+    const canvas = document.createElement('canvas');
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext('2d');
+    context.imageSmoothingEnabled = false;
+    context.drawImage(itemCanvasFromResult(result), 0, 0, 32, 32);
+    button.append(canvas);
+    fragment.append(button);
+  }
+  els.itemVariants.replaceChildren(fragment);
+}
+
+function updateItemVariantSelection() {
+  for (const button of $$('.item-variant', els.itemVariants)) {
+    button.classList.toggle('is-current', Number(button.dataset.seed) === state.itemSeed);
+  }
+}
+
 function renderItemSelectors() {
   els.itemMaterial.replaceChildren();
   for (const material of ITEM_MATERIALS) {
@@ -2643,6 +2692,7 @@ function renderItemStudio() {
   state.itemCurrent = result;
   state.itemTarget = result.recipe.itemId;
   state.itemImported = false;
+  if (els.itemVariantsWrap) els.itemVariantsWrap.hidden = false;
   state.itemCanvas = itemCanvasFromResult(result);
   drawItemPreviewCanvas();
   els.itemTitle.textContent = `${material.name} ${type.name}`;
@@ -2657,6 +2707,7 @@ function renderItemStudio() {
     els.itemPalette.append(swatch);
   }
   if (document.activeElement !== els.itemSeed) els.itemSeed.value = state.itemSeed;
+  updateItemVariantSelection();
 }
 
 async function importItemTexture(file) {
@@ -2674,6 +2725,8 @@ async function importItemTexture(file) {
     context.clearRect(0, 0, targetSize, targetSize);
     context.drawImage(image, 0, 0, plan.sourceWidth, plan.cropHeight, 0, 0, targetSize, targetSize);
     state.itemImported = true;
+    els.itemVariantsWrap.hidden = true;
+    els.itemVariants.replaceChildren();
     state.itemCanvas = canvas;
     state.itemSize = targetSize;
     state.itemTarget = importTitle(file.name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'imported_item';
@@ -2701,8 +2754,10 @@ async function importItemTexture(file) {
 }
 
 function openItemStudio() {
+  state.itemVariantRoot = state.itemSeed;
   renderItemSelectors();
   renderItemStudio();
+  renderItemVariants();
   if (!els.itemDialog.open) {
     document.body.classList.add('dialog-open');
     els.itemDialog.showModal();
@@ -3281,10 +3336,12 @@ function bindEvents() {
     state.itemType = button.dataset.type;
     renderItemTypeButtons();
     renderItemStudio();
+    renderItemVariants();
   });
   els.itemMaterial.addEventListener('change', () => {
     state.itemMaterial = els.itemMaterial.value;
     renderItemStudio();
+    renderItemVariants();
   });
   els.itemFormat.addEventListener('change', () => {
     state.itemFormat = els.itemFormat.value;
@@ -3293,13 +3350,17 @@ function bindEvents() {
     const value = Number(els.itemSeed.value);
     if (Number.isFinite(value) && value >= 1) {
       state.itemSeed = Math.min(999999999, Math.round(value));
+      state.itemVariantRoot = state.itemSeed;
       renderItemStudio();
+      renderItemVariants();
     }
   });
   els.itemDice.addEventListener('click', () => {
     state.itemSeed = randomSeed();
+    state.itemVariantRoot = state.itemSeed;
     els.itemSeed.value = state.itemSeed;
     renderItemStudio();
+    renderItemVariants();
   });
   els.itemSize.addEventListener('change', () => {
     state.itemSize = Number(els.itemSize.value) || 16;
@@ -3312,6 +3373,14 @@ function bindEvents() {
   els.itemImportInput.addEventListener('change', () => {
     const file = els.itemImportInput.files?.[0];
     if (file) importItemTexture(file);
+  });
+  els.itemVariants.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-seed]');
+    if (!button) return;
+    state.itemSeed = Number(button.dataset.seed);
+    els.itemSeed.value = state.itemSeed;
+    renderItemStudio();
+    updateItemVariantSelection();
   });
   els.itemTargetInput.addEventListener('input', () => {
     const value = els.itemTargetInput.value.toLowerCase().replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);

@@ -186,6 +186,7 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 Open **Weapon / item studio** in the left panel or press **W**.
 
 - Six item types: sword, axe, pickaxe, shovel, bow, shield.
+- **16 seed variants** per type/material, click to compare and select.
 - Eight material palettes: wood, stone, iron, gold, diamond, netherite, copper, emerald.
 - Deterministic 16 px sprites, scalable to 32/64 px, with transparent backgrounds.
 - Download PNG, copy PNG, or export a drop-in **item resource pack**.
@@ -196,6 +197,8 @@ Open **Weapon / item studio** in the left panel or press **W**.
 ![Item studio](screenshots/blockloom-item-studio.png)
 
 This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive. Web-generated textures work through the same local import path; Blockloom does not scrape or log into external services.
+
+The 16-variant sheet is modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
 
 ## Texture generation
 
