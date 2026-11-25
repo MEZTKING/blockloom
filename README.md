@@ -204,6 +204,12 @@ This is separate from the block library/finisher for now: item sprites export di
 
 Both 16-variant sheets are modeled on the workflow observed in Bloxal’s public studio: one prompt produces a sheet of alternatives, then the creator picks one and edits it.
 
+## Prompt coverage
+
+![Prompt coverage](screenshots/blockloom-prompt-suite.png)
+
+Material + modifier prompts are strong. Architectural motifs, secondary accents, and plant/entity prompts are the current weak spots. See `screenshots/blockloom-prompt-suite.png`.
+
 ## Universal texture packer
 
 Open **Universal texture pack** in the left panel or press **U**.
