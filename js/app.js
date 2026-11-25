@@ -21,6 +21,7 @@ import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
 import { PixelEditor } from './pixedit.js';
+import { saveAnyPackDraft, loadAnyPackDraft, clearAnyPackDraft as clearAnyPackDraftStore } from './drafts.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -119,6 +120,8 @@ const els = {
   anyPackEmpty: $('#anyPackEmpty'),
   anyPackCount: $('#anyPackCount'),
   anyPackHealth: $('#anyPackHealth'),
+  anyPackDraftState: $('#anyPackDraftState'),
+  anyPackClearBtn: $('#anyPackClearBtn'),
   anyPackExportBtn: $('#anyPackExportBtn'),
   anyPackTemplate: $('#anyPackTemplate'),
   anyPackTemplateNote: $('#anyPackTemplateNote'),
@@ -302,6 +305,8 @@ const state = {
   anyPackCategory: 'block',
   anyPackFormat: 'modern',
   anyPackName: 'Blockloom Custom Pack',
+  anyPackDraftLoaded: false,
+  anyPackDraftTimer: null,
   themeId: 'brass_checker',
   themeSeed: 20261124,
   themeFormat: 'modern',
@@ -2902,6 +2907,7 @@ function renderAnyPackEntries() {
     path.addEventListener('input', () => {
       entry.path = path.value.trim();
       updateAnyPackHealth();
+      scheduleAnyPackDraft();
     });
     const detail = document.createElement('small');
     const warnings = anyPackWarnings(entry);
@@ -2922,8 +2928,16 @@ function renderAnyPackEntries() {
       if (entry.url) URL.revokeObjectURL(entry.url);
       state.anyPackEntries = state.anyPackEntries.filter((item) => item.id !== entry.id);
       renderAnyPackEntries();
+      scheduleAnyPackDraft();
     });
-    row.append(thumb, main, remove);
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'any-entry-edit';
+    edit.textContent = '✎';
+    edit.title = 'Paint this entry';
+    edit.disabled = !entry.file.name.toLowerCase().endsWith('.png');
+    edit.addEventListener('click', () => editAnyPackEntry(entry));
+    row.append(thumb, main, edit, remove);
     fragment.append(row);
   }
   els.anyPackList.replaceChildren(fragment);
@@ -2988,6 +3002,7 @@ async function addAnyPackFiles(files) {
     state.anyPackEntries.push(entry);
   }
   renderAnyPackEntries();
+  scheduleAnyPackDraft();
 }
 
 const ANY_PACK_HINTS = {
@@ -3010,6 +3025,7 @@ function syncAnyPackSettings() {
   state.anyPackNamespace = els.anyPackNamespace.value.trim() || 'minecraft';
   state.anyPackCategory = els.anyPackCategory.value;
   state.anyPackFormat = els.anyPackFormat.value;
+  scheduleAnyPackDraft();
 }
 
 function renderAnyPackTemplates() {
@@ -3071,9 +3087,8 @@ function initPixelEditor() {
   els.pixelDialog.addEventListener('close', () => syncDialogBody());
 }
 
-function addAnyPackCanvas(canvas, path, name, blob) {
-  const context = canvas.getContext('2d');
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+function analyzeCanvas(canvas) {
+  const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
   let visible = 0;
   const palette = new Set();
   for (let i = 0; i < pixels.length; i += 4) {
@@ -3082,16 +3097,73 @@ function addAnyPackCanvas(canvas, path, name, blob) {
       palette.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
     }
   }
+  return {
+    width: canvas.width,
+    height: canvas.height,
+    alphaPct: Math.round((visible / (canvas.width * canvas.height)) * 10000) / 100,
+    colors: palette.size,
+  };
+}
+
+function addAnyPackCanvas(canvas, path, name, blob) {
+  const stats = analyzeCanvas(canvas);
   const file = new File([blob], name, { type: 'image/png' });
   state.anyPackEntries.push({
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     file,
     path,
-    width: canvas.width,
-    height: canvas.height,
-    alphaPct: Math.round((visible / (canvas.width * canvas.height)) * 10000) / 100,
-    colors: palette.size,
+    ...stats,
     url: URL.createObjectURL(file),
+  });
+  scheduleAnyPackDraft();
+}
+
+async function editAnyPackEntry(entry) {
+  if (!entry.file.name.toLowerCase().endsWith('.png')) {
+    toast('Only PNG entries can be painted.', true);
+    return;
+  }
+  const bitmap = await createImageBitmap(entry.file);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0);
+  bitmap.close?.();
+  const animation = canvas.height > canvas.width && canvas.height % canvas.width === 0;
+  pixelEditor.open({
+    canvas,
+    title: entry.file.name,
+    path: entry.path,
+    animation,
+    onSave: async ({ canvas: result, meta }) => {
+      const blob = await new Promise((resolve, reject) => result.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
+      const stats = analyzeCanvas(result);
+      if (entry.url) URL.revokeObjectURL(entry.url);
+      entry.file = new File([blob], entry.file.name, { type: 'image/png' });
+      Object.assign(entry, stats);
+      entry.url = URL.createObjectURL(entry.file);
+      if (meta) {
+        const metaPath = `${entry.path}.mcmeta`;
+        const existing = state.anyPackEntries.find((item) => item.path === metaPath);
+        if (existing) {
+          existing.file = new File([meta], entry.file.name + '.mcmeta', { type: 'application/json' });
+        } else {
+          state.anyPackEntries.push({
+            id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            file: new File([meta], entry.file.name + '.mcmeta', { type: 'application/json' }),
+            path: metaPath,
+            width: 0,
+            height: 0,
+            alphaPct: null,
+            colors: 0,
+            url: null,
+          });
+        }
+      }
+      renderAnyPackEntries();
+      scheduleAnyPackDraft();
+      toast('Painted entry updated');
+    },
   });
 }
 
@@ -3127,12 +3199,77 @@ async function editAnyPackTemplate() {
         });
       }
       renderAnyPackEntries();
+      scheduleAnyPackDraft();
       toast('Template saved to the universal pack');
     },
   });
 }
 
-function openAnyPack(templateId = null) {
+function scheduleAnyPackDraft() {
+  if (state.anyPackDraftTimer) clearTimeout(state.anyPackDraftTimer);
+  if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Saving…';
+  state.anyPackDraftTimer = setTimeout(async () => {
+    try {
+      await saveAnyPackDraft(state.anyPackEntries, {
+        name: state.anyPackName,
+        namespace: state.anyPackNamespace,
+        category: state.anyPackCategory,
+        format: state.anyPackFormat,
+      });
+      if (els.anyPackDraftState) els.anyPackDraftState.textContent = state.anyPackEntries.length ? 'Draft saved' : 'Draft empty';
+    } catch {
+      if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Draft unavailable';
+    }
+  }, 550);
+}
+
+async function restoreAnyPackDraft() {
+  if (state.anyPackDraftLoaded) return;
+  state.anyPackDraftLoaded = true;
+  if (state.anyPackEntries.length) return;
+  try {
+    const record = await loadAnyPackDraft();
+    if (!record?.entries?.length) return;
+    state.anyPackEntries = record.entries.map((entry) => ({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      file: entry.file,
+      path: entry.path,
+      width: entry.width,
+      height: entry.height,
+      alphaPct: entry.alphaPct,
+      colors: entry.colors,
+      url: entry.file?.type === 'image/png' ? URL.createObjectURL(entry.file) : null,
+    }));
+    if (record.settings) {
+      state.anyPackName = record.settings.name || state.anyPackName;
+      state.anyPackNamespace = record.settings.namespace || state.anyPackNamespace;
+      state.anyPackCategory = record.settings.category || state.anyPackCategory;
+      state.anyPackFormat = record.settings.format || state.anyPackFormat;
+    }
+    if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Draft restored';
+  } catch {
+    if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Draft unavailable';
+  }
+}
+
+async function clearAnyPackDraft() {
+  if (!state.anyPackEntries.length) {
+    toast('The draft is already empty.');
+    return;
+  }
+  if (!window.confirm('Clear the saved universal-pack draft and remove all current files?')) return;
+  if (state.anyPackDraftTimer) clearTimeout(state.anyPackDraftTimer);
+  state.anyPackDraftTimer = null;
+  for (const entry of state.anyPackEntries) if (entry.url) URL.revokeObjectURL(entry.url);
+  state.anyPackEntries = [];
+  try { await clearAnyPackDraftStore(); } catch { /* ignore */ }
+  renderAnyPackEntries();
+  if (els.anyPackDraftState) els.anyPackDraftState.textContent = 'Draft empty';
+  toast('Universal pack draft cleared');
+}
+
+async function openAnyPack(templateId = null) {
+  await restoreAnyPackDraft();
   els.anyPackName.value = state.anyPackName;
   els.anyPackNamespace.value = state.anyPackNamespace;
   els.anyPackCategory.value = state.anyPackCategory;
@@ -3897,6 +4034,7 @@ function bindEvents() {
   els.anyPackCategory.addEventListener('change', syncAnyPackSettings);
   els.anyPackFormat.addEventListener('change', syncAnyPackSettings);
   els.anyPackExportBtn.addEventListener('click', exportAnyPack);
+  els.anyPackClearBtn.addEventListener('click', clearAnyPackDraft);
   els.anyPackTemplate.addEventListener('change', syncAnyPackTemplate);
   els.anyPackTemplateBlankBtn.addEventListener('click', () => downloadTemplate(false));
   els.anyPackTemplateGuideBtn.addEventListener('click', () => downloadTemplate(true));

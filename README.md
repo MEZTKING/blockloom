@@ -205,11 +205,13 @@ The front page maps every texture category and labels the honest mode for each:
 
 Every card opens the relevant studio or format template.
 
+The Universal Packer autosaves its draft files and settings in IndexedDB. Reopen it after a reload to continue; **Clear draft** removes the stored work.
+
 ## Pixel editor
 
 ![Pixel editor](screenshots/blockloom-pixel-editor.png)
 
-Open **Universal texture pack → Edit** after choosing a format template.
+Open **Universal texture pack → Edit** after choosing a format template, or press **✎** on any PNG entry in the packer to paint it in place.
 
 - Pencil, eraser, flood fill, eyedropper
 - Alpha colour, sampled palette

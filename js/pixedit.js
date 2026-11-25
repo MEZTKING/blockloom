@@ -431,9 +431,10 @@ export class PixelEditor {
       const canvas = this.compose();
       const meta = this.meta();
       if (this.onSave) await this.onSave({ canvas, meta, path: this.path, name: this.filename() });
-      this.close();
     } catch (error) {
       this.status.textContent = 'Save failed.';
+    } finally {
+      this.close();
     }
   }
 }
