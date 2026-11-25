@@ -50,6 +50,7 @@ Without `BRIDGE_TOKEN`, only loopback clients can use the bridge. The token is n
 | `GET /api/generate?...` | One PNG by default, or `format=json` / `format=zip` |
 | `POST /api/generate` | JSON recipe |
 | `POST /api/batch` | Many textures → one ZIP |
+| `GET/POST /api/item` | Deterministic weapon/item sprite PNG or JSON |
 | `GET /api/openapi.json` | OpenAPI 3.0 document |
 
 ### One PNG
@@ -109,6 +110,18 @@ curl "http://127.0.0.1:4173/api/generate?prompt=frosted%20oak%20planks&size=32&f
 ```
 
 Contains `side.png`, `top.png`, `bottom.png`, `texture.json`, and `README.txt`.
+
+### Item / weapon sprite
+
+```bash
+curl "http://127.0.0.1:4173/api/item?type=sword&material=diamond&seed=42&size=16" -o sword.png
+curl "http://127.0.0.1:4173/api/item?type=axe&material=iron&format=json"
+```
+
+Types: `sword`, `axe`, `pickaxe`, `shovel`, `bow`, `shield`.
+Materials: `wood`, `stone`, `iron`, `gold`, `diamond`, `netherite`, `copper`, `emerald`.
+
+Output is a transparent PNG. The JSON form includes the resolved item id, recipe, and `ITEM_ENGINE_VERSION`. No ZIP is produced for a single item.
 
 ### Batch
 

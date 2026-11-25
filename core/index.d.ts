@@ -148,3 +148,62 @@ export function renderTextureBuffer(params: Record<string, unknown>): {
   overlayAccentSwatches: string[];
   modifiers: string[];
 };
+
+export type ItemTypeId = 'sword' | 'axe' | 'pickaxe' | 'shovel' | 'bow' | 'shield';
+
+export interface ItemType {
+  id: ItemTypeId;
+  name: string;
+  keywords: string[];
+  suffix: string;
+  fixedTarget: string | null;
+}
+
+export interface ItemMaterial {
+  id: string;
+  name: string;
+  prefix: string;
+  base: string;
+  light: string;
+  dark: string;
+  handle: string;
+  handleDark: string;
+  outline: string;
+  guard: string;
+  guardLight: string;
+  accent: string;
+}
+
+export interface ItemRecipe {
+  type: ItemTypeId;
+  typeName: string;
+  material: string;
+  materialName: string;
+  itemId: string;
+  seed: number;
+  size: number;
+  accent: string;
+  engineVersion: string;
+}
+
+export interface GeneratedItem {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+  recipe: ItemRecipe;
+  version: string;
+}
+
+export function generateItem(options?: {
+  type?: ItemTypeId;
+  material?: string;
+  seed?: number;
+  size?: 16 | 32 | 64;
+  accent?: string;
+}): GeneratedItem;
+export function itemTargetId(type: ItemTypeId, material: string): string;
+export function listItemTypes(): ItemType[];
+export function listItemMaterials(): ItemMaterial[];
+export const ITEM_TYPES: ItemType[];
+export const ITEM_MATERIALS: ItemMaterial[];
+export const ITEM_ENGINE_VERSION: string;

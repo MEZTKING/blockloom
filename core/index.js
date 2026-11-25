@@ -20,3 +20,12 @@ export {
   MODIFIER_WORDS,
   getMaterial,
 } from './data.js';
+export {
+  ITEM_ENGINE_VERSION,
+  ITEM_MATERIALS,
+  ITEM_TYPES,
+  generateItem,
+  itemTargetId,
+  listItemMaterials,
+  listItemTypes,
+} from './items.js';

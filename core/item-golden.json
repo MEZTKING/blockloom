@@ -1,0 +1,19 @@
+{
+  "engineVersion": "1.0.0",
+  "seed": 20261124,
+  "hash": "sha256",
+  "cases": [
+    { "type": "sword", "material": "iron", "itemId": "iron_sword", "hash": "48833051780139b94e1ceff16bd1a9c83b53bea952b1bfc7a6d705f2d8f40894" },
+    { "type": "sword", "material": "diamond", "itemId": "diamond_sword", "hash": "03a65d132abd2c83b6b43c6db43f5cccb9054d2c5b4df7666c7b140d7b814a63" },
+    { "type": "axe", "material": "iron", "itemId": "iron_axe", "hash": "0cd4c4e8bb2a36e1095f1323649366d146142e5e0f5b584afd98d226ca38fa38" },
+    { "type": "axe", "material": "gold", "itemId": "golden_axe", "hash": "5af66830eb0a1aca71b2140bc753430b307c58b5c669b3e92a22d07807d3a2f6" },
+    { "type": "pickaxe", "material": "stone", "itemId": "stone_pickaxe", "hash": "e0621e3fbe9b4149a4885eb8958829ddbb158e527347416017f4487ecf627a09" },
+    { "type": "pickaxe", "material": "netherite", "itemId": "netherite_pickaxe", "hash": "1ba733ef62d1ab743981e543d85d7919ca577c21d096553a206a22b5b94f73fe" },
+    { "type": "shovel", "material": "wood", "itemId": "wooden_shovel", "hash": "3c8916739f07ba9c9d3a01cbf8d3763cc0a7c4506187d424b30c418c5bde1450" },
+    { "type": "shovel", "material": "copper", "itemId": "copper_shovel", "hash": "fc6833d7bb032231737ce3fadcb0271f99e22510666f65bf8746c97e4058c705" },
+    { "type": "bow", "material": "wood", "itemId": "bow", "hash": "8b133e56ec266cf7c6b40e269692cbac7baf093bb139e361d9f44e93d62bcd3e" },
+    { "type": "bow", "material": "emerald", "itemId": "bow", "hash": "b7aea89b3193f971f44d5af66a89aa606292b59e32eee9b00122d79e2b267e17" },
+    { "type": "shield", "material": "iron", "itemId": "shield", "hash": "b916e172827a1220f834993143a99a4795af6aef5afb78b905186c7a830d5622" },
+    { "type": "shield", "material": "gold", "itemId": "shield", "hash": "42239a7fbabc78f17d1206a37d535c3809c0caec258cbc430cb6ed3d1d5493ad" }
+  ]
+}

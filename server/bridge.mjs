@@ -1,8 +1,11 @@
 /* Local, AI-free texture generation bridge. Shared by the HTTP API and CLI. */
 import {
   FINISHES,
+  ITEM_MATERIALS,
+  ITEM_TYPES,
   MATERIALS,
   MODIFIERS,
+  generateItem,
   getMaterial,
   parsePrompt,
   renderTextureBuffer,
@@ -11,7 +14,7 @@ import {
 import { createZip } from '../js/zip.js';
 import { encodePng } from './png.mjs';
 
-export const BRIDGE_API_VERSION = '1.0.0';
+export const BRIDGE_API_VERSION = '1.1.0';
 export const MAX_BATCH_ITEMS = 64;
 export const MAX_SIZE = 512;
 export const FACES = ['side', 'top', 'bottom'];
@@ -312,6 +315,11 @@ export function capabilities() {
     modifiers: MODIFIERS.map(({ id, label }) => ({ id, label })),
     faces: FACES,
     formats: ['png', 'json', 'zip'],
+    items: {
+      types: ITEM_TYPES.map((type) => ({ id: type.id, name: type.name })),
+      materials: ITEM_MATERIALS.map((material) => ({ id: material.id, name: material.name })),
+      formats: ['png', 'json'],
+    },
   };
 }
 
@@ -326,6 +334,8 @@ export const API_DOCS = {
     'GET /api/generate?prompt=...': 'One PNG (side face) by default. Add format=json or format=zip, face=top/bottom.',
     'POST /api/generate': 'JSON body with prompt/material/seed/size/finish/modifiers/accent/face/format.',
     'POST /api/batch': 'JSON body { items: [...] } -> ZIP of texture sets and manifest.json.',
+    'GET /api/item?type=sword&material=iron': 'One transparent item/weapon PNG. Add format=json for metadata.',
+    'POST /api/item': 'JSON item recipe.',
     'GET /api/openapi.json': 'OpenAPI 3.0 description.',
   },
   examples: {
@@ -363,5 +373,47 @@ export const OPENAPI = {
       post: { summary: 'Generate from a JSON recipe', responses: { '200': { description: 'PNG, JSON, or ZIP' } } },
     },
     '/api/batch': { post: { summary: 'Generate many textures as one ZIP', responses: { '200': { description: 'ZIP' } } } },
+    '/api/item': {
+      get: {
+        summary: 'Generate one item or weapon sprite',
+        parameters: [
+          { name: 'type', in: 'query', schema: { type: 'string', enum: ITEM_TYPES.map((type) => type.id) } },
+          { name: 'material', in: 'query', schema: { type: 'string', enum: ITEM_MATERIALS.map((material) => material.id) } },
+          { name: 'seed', in: 'query', schema: { type: 'integer' } },
+          { name: 'size', in: 'query', schema: { type: 'integer', enum: [16, 32, 64] } },
+          { name: 'format', in: 'query', schema: { type: 'string', enum: ['png', 'json'] } },
+        ],
+        responses: { '200': { description: 'PNG or JSON' } },
+      },
+      post: { summary: 'Generate one item or weapon sprite from JSON', responses: { '200': { description: 'PNG or JSON' } } },
+    },
   },
 };
+
+export function renderItem(input = {}) {
+  const item = generateItem({
+    type: input.type,
+    material: input.material || input.materialId,
+    seed: input.seed,
+    size: input.size,
+    accent: input.accent,
+  });
+  const png = encodePng(item.width, item.height, item.rgba);
+  return {
+    ...item,
+    png,
+    dataUrl: `data:image/png;base64,${png.toString('base64')}`,
+    filename: `blockloom_${item.recipe.material}_${item.recipe.type}_${item.recipe.seed}_${item.recipe.size}px`,
+  };
+}
+
+export function serializeItem(result) {
+  return {
+    ok: true,
+    width: result.width,
+    height: result.height,
+    recipe: result.recipe,
+    version: result.version,
+    image: result.dataUrl,
+  };
+}

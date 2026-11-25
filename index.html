@@ -104,6 +104,12 @@
         <input id="importInput" type="file" accept="image/png,image/*" hidden />
       </div>
 
+      <button class="import-button item-studio-button" id="itemStudioBtn" type="button" title="Open the weapon / item studio (W)">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14.5 4.5 5-1-1 5-8.6 8.6-3.9 1.2 1.2-3.9 8.3-8.3ZM4 20l3.2-3.2M13 6l5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><strong>Weapon / item studio</strong><small>Swords · axes · tools · bows</small></span>
+        <kbd>W</kbd>
+      </button>
+
       <section class="control-block material-block">
         <div class="control-title">
           <span>Base material</span>
@@ -403,6 +409,7 @@
         <div><kbd>A</kbd><span>AI lab</span></div>
         <div><kbd>P</kbd><span>Pack builder</span></div>
         <div><kbd>S</kbd><span>Share link</span></div>
+        <div><kbd>W</kbd><span>Weapons</span></div>
         <div><kbd>I</kbd><span>Import PNG</span></div>
         <div><kbd>E</kbd><span>PNG</span></div>
         <div><kbd>?</kbd><span>This guide</span></div>
@@ -728,6 +735,52 @@
     </div>
   </dialog>
 
+
+  <!-- Item / weapon studio -->
+  <dialog class="item-dialog" id="itemDialog" aria-labelledby="itemDialogTitle">
+    <div class="item-shell">
+      <header class="item-head">
+        <div>
+          <div class="item-kicker"><span></span>ITEM STUDIO</div>
+          <h2 id="itemDialogTitle">Forge a weapon.</h2>
+          <p>Deterministic item sprites, exported as PNG or a drop-in item pack.</p>
+        </div>
+        <button class="icon-button" id="closeItemBtn" type="button" aria-label="Close item studio">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="item-body">
+        <section class="item-controls" aria-label="Item settings">
+          <div class="item-control-block">
+            <div class="item-control-head"><span>Weapon</span><span>6 types</span></div>
+            <div class="item-type-grid" id="itemTypes"></div>
+          </div>
+          <div class="item-control-block">
+            <label class="item-field"><span>Material</span><select id="itemMaterial" aria-label="Item material"></select></label>
+            <label class="item-field"><span>Pack format</span><select id="itemFormat" aria-label="Item pack format"></select></label>
+          </div>
+          <div class="item-control-block item-inline">
+            <label class="item-field item-seed"><span>Seed</span><input id="itemSeed" type="number" min="1" max="999999999" inputmode="numeric" /></label>
+            <button class="item-dice" id="itemDice" type="button" title="Random seed" aria-label="Random seed">⚄</button>
+            <label class="item-field item-size"><span>Size</span><select id="itemSize" aria-label="Item texture size"><option>16</option><option>32</option><option>64</option></select></label>
+          </div>
+          <div class="item-note">Textures are transparent PNGs. The item pack overrides <code>assets/minecraft/textures/item/&lt;id&gt;.png</code>.</div>
+        </section>
+        <section class="item-preview-panel" aria-label="Item preview">
+          <div class="item-preview-frame"><canvas id="itemPreview" width="384" height="384" role="img" aria-label="Item sprite preview"></canvas></div>
+          <div class="item-preview-meta">
+            <div><h3 id="itemTitle">Iron Sword</h3><p id="itemTarget">iron_sword</p></div>
+            <div class="item-palette" id="itemPalette"></div>
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-outline" id="itemDownloadBtn" type="button">Download PNG</button>
+            <button class="btn btn-outline" id="itemCopyBtn" type="button">Copy PNG</button>
+            <button class="btn btn-primary" id="itemPackBtn" type="button">Export item pack</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </dialog>
 
   <!-- Library version history -->
   <dialog class="version-dialog" id="versionDialog" aria-labelledby="versionTitle" aria-describedby="versionSub">

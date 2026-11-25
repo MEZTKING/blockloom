@@ -26,7 +26,7 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
-**Core package:** [@blockloom/core v1.1.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.1.0) — DOM-free generator, 89 recipes, types, and worker docs.
+**Core package:** [@blockloom/core v1.2.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.2.0) — DOM-free block + item generator, 89 recipes, types, and worker docs.
 
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 
@@ -181,6 +181,21 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 
 ![Imported texture in the studio](screenshots/blockloom-import.png)
 
+## Item / weapon studio
+
+Open **Weapon / item studio** in the left panel or press **W**.
+
+- Six item types: sword, axe, pickaxe, shovel, bow, shield.
+- Eight material palettes: wood, stone, iron, gold, diamond, netherite, copper, emerald.
+- Deterministic 16 px sprites, scalable to 32/64 px, with transparent backgrounds.
+- Download PNG, copy PNG, or export a drop-in **item resource pack**.
+- Item pack path: `assets/minecraft/textures/item/<item>.png`.
+- Vanilla IDs are used for the five vanilla tool tiers; copper/emerald produce modded IDs.
+
+![Item studio](screenshots/blockloom-item-studio.png)
+
+This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive.
+
 ## Texture generation
 
 - 89 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
@@ -193,7 +208,8 @@ Use **Import texture** in the left panel, press **I**, or drop a PNG onto the st
 - A shareable compressed link carrying the current pixels and recipe.
 - An offline app shell; after first load, generation, import, finishing, library, versions, sharing, and packs work with no network.
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
-- A local HTTP API and CLI for generating PNGs and texture-set ZIPs for MCSuperMods and other applications.
+- A local HTTP API and CLI for generating block PNGs, full texture sets, and weapon/item sprites for MCSuperMods and other applications.
+- A **Weapon / item studio** for swords, axes, pickaxes, shovels, bows, and shields, with PNG and item-pack export.
 
 ## Texture finisher
 
@@ -416,7 +432,9 @@ At Minecraft resolution, texture quality comes from **palette discipline, contro
 index.html          app shell and UI
 styles.css          design system, 3D cube, AI lab, library, finisher, responsive layouts
 js/importer.js     square/animation import planning and filename titles
-server/bridge.mjs   local AI-free texture generator, API model, batch/ZIP logic
+core/items.js      deterministic weapon/item sprite templates and generator
+js/itempack.js     item/weapon resource-pack export
+server/bridge.mjs   local AI-free block + item generator, API model, batch/ZIP logic
 server/png.mjs      dependency-free RGBA PNG encoder
 bin/blockloom.mjs   CLI for PNG, texture-set ZIP, batch, materials
 docs/API.md         HTTP bridge and MCSuperMods integration reference
@@ -448,6 +466,9 @@ screenshots/        preview images
 
 ## Notes and limits
 
+- Item sprites are export-only for now; they do not enter the block library, finisher, or block pack builder.
+- Item packs override item texture paths only; they do not add new items or item models.
+
 - The local bridge is procedural only; it never calls an AI provider.
 - The Tauri Windows/Android apps do **not** start the HTTP bridge. Run `npm run bridge` separately for MCSuperMods or other apps.
 
@@ -475,7 +496,9 @@ screenshots/        preview images
 `npm test` runs a dependency-free suite with the Node test runner:
 
 - prompt parsing for materials, tints, accents, and effects,
-- all 89 materials across side/top/bottom faces,
+- all 89 block materials across side/top/bottom faces,
+- deterministic item/weapon sprites, item golden hashes, and target IDs,
+- item PNG and item-pack export paths,
 - RGBA completeness and deterministic seeds,
 - a seam sanity ratio at 16 px,
 - all finishes and effect overlays,

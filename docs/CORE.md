@@ -1,4 +1,4 @@
-# @blockloom/core v1.1.0
+# @blockloom/core v1.2.0
 
 Deterministic Minecraft texture generation with **no DOM, canvas, network, or AI dependency**.
 
@@ -6,10 +6,10 @@ It is the same engine used by the Blockloom app, local bridge, and CLI. Same inp
 
 ## Install / import
 
-The package lives in [`core/`](../core) and is published with the `core-v1.1.0` tag. Install the release tarball:
+The package lives in [`core/`](../core) and is published with the `core-v1.2.0` tag. Install the release tarball:
 
 ```bash
-npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.1.0/blockloom-core-1.1.0.tgz
+npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.2.0/blockloom-core-1.2.0.tgz
 ```
 
 Or copy `core/` into your project. It is plain ESM with no dependencies.
@@ -69,7 +69,25 @@ generate({
 
 `prompt` and `recipe` can be combined; explicit recipe fields win.
 
-### Other exports
+### Weapons and items
+
+```js
+import { generateItem, listItemTypes, listItemMaterials } from '@blockloom/core';
+
+const item = generateItem({
+  type: 'sword',       // sword | axe | pickaxe | shovel | bow | shield
+  material: 'diamond', // wood | stone | iron | gold | diamond | netherite | copper | emerald
+  seed: 42,
+  size: 16,
+});
+item.rgba;             // transparent RGBA
+item.recipe.itemId;    // 'diamond_sword'
+item.version;          // ITEM_ENGINE_VERSION
+```
+
+Item sprites are deterministic 16×16 templates scaled to 16/32/64. `core/item-golden.json` pins 12 item hashes. `ITEM_ENGINE_VERSION` is separate from the block `ENGINE_VERSION`.
+
+## Other exports
 
 ```js
 parsePrompt('oxidized copper block');
@@ -77,6 +95,8 @@ parsePrompt('oxidized copper block');
 
 listMaterials(); // 89 recipes: stone, glass, stained glass, wool, concrete, metals, copper stages, leaves…
 listModifiers(); // effect vocabulary
+listItemTypes();
+listItemMaterials();
 ENGINE_VERSION;  // '1.0.0'
 ```
 
@@ -168,4 +188,4 @@ MIT. Credit: **Blockloom / Lelouch**. The MIT licence in the repository root app
 
 ## Release
 
-Tag: `core-v1.1.0`
+Tag: `core-v1.2.0`

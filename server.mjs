@@ -2,7 +2,7 @@ import http from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API_DOCS, BRIDGE_API_VERSION, OPENAPI, batchZip, capabilities, renderTextureSet, serializeTextureSet, texturePng, textureResultZip } from './server/bridge.mjs';
+import { API_DOCS, BRIDGE_API_VERSION, OPENAPI, batchZip, capabilities, renderItem, renderTextureSet, serializeItem, serializeTextureSet, texturePng, textureResultZip } from './server/bridge.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const port = Number(process.env.PORT) || 4173;
@@ -340,7 +340,7 @@ function aiStatus() {
   };
 }
 
-const BRIDGE_PATHS = new Set(['/api', '/api/health', '/api/materials', '/api/generate', '/api/batch', '/api/openapi.json']);
+const BRIDGE_PATHS = new Set(['/api', '/api/health', '/api/materials', '/api/generate', '/api/batch', '/api/item', '/api/openapi.json']);
 
 function isLoopbackHost(value) {
   return value === '127.0.0.1' || value === 'localhost' || value === '::1';
@@ -513,6 +513,8 @@ async function handleBridge(req, res, url) {
         formats: caps.formats,
         maxBatchItems: caps.bridge.maxBatchItems,
         sizes: caps.bridge.sizes,
+        itemTypes: caps.items.types.length,
+        itemMaterials: caps.items.materials.length,
       },
     });
     return true;
@@ -540,6 +542,37 @@ async function handleBridge(req, res, url) {
     await sendTextureResult(req, res, result, input, format, {
       download: url.searchParams.get('download') === '1' || body.download === true,
     });
+    return true;
+  }
+
+  if (url.pathname === '/api/item' && (req.method === 'GET' || req.method === 'POST')) {
+    let body = {};
+    if (req.method === 'POST') body = await readJson(req, 32 * 1024);
+    const q = url.searchParams;
+    const input = {
+      type: body.type || q.get('type') || 'sword',
+      material: body.material || body.materialId || q.get('material') || q.get('materialId') || 'iron',
+      seed: body.seed || q.get('seed') || 1,
+      size: body.size || q.get('size') || 16,
+      accent: body.accent || q.get('accent') || undefined,
+    };
+    const item = renderItem(input);
+    const format = String(body.format || q.get('format') || (String(req.headers.accept || '').includes('application/json') ? 'json' : 'png')).toLowerCase();
+    const headers = {
+      'X-Blockloom-Title': encodeURIComponent(`${item.recipe.materialName} ${item.recipe.typeName}`),
+      'X-Blockloom-Item': item.recipe.itemId,
+      'X-Blockloom-Generator': 'blockloom-local-bridge',
+    };
+    if (format === 'json') {
+      json(res, 200, serializeItem(item));
+    } else if (format === 'png') {
+      sendBuffer(res, 200, item.png, 'image/png', `${item.filename}.png`, {
+        ...headers,
+        'Content-Disposition': `inline; filename="${item.filename}.png"`,
+      });
+    } else {
+      bridgeError(res, 400, 'Item format must be png or json.');
+    }
     return true;
   }
 

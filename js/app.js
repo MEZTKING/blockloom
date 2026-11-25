@@ -16,6 +16,8 @@ import { importSummary, importTitle, planTextureImport } from './importer.js';
 import { releaseInfo } from './update.js';
 import { APP_VERSION } from './version.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
+import { ITEM_MATERIALS, ITEM_TYPES, generateItem } from '../core/index.js';
+import { buildItemResourcePack } from './itempack.js';
 import { TextureFinisher } from './finisher.js';
 import {
   countWorks,
@@ -69,6 +71,22 @@ const els = {
   finishBtn: $('#finishBtn'),
   shareBtn: $('#shareBtn'),
   importBtn: $('#importBtn'),
+  itemStudioBtn: $('#itemStudioBtn'),
+  itemDialog: $('#itemDialog'),
+  closeItemBtn: $('#closeItemBtn'),
+  itemTypes: $('#itemTypes'),
+  itemMaterial: $('#itemMaterial'),
+  itemFormat: $('#itemFormat'),
+  itemSeed: $('#itemSeed'),
+  itemDice: $('#itemDice'),
+  itemSize: $('#itemSize'),
+  itemPreview: $('#itemPreview'),
+  itemTitle: $('#itemTitle'),
+  itemTarget: $('#itemTarget'),
+  itemPalette: $('#itemPalette'),
+  itemDownloadBtn: $('#itemDownloadBtn'),
+  itemCopyBtn: $('#itemCopyBtn'),
+  itemPackBtn: $('#itemPackBtn'),
   importInput: $('#importInput'),
   dropOverlay: $('#dropOverlay'),
   textureTitle: $('#textureTitle'),
@@ -231,6 +249,12 @@ const state = {
   packGrassTintFree: false,
   versionWorkId: null,
   importing: false,
+  itemType: 'sword',
+  itemMaterial: 'iron',
+  itemSeed: 42317,
+  itemSize: 16,
+  itemFormat: 'modern',
+  itemCurrent: null,
   dragDepth: 0,
 };
 
@@ -400,7 +424,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2497,9 +2521,181 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open) return;
     importTextureFile(file);
   });
+}
+
+
+/* ---------- Item / weapon studio ---------- */
+function itemTypeInfo() {
+  return ITEM_TYPES.find((type) => type.id === state.itemType) || ITEM_TYPES[0];
+}
+
+function itemMaterialInfo() {
+  return ITEM_MATERIALS.find((material) => material.id === state.itemMaterial) || ITEM_MATERIALS[2];
+}
+
+function itemFilename(extension = 'png') {
+  const type = itemTypeInfo();
+  const material = itemMaterialInfo();
+  return `blockloom_${material.id}_${type.id}_${state.itemSeed}_${state.itemSize}px.${extension}`;
+}
+
+function renderItemTypeButtons() {
+  els.itemTypes.replaceChildren();
+  const fragment = document.createDocumentFragment();
+  for (const type of ITEM_TYPES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.type = type.id;
+    button.textContent = type.name;
+    button.className = type.id === state.itemType ? 'active' : '';
+    fragment.append(button);
+  }
+  els.itemTypes.append(fragment);
+}
+
+function renderItemSelectors() {
+  els.itemMaterial.replaceChildren();
+  for (const material of ITEM_MATERIALS) {
+    const option = document.createElement('option');
+    option.value = material.id;
+    option.textContent = material.name;
+    els.itemMaterial.append(option);
+  }
+  els.itemMaterial.value = state.itemMaterial;
+  els.itemFormat.replaceChildren();
+  for (const format of PACK_FORMATS) {
+    const option = document.createElement('option');
+    option.value = format.id;
+    option.textContent = `${format.label} · F${format.packFormat}`;
+    els.itemFormat.append(option);
+  }
+  els.itemFormat.value = state.itemFormat;
+  els.itemSeed.value = state.itemSeed;
+  els.itemSize.value = String(state.itemSize);
+  renderItemTypeButtons();
+}
+
+function itemCanvasFromResult(result) {
+  const canvas = document.createElement('canvas');
+  canvas.width = result.width;
+  canvas.height = result.height;
+  const context = canvas.getContext('2d');
+  const imageData = context.createImageData(result.width, result.height);
+  imageData.data.set(result.rgba);
+  context.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
+function sampleItemPalette(result) {
+  const counts = new Map();
+  for (let i = 0; i < result.rgba.length; i += 4) {
+    if (result.rgba[i + 3] < 24) continue;
+    const key = `${result.rgba[i]},${result.rgba[i + 1]},${result.rgba[i + 2]}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7)
+    .map(([key]) => `#${key.split(',').map((value) => Number(value).toString(16).padStart(2, '0')).join('')}`);
+}
+
+function renderItemStudio() {
+  const type = itemTypeInfo();
+  const material = itemMaterialInfo();
+  const result = generateItem({
+    type: state.itemType,
+    material: state.itemMaterial,
+    seed: state.itemSeed,
+    size: state.itemSize,
+  });
+  state.itemCurrent = result;
+  state.itemCanvas = itemCanvasFromResult(result);
+  const canvas = els.itemPreview;
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = false;
+  context.drawImage(state.itemCanvas, 0, 0, canvas.width, canvas.height);
+  els.itemTitle.textContent = `${material.name} ${type.name}`;
+  els.itemTarget.textContent = result.recipe.itemId;
+  const palette = sampleItemPalette(result);
+  els.itemPalette.replaceChildren();
+  for (const color of palette) {
+    const swatch = document.createElement('span');
+    swatch.style.backgroundColor = color;
+    swatch.title = color.toUpperCase();
+    els.itemPalette.append(swatch);
+  }
+  if (document.activeElement !== els.itemSeed) els.itemSeed.value = state.itemSeed;
+}
+
+function openItemStudio() {
+  renderItemSelectors();
+  renderItemStudio();
+  if (!els.itemDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.itemDialog.showModal();
+  }
+}
+
+function closeItemStudio() {
+  if (els.itemDialog.open) els.itemDialog.close();
+}
+
+async function downloadItemPng() {
+  if (!state.itemCurrent) return;
+  try {
+    const blob = await new Promise((resolve, reject) => state.itemCanvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
+    downloadBlob(blob, itemFilename());
+    toast('Item PNG exported · ' + itemFilename());
+  } catch (error) {
+    toast('Could not export the item PNG', true);
+  }
+}
+
+async function copyItemPng() {
+  if (!state.itemCanvas) return;
+  if (!navigator.clipboard?.write || !window.ClipboardItem) {
+    toast('Clipboard image copy is not supported here — use Download.', true);
+    return;
+  }
+  try {
+    const blob = await new Promise((resolve, reject) => state.itemCanvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG encoding failed'))), 'image/png'));
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('Item PNG copied');
+  } catch (error) {
+    toast('Clipboard blocked by the browser — use Download.', true);
+  }
+}
+
+async function exportItemPack() {
+  if (!state.itemCurrent || els.itemPackBtn.disabled) return;
+  els.itemPackBtn.disabled = true;
+  const label = els.itemPackBtn.textContent;
+  els.itemPackBtn.textContent = 'Packing…';
+  try {
+    const result = state.itemCurrent;
+    const { blob, filename } = await buildItemResourcePack({
+      canvas: state.itemCanvas,
+      itemId: result.recipe.itemId,
+      title: `${itemMaterialInfo().name} ${itemTypeInfo().name}`,
+      seed: state.itemSeed,
+      size: state.itemSize,
+      material: state.itemMaterial,
+      type: state.itemType,
+      formatId: state.itemFormat,
+    });
+    downloadBlob(blob, filename);
+    toast('Item pack exported · ' + result.recipe.itemId);
+  } catch (error) {
+    console.error(error);
+    toast('Could not build the item pack', true);
+  } finally {
+    els.itemPackBtn.disabled = false;
+    els.itemPackBtn.textContent = label;
+  }
 }
 
 
@@ -3004,6 +3200,45 @@ function bindEvents() {
     if (file) importTextureFile(file);
   });
   bindTextureDrop();
+  els.itemStudioBtn.addEventListener('click', openItemStudio);
+  els.closeItemBtn.addEventListener('click', closeItemStudio);
+  els.itemDialog.addEventListener('click', (event) => {
+    if (event.target === els.itemDialog) closeItemStudio();
+  });
+  els.itemDialog.addEventListener('close', () => syncDialogBody());
+  els.itemTypes.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-type]');
+    if (!button) return;
+    state.itemType = button.dataset.type;
+    renderItemTypeButtons();
+    renderItemStudio();
+  });
+  els.itemMaterial.addEventListener('change', () => {
+    state.itemMaterial = els.itemMaterial.value;
+    renderItemStudio();
+  });
+  els.itemFormat.addEventListener('change', () => {
+    state.itemFormat = els.itemFormat.value;
+  });
+  els.itemSeed.addEventListener('input', () => {
+    const value = Number(els.itemSeed.value);
+    if (Number.isFinite(value) && value >= 1) {
+      state.itemSeed = Math.min(999999999, Math.round(value));
+      renderItemStudio();
+    }
+  });
+  els.itemDice.addEventListener('click', () => {
+    state.itemSeed = randomSeed();
+    els.itemSeed.value = state.itemSeed;
+    renderItemStudio();
+  });
+  els.itemSize.addEventListener('change', () => {
+    state.itemSize = Number(els.itemSize.value) || 16;
+    renderItemStudio();
+  });
+  els.itemDownloadBtn.addEventListener('click', downloadItemPng);
+  els.itemCopyBtn.addEventListener('click', copyItemPng);
+  els.itemPackBtn.addEventListener('click', exportItemPack);
   els.finishBtn.addEventListener('click', openFinisher);
   els.shareBtn.addEventListener('click', copyShareLink);
   els.finisherDialog.addEventListener('close', () => {
@@ -3137,6 +3372,9 @@ function bindEvents() {
     } else if (key === 'p') {
       event.preventDefault();
       openPackBuilder();
+    } else if (key === 'w') {
+      event.preventDefault();
+      openItemStudio();
     } else if (key === 's') {
       event.preventDefault();
       copyShareLink();

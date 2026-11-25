@@ -74,4 +74,6 @@ test('capabilities list the recipe vocabulary', () => {
   assert.deepEqual(caps.faces, ['side', 'top', 'bottom']);
   assert.deepEqual(caps.formats, ['png', 'json', 'zip']);
   assert.equal(caps.bridge.aiRequired, false);
+  assert.equal(caps.items.types.length, 6);
+  assert.equal(caps.items.materials.length, 8);
 });

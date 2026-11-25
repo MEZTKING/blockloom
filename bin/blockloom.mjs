@@ -5,7 +5,9 @@ import { parseArgs } from 'node:util';
 import {
   batchZip,
   capabilities,
+  renderItem,
   renderTextureSet,
+  serializeItem,
   serializeTextureSet,
   texturePng,
   textureResultZip,
@@ -19,6 +21,12 @@ Usage:
   blockloom set --prompt "cracked deepslate" --out texture-set.zip
   blockloom batch --in batch.json --out textures.zip
   blockloom materials
+  blockloom item --type sword --material iron --out sword.png
+
+Item options:
+  --type <id>           sword | axe | pickaxe | shovel | bow | shield
+  --material <id>       wood | stone | iron | gold | diamond | netherite | copper | emerald
+  --accent <#rrggbb>    Pommel/gem accent
 
 Generate options:
   --prompt <text>       Natural-language prompt
@@ -123,6 +131,24 @@ async function batch(values) {
   await writeOutput(zip, values.out || 'blockloom_batch.zip', true);
 }
 
+async function item(values) {
+  const result = renderItem({
+    type: values.type,
+    material: values.material,
+    seed: values.seed,
+    size: values.size,
+    accent: values.accent,
+  });
+  const format = values.format || (values.out?.endsWith('.json') ? 'json' : 'png');
+  if (format === 'json') {
+    await writeOutput(JSON.stringify(serializeItem(result), null, 2), values.out, false);
+    return;
+  }
+  if (format !== 'png') throw new Error('item format must be png or json');
+  await writeOutput(result.png, values.out, true);
+  if (!values.out) console.error(`${result.filename}.png`);
+}
+
 async function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
@@ -140,6 +166,7 @@ async function main() {
       contrast: { type: 'string' },
       hue: { type: 'string' },
       face: { type: 'string' },
+      type: { type: 'string' },
       format: { type: 'string' },
       title: { type: 'string' },
       out: { type: 'string' },
@@ -164,6 +191,7 @@ async function main() {
     if (!values.prompt && !values.material) throw new Error('set needs --prompt or --material');
     return set(values);
   }
+  if (command === 'item') return item(values);
   if (command === 'batch') return batch(values);
   throw new Error(`Unknown command “${command}”. Run blockloom help.`);
 }

@@ -132,3 +132,17 @@ test('CORS preflight allows local development origins', async () => {
   assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:3000');
   assert.match(response.headers.get('access-control-allow-headers'), /Authorization/);
 });
+
+test('item endpoint returns an item PNG and JSON', async () => {
+  const auth = { Authorization: `Bearer ${TOKEN}` };
+  const png = await fetch(`${base}/api/item?type=sword&material=diamond&seed=4&size=16`, { headers: auth });
+  assert.equal(png.headers.get('content-type'), 'image/png');
+  const bytes = Buffer.from(await png.arrayBuffer());
+  assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.equal(bytes.readUInt32BE(16), 16);
+  const json = await fetch(`${base}/api/item?type=axe&material=iron&format=json`, { headers: auth });
+  const body = await json.json();
+  assert.equal(body.ok, true);
+  assert.equal(body.recipe.itemId, 'iron_axe');
+  assert.ok(body.image.startsWith('data:image/png;base64,'));
+});
