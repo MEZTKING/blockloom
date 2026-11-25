@@ -4077,9 +4077,10 @@ async function registerOfflineWorker() {
 }
 
 function initUiZoom() {
-  const key = 'blockloom-ui-zoom';
-  const steps = [1, 1.1, 1.2];
-  let value = 1.1;
+  const key = 'blockloom-ui-zoom-v2';
+  const steps = [1, 1.15, 1.3, 1.45, 1.6];
+  const preferred = window.innerWidth >= 1900 ? 1.3 : window.innerWidth <= 700 ? 1 : 1.2;
+  let value = preferred;
   try {
     const stored = Number(localStorage.getItem(key));
     if (steps.includes(stored)) value = stored;

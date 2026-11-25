@@ -3034,7 +3034,24 @@ body.is-dragging-file .drop-overlay { display: grid; }
 .any-pack-template-row .btn { height: 29px; font-size: 7px; }
 
 /* ---------- Global UI text scale ---------- */
-body { zoom: var(--ui-zoom, 1.1); }
+body { zoom: var(--ui-zoom, 1.2); }
+
+/* Legibility floor for the smallest labels. */
+small { font-size: 9px !important; }
+.make-copy small { font-size: 8.5px !important; }
+.make-copy strong { font-size: 11px; }
+.make-card em { font-size: 8px; }
+.make-title-row p { font-size: 11px; }
+.make-kicker, .eyebrow { font-size: 8.5px; }
+.shortcut-note { font-size: 8.5px; }
+.variations-sub { font-size: 11px; }
+.dna-row { font-size: 9px; }
+.field-label { font-size: 8.5px; }
+.item-field { font-size: 8px; }
+.item-control-head { font-size: 8px; }
+.item-note { font-size: 8px; }
+.footer-version, .site-footer { font-size: 8.5px; }
+.material-option span { font-size: 8px; }
 
 /* ---------- Front-page capability map ---------- */
 .make-strip { padding: 18px 24px 16px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(15,18,11,.55), rgba(9,11,7,.2)); }
@@ -3063,3 +3080,9 @@ body { zoom: var(--ui-zoom, 1.1); }
 .any-pack-health.is-warning { color: #ffbd6b; }
 .any-pack-health.is-ok { color: #9fc36d; }
 .any-entry-warning { color: #ffbd6b !important; }
+
+.make-copy strong { font-size: 11px !important; }
+@media (max-width: 560px) {
+  .make-grid { display: flex; overflow-x: auto; gap: 6px; scroll-snap-type: x mandatory; padding-bottom: 4px; }
+  .make-card { flex: 0 0 150px; min-height: 92px; scroll-snap-align: start; }
+}
