@@ -3,9 +3,14 @@ import {
   FINISHES,
   ITEM_MATERIALS,
   ITEM_TYPES,
+  THEMES,
+  THEME_ENGINE_VERSION,
   MATERIALS,
   MODIFIERS,
+  detectTheme,
   generateItem,
+  generateThemeMotif,
+  generateThemeSheet,
   getMaterial,
   parsePrompt,
   renderTextureBuffer,
@@ -14,7 +19,7 @@ import {
 import { createZip } from '../js/zip.js';
 import { encodePng } from './png.mjs';
 
-export const BRIDGE_API_VERSION = '1.1.0';
+export const BRIDGE_API_VERSION = '1.2.0';
 export const MAX_BATCH_ITEMS = 64;
 export const MAX_SIZE = 512;
 export const FACES = ['side', 'top', 'bottom'];
@@ -315,6 +320,10 @@ export function capabilities() {
     modifiers: MODIFIERS.map(({ id, label }) => ({ id, label })),
     faces: FACES,
     formats: ['png', 'json', 'zip'],
+    themes: {
+      count: THEMES.length,
+      families: THEMES.map((theme) => ({ id: theme.id, name: theme.name, motifs: theme.motifs.length })),
+    },
     items: {
       types: ITEM_TYPES.map((type) => ({ id: type.id, name: type.name })),
       materials: ITEM_MATERIALS.map((material) => ({ id: material.id, name: material.name })),
@@ -336,6 +345,9 @@ export const API_DOCS = {
     'POST /api/batch': 'JSON body { items: [...] } -> ZIP of texture sets and manifest.json.',
     'GET /api/item?type=sword&material=iron': 'One transparent item/weapon PNG. Add format=json for metadata.',
     'POST /api/item': 'JSON item recipe.',
+    'GET /api/themes': 'List four motif-sheet themes.',
+    'GET /api/theme?theme=brass_checker&motif=classic_brass_checker': 'One theme motif PNG or JSON.',
+    'GET /api/theme-sheet?theme=aztec_temple': 'ZIP of all 16 motifs for a theme.',
     'GET /api/openapi.json': 'OpenAPI 3.0 description.',
   },
   examples: {
@@ -373,6 +385,21 @@ export const OPENAPI = {
       post: { summary: 'Generate from a JSON recipe', responses: { '200': { description: 'PNG, JSON, or ZIP' } } },
     },
     '/api/batch': { post: { summary: 'Generate many textures as one ZIP', responses: { '200': { description: 'ZIP' } } } },
+    '/api/themes': { get: { summary: 'List motif-sheet themes', responses: { '200': { description: 'JSON' } } } },
+    '/api/theme': {
+      get: {
+        summary: 'Generate one theme motif',
+        parameters: [
+          { name: 'theme', in: 'query', schema: { type: 'string', enum: THEMES.map((theme) => theme.id) } },
+          { name: 'motif', in: 'query', schema: { type: 'string' } },
+          { name: 'seed', in: 'query', schema: { type: 'integer' } },
+          { name: 'size', in: 'query', schema: { type: 'integer', enum: [16, 32, 64] } },
+          { name: 'format', in: 'query', schema: { type: 'string', enum: ['png', 'json'] } },
+        ],
+        responses: { '200': { description: 'PNG or JSON' } },
+      },
+    },
+    '/api/theme-sheet': { get: { summary: 'Generate a 16-motif theme ZIP', responses: { '200': { description: 'ZIP' } } } },
     '/api/item': {
       get: {
         summary: 'Generate one item or weapon sprite',
@@ -416,4 +443,53 @@ export function serializeItem(result) {
     version: result.version,
     image: result.dataUrl,
   };
+}
+
+export function renderTheme(input = {}) {
+  const result = generateThemeMotif({
+    themeId: input.themeId || input.theme || detectTheme(input.prompt) || 'brass_checker',
+    motifId: input.motifId || input.motif || 'classic_brass_checker',
+    seed: input.seed,
+    size: input.size,
+  });
+  const png = encodePng(result.width, result.height, result.rgba);
+  return {
+    ...result,
+    png,
+    dataUrl: `data:image/png;base64,${png.toString('base64')}`,
+    filename: `blockloom_${result.recipe.motif}_${result.recipe.seed}_${result.recipe.size}px`,
+  };
+}
+
+export function serializeTheme(result) {
+  return { ok: true, width: result.width, height: result.height, recipe: result.recipe, version: result.version, image: result.dataUrl };
+}
+
+export async function themeSheetZip(input = {}) {
+  const sheet = generateThemeSheet({
+    themeId: input.themeId || input.theme,
+    prompt: input.prompt,
+    seed: input.seed,
+    size: input.size,
+  });
+  const files = [];
+  const entries = [];
+  for (const motif of sheet.motifs) {
+    const png = encodePng(motif.width, motif.height, motif.rgba);
+    const name = `assets/minecraft/textures/block/${motif.recipe.motif}.png`;
+    files.push({ name, data: png });
+    entries.push({ motif: motif.recipe.motif, name: motif.recipe.motifName, file: name });
+  }
+  const manifest = {
+    generator: 'Blockloom theme sheets',
+    engineVersion: THEME_ENGINE_VERSION,
+    theme: sheet.theme,
+    seed: input.seed,
+    size: input.size,
+    motifs: entries,
+  };
+  files.push({ name: 'blockloom-theme.json', data: JSON.stringify(manifest, null, 2) });
+  const blob = await createZip(files);
+  const zip = Buffer.from(await blob.arrayBuffer());
+  return { zip, filename: `blockloom_${sheet.theme.id}_16motifs_${input.seed || 1}.zip`, theme: sheet.theme };
 }

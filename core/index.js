@@ -29,3 +29,12 @@ export {
   listItemMaterials,
   listItemTypes,
 } from './items.js';
+
+export {
+  THEMES,
+  THEME_ENGINE_VERSION,
+  detectTheme,
+  generateThemeMotif,
+  generateThemeSheet,
+  listThemes,
+} from './themes.js';

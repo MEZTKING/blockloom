@@ -6,10 +6,10 @@ It is the same engine used by the Blockloom app, local bridge, and CLI. Same inp
 
 ## Install / import
 
-The package lives in [`core/`](../core) and is published with the `core-v1.3.0` tag. Install the release tarball:
+The package lives in [`core/`](../core) and is published with the `core-v1.4.0` tag. Install the release tarball:
 
 ```bash
-npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.3.0/blockloom-core-1.3.0.tgz
+npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.4.0/blockloom-core-1.4.0.tgz
 ```
 
 Or copy `core/` into your project. It is plain ESM with no dependencies.
@@ -86,6 +86,26 @@ item.version;          // ITEM_ENGINE_VERSION
 ```
 
 Item sprites are deterministic 16×16 templates scaled to 16/32/64. `core/item-golden.json` pins 12 item hashes. `ITEM_ENGINE_VERSION` is separate from the block `ENGINE_VERSION`.
+
+## Theme sheets
+
+```js
+import { THEMES, detectTheme, generateThemeSheet, generateThemeMotif } from '@blockloom/core';
+
+detectTheme('black and white checkerboard tiles with brass trim'); // 'brass_checker'
+const sheet = generateThemeSheet({ themeId: 'brass_checker', seed: 42, size: 16 });
+sheet.motifs.length; // 16
+sheet.motifs[0].recipe.motifName;
+```
+
+Four families, each with 16 distinct motif slots:
+
+- `brass_checker`
+- `gold_marble`
+- `aztec_temple`
+- `celestial`
+
+`THEME_ENGINE_VERSION = 1.0.0`; `core/theme-golden.json` pins 16 hashes.
 
 ## Prompt themes
 
@@ -198,4 +218,4 @@ MIT. Credit: **Blockloom / Lelouch**. The MIT licence in the repository root app
 
 ## Release
 
-Tag: `core-v1.3.0`
+Tag: `core-v1.4.0`

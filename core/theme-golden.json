@@ -1,0 +1,87 @@
+{
+  "engineVersion": "1.0.0",
+  "seed": 20261124,
+  "hash": "sha256",
+  "cases": [
+    {
+      "theme": "brass_checker",
+      "motif": "classic_brass_checker",
+      "hash": "3fb986a52e5394e81c84c0d73415a0c43129170ffe37ed71f0d9040f715be639"
+    },
+    {
+      "theme": "brass_checker",
+      "motif": "wide_brass_border",
+      "hash": "75855213f831ea6d9eab735bee0e1bbf2d2ca634af71bdab124dfdbfb3a235dc"
+    },
+    {
+      "theme": "brass_checker",
+      "motif": "fine_brass_grid",
+      "hash": "d632a3183707178777ed5ad36de5c6cf051ea22d9dff263c42fbe9be86ba46d5"
+    },
+    {
+      "theme": "brass_checker",
+      "motif": "beveled_chess_tiles",
+      "hash": "ec7831b030977b012696ccfdf64c6d0ba32a1071d5b3a8290f1dd9f2b7da87ef"
+    },
+    {
+      "theme": "gold_marble",
+      "motif": "veined_marble",
+      "hash": "38c32bb4d4db286870276fa3d7c889f9887c17c781078ee867f7fd02dc98e0f7"
+    },
+    {
+      "theme": "gold_marble",
+      "motif": "gold_cross_marble",
+      "hash": "a550c0420efe71996a6b26bad8f1407024174db3a7bd49873fe3c3bbff40b19a"
+    },
+    {
+      "theme": "gold_marble",
+      "motif": "sunburst_marble",
+      "hash": "58a3b2e5c595a9da87d7946de3ee5f2afe4422a1773adf4acd68a6e8419ea0a4"
+    },
+    {
+      "theme": "gold_marble",
+      "motif": "geometric_marble",
+      "hash": "7aa95fa1a77d1cb15a3efb20cc83e383b7d8ddb17188ae98b63556d1a87149f9"
+    },
+    {
+      "theme": "aztec_temple",
+      "motif": "weathered_temple_sandstone",
+      "hash": "3730099130b9761346c590c457ba63887cfeae6e158f6adb40158a53b87841ac"
+    },
+    {
+      "theme": "aztec_temple",
+      "motif": "turquoise_mosaic_tile",
+      "hash": "0576f9574c0bbcd887e8c98c5bf81ca6259d6d8027e90044a991e9b9995263f6"
+    },
+    {
+      "theme": "aztec_temple",
+      "motif": "gold_glyph_sandstone",
+      "hash": "c994fab263b96ea68320eaffb41fe0395e895fd83ec3a85f23c68c27ac0065fd"
+    },
+    {
+      "theme": "aztec_temple",
+      "motif": "carved_sun_stone",
+      "hash": "d17a7d7879e5bb842ba2edee8ca6b9cf7ebbff8ef8d527db028b001c69b0d176"
+    },
+    {
+      "theme": "celestial",
+      "motif": "cloud_marble",
+      "hash": "6826eb18fd06f16a94df64b4d426c2fbb3c9defb4490484c19f141f56a31c9b7"
+    },
+    {
+      "theme": "celestial",
+      "motif": "azure_bricks",
+      "hash": "6294285d39220465e4e3922e03f4678f6b2c4f5c151e3b813dc9990bcc0ab128"
+    },
+    {
+      "theme": "celestial",
+      "motif": "pearl_tiles",
+      "hash": "b6da4361cae8108c61d78f7f79bf3913ab6c1e232380b6638551d54bc486384e"
+    },
+    {
+      "theme": "celestial",
+      "motif": "halo_mosaic",
+      "hash": "3ea3e7f07c048d81c7c8dedcb38719460c0b533f37ad006deaefacb439ff5ecc"
+    }
+  ]
+}

@@ -6,7 +6,9 @@ import {
   batchZip,
   capabilities,
   renderItem,
+  renderTheme,
   renderTextureSet,
+  themeSheetZip,
   serializeItem,
   serializeTextureSet,
   texturePng,
@@ -22,6 +24,13 @@ Usage:
   blockloom batch --in batch.json --out textures.zip
   blockloom materials
   blockloom item --type sword --material iron --out sword.png
+  blockloom themes
+  blockloom theme --theme brass_checker --motif classic_brass_checker --out brass.png
+  blockloom theme-sheet --theme aztec_temple --out aztec.zip
+
+Theme options:
+  --theme <id>          brass_checker | gold_marble | aztec_temple | celestial
+  --motif <id>          Motif id from "blockloom themes"
 
 Item options:
   --type <id>           sword | axe | pickaxe | shovel | bow | shield
@@ -149,12 +158,46 @@ async function item(values) {
   if (!values.out) console.error(`${result.filename}.png`);
 }
 
+async function themes() {
+  console.log(JSON.stringify(listThemes(), null, 2));
+}
+
+async function theme(values) {
+  const result = renderTheme({
+    theme: values.theme,
+    motif: values.motif,
+    prompt: values.prompt,
+    seed: values.seed,
+    size: values.size,
+  });
+  const format = values.format || (values.out?.endsWith('.json') ? 'json' : 'png');
+  if (format === 'json') {
+    await writeOutput(JSON.stringify({ ok: true, width: result.width, height: result.height, recipe: result.recipe, version: result.version, image: result.dataUrl }, null, 2), values.out, false);
+    return;
+  }
+  if (format !== 'png') throw new Error('theme format must be png or json');
+  await writeOutput(result.png, values.out, true);
+  if (!values.out) console.error(`${result.filename}.png`);
+}
+
+async function themeSheet(values) {
+  const { zip, filename } = await themeSheetZip({
+    theme: values.theme,
+    prompt: values.prompt,
+    seed: values.seed,
+    size: values.size,
+  });
+  await writeOutput(zip, values.out || `${filename}`, true);
+}
+
 async function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     allowPositionals: true,
     options: {
       prompt: { type: 'string' },
+      theme: { type: 'string' },
+      motif: { type: 'string' },
       material: { type: 'string' },
       seed: { type: 'string' },
       size: { type: 'string' },
@@ -191,6 +234,9 @@ async function main() {
     if (!values.prompt && !values.material) throw new Error('set needs --prompt or --material');
     return set(values);
   }
+  if (command === 'themes') return themes();
+  if (command === 'theme') return theme(values);
+  if (command === 'theme-sheet') return themeSheet(values);
   if (command === 'item') return item(values);
   if (command === 'batch') return batch(values);
   throw new Error(`Unknown command “${command}”. Run blockloom help.`);

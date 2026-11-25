@@ -51,6 +51,9 @@ Without `BRIDGE_TOKEN`, only loopback clients can use the bridge. The token is n
 | `POST /api/generate` | JSON recipe |
 | `POST /api/batch` | Many textures → one ZIP |
 | `GET/POST /api/item` | Deterministic weapon/item sprite PNG or JSON |
+| `GET /api/themes` | List four 16-motif theme families |
+| `GET/POST /api/theme` | One themed motif PNG or JSON |
+| `GET/POST /api/theme-sheet` | ZIP of all 16 motifs for a theme |
 | `GET /api/openapi.json` | OpenAPI 3.0 document |
 
 ### One PNG
@@ -122,6 +125,16 @@ Types: `sword`, `axe`, `pickaxe`, `shovel`, `bow`, `shield`.
 Materials: `wood`, `stone`, `iron`, `gold`, `diamond`, `netherite`, `copper`, `emerald`.
 
 Output is a transparent PNG. The JSON form includes the resolved item id, recipe, and `ITEM_ENGINE_VERSION`. No ZIP is produced for a single item.
+
+### Theme sheets
+
+```bash
+curl http://127.0.0.1:4173/api/themes
+curl "http://127.0.0.1:4173/api/theme?theme=aztec_temple&motif=jaguar_relief_block" -o jaguar.png
+curl "http://127.0.0.1:4173/api/theme-sheet?theme=brass_checker" -o brass.zip
+```
+
+Themes: `brass_checker`, `gold_marble`, `aztec_temple`, `celestial`. Each has 16 motif ids. The ZIP writes `assets/minecraft/textures/block/<motif>.png` plus `blockloom-theme.json`.
 
 ### Batch
 

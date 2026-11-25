@@ -116,6 +116,12 @@
         <kbd>U</kbd>
       </button>
 
+      <button class="import-button theme-studio-button" id="themeStudioBtn" type="button" title="Open the 16-motif theme sheets (T)">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span><strong>Theme motif sheets</strong><small>Brass · gold marble · Aztec · celestial</small></span>
+        <kbd>T</kbd>
+      </button>
+
       <section class="control-block material-block">
         <div class="control-title">
           <span>Base material</span>
@@ -418,6 +424,7 @@
         <div><kbd>S</kbd><span>Share link</span></div>
         <div><kbd>W</kbd><span>Weapons</span></div>
         <div><kbd>U</kbd><span>Universal pack</span></div>
+        <div><kbd>T</kbd><span>Theme sheets</span></div>
         <div><kbd>I</kbd><span>Import PNG</span></div>
         <div><kbd>E</kbd><span>PNG</span></div>
         <div><kbd>?</kbd><span>This guide</span></div>
@@ -753,6 +760,33 @@
       </header>
       <div class="variant-sheet-grid" id="variantSheetGrid"></div>
       <footer class="variant-sheet-foot">Click any cut to load it into the studio.</footer>
+    </div>
+  </dialog>
+
+  <!-- Theme motif sheets -->
+  <dialog class="theme-dialog" id="themeDialog" aria-labelledby="themeDialogTitle">
+    <div class="theme-shell">
+      <header class="theme-head">
+        <div><div class="theme-kicker"><span></span>THEME SHEETS</div><h2 id="themeDialogTitle">Sixteen motifs. One palette.</h2><p>Deterministic motif families for brass checker, gold marble, Aztec temple, and celestial prompts.</p></div>
+        <button class="icon-button" id="closeThemeBtn" type="button" aria-label="Close theme sheets"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+      </header>
+      <div class="theme-tabs" id="themeTabs"></div>
+      <div class="theme-body">
+        <div class="theme-preview-panel">
+          <div class="theme-preview-frame"><canvas id="themePreview" width="384" height="384" role="img" aria-label="Theme motif preview"></canvas></div>
+          <div class="theme-preview-meta"><div><h3 id="themeTitle">Classic Brass Checker</h3><p id="themeTarget">brass_checker / classic_brass_checker</p></div><div class="theme-palette" id="themePalette"></div></div>
+          <div class="theme-actions">
+            <button class="btn btn-outline" id="themeDownloadBtn" type="button">Download PNG</button>
+            <button class="btn btn-outline" id="themeCopyBtn" type="button">Copy PNG</button>
+            <button class="btn btn-primary" id="themePackBtn" type="button">Export 16-pack</button>
+          </div>
+        </div>
+        <div class="theme-grid-wrap">
+          <div class="theme-grid-head"><span>16 MOTIFS</span><span>Click to preview</span></div>
+          <div class="theme-grid" id="themeGrid"></div>
+          <div class="theme-seed-row"><label class="item-field"><span>Seed</span><input id="themeSeed" type="number" min="1" max="999999999" inputmode="numeric" /></label><button class="item-dice" id="themeDice" type="button" aria-label="Random theme seed">⚄</button><label class="item-field theme-format"><span>Format</span><select id="themeFormat" aria-label="Theme pack format"></select></label></div>
+        </div>
+      </div>
     </div>
   </dialog>
 

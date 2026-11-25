@@ -16,7 +16,7 @@ import { importSummary, importTitle, planTextureImport } from './importer.js';
 import { releaseInfo } from './update.js';
 import { APP_VERSION } from './version.js';
 import { buildResourcePack, getPackFormat, getPackTarget, packTargetFor, PACK_FORMATS, PACK_TARGETS } from './resourcepack.js';
-import { ITEM_MATERIALS, ITEM_TYPES, generateItem } from '../core/index.js';
+import { ITEM_MATERIALS, ITEM_TYPES, generateItem, THEMES, detectTheme, generateThemeSheet } from '../core/index.js';
 import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TextureFinisher } from './finisher.js';
@@ -95,6 +95,21 @@ const els = {
   itemVariants: $('#itemVariants'),
   variantSheetBtn: $('#variantSheetBtn'),
   anyPackBtn: $('#anyPackBtn'),
+  themeStudioBtn: $('#themeStudioBtn'),
+  themeDialog: $('#themeDialog'),
+  closeThemeBtn: $('#closeThemeBtn'),
+  themeTabs: $('#themeTabs'),
+  themePreview: $('#themePreview'),
+  themeTitle: $('#themeTitle'),
+  themeTarget: $('#themeTarget'),
+  themePalette: $('#themePalette'),
+  themeGrid: $('#themeGrid'),
+  themeSeed: $('#themeSeed'),
+  themeDice: $('#themeDice'),
+  themeFormat: $('#themeFormat'),
+  themeDownloadBtn: $('#themeDownloadBtn'),
+  themeCopyBtn: $('#themeCopyBtn'),
+  themePackBtn: $('#themePackBtn'),
   anyPackDialog: $('#anyPackDialog'),
   closeAnyPackBtn: $('#closeAnyPackBtn'),
   anyPackName: $('#anyPackName'),
@@ -286,6 +301,11 @@ const state = {
   anyPackCategory: 'block',
   anyPackFormat: 'modern',
   anyPackName: 'Blockloom Custom Pack',
+  themeId: 'brass_checker',
+  themeSeed: 20261124,
+  themeFormat: 'modern',
+  themeSelected: null,
+  themeSheet: null,
   dragDepth: 0,
 };
 
@@ -455,7 +475,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2554,7 +2574,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -3066,6 +3086,182 @@ async function exportAnyPack() {
   } finally {
     els.anyPackExportBtn.disabled = state.anyPackEntries.length === 0;
     els.anyPackExportBtn.textContent = label;
+  }
+}
+
+
+/* ---------- Theme motif sheets ---------- */
+function activeTheme() {
+  return THEMES.find((theme) => theme.id === state.themeId) || THEMES[0];
+}
+
+function themeFilename() {
+  const motif = state.themeSelected?.recipe?.motif || 'theme';
+  return `blockloom_${motif}_${state.themeSeed}_16px.png`;
+}
+
+function renderThemeTabs() {
+  const fragment = document.createDocumentFragment();
+  for (const theme of THEMES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `theme-tab${theme.id === state.themeId ? ' active' : ''}`;
+    button.dataset.theme = theme.id;
+    button.textContent = theme.name;
+    fragment.append(button);
+  }
+  els.themeTabs.replaceChildren(fragment);
+}
+
+function renderThemeSheet() {
+  state.themeSheet = generateThemeSheet({ themeId: state.themeId, seed: state.themeSeed, size: 16 });
+  if (!state.themeSelected || state.themeSelected.recipe.theme !== state.themeId) {
+    state.themeSelected = state.themeSheet.motifs[0];
+  }
+  const fragment = document.createDocumentFragment();
+  for (const motif of state.themeSheet.motifs) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `theme-card${motif.recipe.motif === state.themeSelected.recipe.motif ? ' is-current' : ''}`;
+    button.dataset.motif = motif.recipe.motif;
+    button.title = motif.recipe.motifName;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    drawRgba(canvas, motif);
+    button.append(canvas);
+    fragment.append(button);
+  }
+  els.themeGrid.replaceChildren(fragment);
+  els.themeSeed.value = state.themeSeed;
+}
+
+function drawRgba(canvas, result) {
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const src = document.createElement('canvas');
+  src.width = result.width;
+  src.height = result.height;
+  const srcCtx = src.getContext('2d');
+  const image = srcCtx.createImageData(result.width, result.height);
+  image.data.set(result.rgba);
+  srcCtx.putImageData(image, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+  return src;
+}
+
+function drawThemePreview() {
+  if (!state.themeSelected) return;
+  state.themeCanvas = drawRgba(els.themePreview, state.themeSelected);
+  els.themeTitle.textContent = state.themeSelected.recipe.motifName;
+  els.themeTarget.textContent = `${state.themeSelected.recipe.theme} / ${state.themeSelected.recipe.motif}`;
+  const theme = activeTheme();
+  els.themePalette.replaceChildren();
+  for (const color of [theme.palette.dark, theme.palette.light, theme.palette.accent, theme.palette.gold || theme.palette.accent]) {
+    const swatch = document.createElement('span');
+    swatch.style.backgroundColor = color;
+    swatch.title = color;
+    els.themePalette.append(swatch);
+  }
+}
+
+function renderThemeStudio() {
+  renderThemeTabs();
+  renderThemeSheet();
+  drawThemePreview();
+}
+
+function openThemeStudio() {
+  const detected = detectTheme(els.promptInput.value);
+  if (detected) {
+    state.themeId = detected;
+    state.themeSelected = null;
+  }
+  els.themeFormat.replaceChildren();
+  for (const format of PACK_FORMATS) {
+    const option = document.createElement('option');
+    option.value = format.id;
+    option.textContent = `${format.label} · F${format.packFormat}`;
+    els.themeFormat.append(option);
+  }
+  els.themeFormat.value = state.themeFormat;
+  renderThemeStudio();
+  if (!els.themeDialog.open) {
+    document.body.classList.add('dialog-open');
+    els.themeDialog.showModal();
+  }
+}
+
+function closeThemeStudio() {
+  if (els.themeDialog.open) els.themeDialog.close();
+}
+
+async function themePngBlob(result) {
+  const canvas = document.createElement('canvas');
+  canvas.width = result.width;
+  canvas.height = result.height;
+  drawRgba(canvas, result);
+  return await new Promise((resolve, reject) => canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('PNG encoding failed'))), 'image/png'));
+}
+
+async function downloadThemePng() {
+  if (!state.themeSelected) return;
+  try {
+    const blob = await themePngBlob(state.themeSelected);
+    downloadBlob(blob, themeFilename());
+    toast('Theme motif PNG exported');
+  } catch (error) {
+    toast('Could not export the theme PNG', true);
+  }
+}
+
+async function copyThemePng() {
+  if (!state.themeSelected) return;
+  if (!navigator.clipboard?.write || !window.ClipboardItem) {
+    toast('Clipboard image copy is not supported here — use Download.', true);
+    return;
+  }
+  try {
+    const blob = await themePngBlob(state.themeSelected);
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    toast('Theme motif copied');
+  } catch {
+    toast('Clipboard blocked — use Download.', true);
+  }
+}
+
+async function exportThemePack() {
+  if (!state.themeSheet || els.themePackBtn.disabled) return;
+  els.themePackBtn.disabled = true;
+  const label = els.themePackBtn.textContent;
+  els.themePackBtn.textContent = 'Packing…';
+  try {
+    const theme = activeTheme();
+    const entries = [];
+    for (const motif of state.themeSheet.motifs) {
+      const blob = await themePngBlob(motif);
+      entries.push({
+        id: motif.recipe.motif,
+        file: new File([blob], `${motif.recipe.motif}.png`, { type: 'image/png' }),
+        path: `assets/minecraft/textures/block/${motif.recipe.motif}.png`,
+        width: motif.width,
+        height: motif.height,
+        url: null,
+      });
+    }
+    const { blob, filename } = await buildAnyResourcePack(entries, {
+      formatId: state.themeFormat,
+      packName: `${theme.name} · 16 motif set`,
+    });
+    downloadBlob(blob, filename);
+    toast(`${theme.name} 16-pack exported`);
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not build the theme pack.', true);
+  } finally {
+    els.themePackBtn.disabled = false;
+    els.themePackBtn.textContent = label;
   }
 }
 
@@ -3638,6 +3834,33 @@ function bindEvents() {
   els.anyPackCategory.addEventListener('change', syncAnyPackSettings);
   els.anyPackFormat.addEventListener('change', syncAnyPackSettings);
   els.anyPackExportBtn.addEventListener('click', exportAnyPack);
+  els.themeStudioBtn.addEventListener('click', openThemeStudio);
+  els.closeThemeBtn.addEventListener('click', closeThemeStudio);
+  els.themeDialog.addEventListener('click', (event) => { if (event.target === els.themeDialog) closeThemeStudio(); });
+  els.themeDialog.addEventListener('close', () => syncDialogBody());
+  els.themeTabs.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-theme]');
+    if (!button) return;
+    state.themeId = button.dataset.theme;
+    state.themeSelected = null;
+    renderThemeStudio();
+  });
+  els.themeGrid.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-motif]');
+    if (!button) return;
+    state.themeSelected = state.themeSheet.motifs.find((motif) => motif.recipe.motif === button.dataset.motif) || state.themeSelected;
+    for (const card of $$('.theme-card', els.themeGrid)) card.classList.toggle('is-current', card === button);
+    drawThemePreview();
+  });
+  els.themeSeed.addEventListener('input', () => {
+    const value = Number(els.themeSeed.value);
+    if (Number.isFinite(value) && value >= 1) { state.themeSeed = Math.min(999999999, Math.round(value)); state.themeSelected = null; renderThemeSheet(); drawThemePreview(); }
+  });
+  els.themeDice.addEventListener('click', () => { state.themeSeed = randomSeed(); state.themeSelected = null; renderThemeSheet(); drawThemePreview(); });
+  els.themeFormat.addEventListener('change', () => { state.themeFormat = els.themeFormat.value; });
+  els.themeDownloadBtn.addEventListener('click', downloadThemePng);
+  els.themeCopyBtn.addEventListener('click', copyThemePng);
+  els.themePackBtn.addEventListener('click', exportThemePack);
   els.variantSheetGrid.addEventListener('click', (event) => {
     const card = event.target.closest('[data-seed]');
     if (!card) return;
@@ -3803,6 +4026,9 @@ function bindEvents() {
     } else if (key === 'u') {
       event.preventDefault();
       openAnyPack();
+    } else if (key === 't') {
+      event.preventDefault();
+      openThemeStudio();
     } else if (key === 's') {
       event.preventDefault();
       copyShareLink();

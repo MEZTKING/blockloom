@@ -210,3 +210,15 @@ export function listItemMaterials(): ItemMaterial[];
 export const ITEM_TYPES: ItemType[];
 export const ITEM_MATERIALS: ItemMaterial[];
 export const ITEM_ENGINE_VERSION: string;
+
+export interface ThemeMotifDefinition { id: string; name: string; }
+export interface ThemeDefinition { id: string; name: string; prompt: string; palette: Record<string,string>; motifs: ThemeMotifDefinition[]; }
+export interface ThemeMotifRecipe { theme: string; themeName: string; motif: string; motifName: string; seed: number; size: number; engineVersion: string; }
+export interface GeneratedThemeMotif { width: number; height: number; rgba: Uint8ClampedArray; recipe: ThemeMotifRecipe; version: string; }
+export interface GeneratedThemeSheet { theme: { id: string; name: string; palette: Record<string,string> }; motifs: GeneratedThemeMotif[]; }
+export function detectTheme(prompt?: string): string | null;
+export function generateThemeMotif(options?: { themeId?: string; motifId?: string; seed?: number; size?: 16 | 32 | 64 }): GeneratedThemeMotif;
+export function generateThemeSheet(options?: { themeId?: string; prompt?: string; seed?: number; size?: 16 | 32 | 64 }): GeneratedThemeSheet;
+export function listThemes(): ThemeDefinition[];
+export const THEMES: ThemeDefinition[];
+export const THEME_ENGINE_VERSION: string;

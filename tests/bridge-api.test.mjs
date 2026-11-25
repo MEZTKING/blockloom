@@ -146,3 +146,23 @@ test('item endpoint returns an item PNG and JSON', async () => {
   assert.equal(body.recipe.itemId, 'iron_axe');
   assert.ok(body.image.startsWith('data:image/png;base64,'));
 });
+
+test('theme endpoints list, generate, and ZIP 16 motifs', async () => {
+  const auth = { Authorization: `Bearer ${TOKEN}` };
+  const list = await fetch(`${base}/api/themes`, { headers: auth });
+  const listBody = await list.json();
+  assert.equal(listBody.themes.length, 4);
+  assert.equal(listBody.themes[0].motifs.length, 16);
+  const png = await fetch(`${base}/api/theme?theme=aztec_temple&motif=jaguar_relief_block&seed=4&size=16`, { headers: auth });
+  assert.equal(png.headers.get('content-type'), 'image/png');
+  const bytes = Buffer.from(await png.arrayBuffer());
+  assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  const json = await fetch(`${base}/api/theme?theme=gold_marble&motif=veined_marble&format=json`, { headers: auth });
+  const body = await json.json();
+  assert.equal(body.recipe.theme, 'gold_marble');
+  assert.ok(body.image.startsWith('data:image/png;base64,'));
+  const sheet = await fetch(`${base}/api/theme-sheet?theme=brass_checker&seed=3`, { headers: auth });
+  assert.equal(sheet.headers.get('content-type'), 'application/zip');
+  const zip = Buffer.from(await sheet.arrayBuffer());
+  assert.deepEqual([...zip.subarray(0, 4)], [80, 75, 3, 4]);
+});
