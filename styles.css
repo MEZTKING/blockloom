@@ -3060,3 +3060,6 @@ body { zoom: var(--ui-zoom, 1.1); }
 @media (max-width: 1080px) { .make-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } .make-title-row p { max-width: 380px; } }
 @media (max-width: 800px) { .make-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } .make-title-row { align-items: flex-start; flex-direction: column; gap: 2px; } .make-title-row p { text-align: left; } }
 @media (max-width: 560px) { .make-strip { padding: 13px 11px 12px; } .make-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .make-title-row h2 { font-size: 21px; } .make-card { min-height: 86px; padding: 8px; } .make-copy small { font-size: 5.5px; } }
+.any-pack-health.is-warning { color: #ffbd6b; }
+.any-pack-health.is-ok { color: #9fc36d; }
+.any-entry-warning { color: #ffbd6b !important; }

@@ -75,7 +75,7 @@ export async function buildAnyResourcePack(entries, { formatId = 'modern', packN
       throw new Error(`Invalid texture path: ${entry.path}`);
     }
     files.push({ name: entry.path, data: await entry.file.arrayBuffer() });
-    manifest.entries.push({ path: entry.path, bytes: entry.file.size, name: entry.file.name });
+    manifest.entries.push({ path: entry.path, bytes: entry.file.size, name: entry.file.name, width: entry.width || null, height: entry.height || null, alphaPct: entry.alphaPct ?? null, colors: entry.colors ?? null });
   }
   const packMcmeta = {
     pack: {

@@ -117,6 +117,7 @@ const els = {
   anyPackList: $('#anyPackList'),
   anyPackEmpty: $('#anyPackEmpty'),
   anyPackCount: $('#anyPackCount'),
+  anyPackHealth: $('#anyPackHealth'),
   anyPackExportBtn: $('#anyPackExportBtn'),
   anyPackTemplate: $('#anyPackTemplate'),
   anyPackTemplateNote: $('#anyPackTemplateNote'),
@@ -2795,6 +2796,57 @@ function closeVariantSheet() {
 
 
 /* ---------- Universal texture packer ---------- */
+const ANY_PACK_RULES = {
+  'entity/equipment/humanoid': { width: 64, height: 32, alpha: true },
+  'entity/equipment/humanoid_leggings': { width: 64, height: 32, alpha: true },
+  'entity': { width: 64, height: 64, alpha: true, alternate: [[64, 32]] },
+  'gui/container': { width: 256, height: 256 },
+  'particle': { width: 8, height: 8 },
+};
+
+function anyPackPathCategory(path) {
+  const match = String(path).match(/\/textures\/(.+)\/[^/]+$/);
+  if (!match) return null;
+  const parts = match[1].split('/');
+  for (let length = parts.length; length > 0; length--) {
+    const prefix = parts.slice(0, length).join('/');
+    if (ANY_PACK_RULES[prefix]) return prefix;
+  }
+  return null;
+}
+
+function anyPackWarnings(entry, entries = state.anyPackEntries) {
+  const warnings = [];
+  const path = entry.path || '';
+  if (!/^assets\/[a-z0-9_.-]+\/textures\/[a-z0-9_./-]+\.(png|png\.mcmeta)$/i.test(path) || path.includes('..')) warnings.push('Invalid path');
+  if (path.endsWith('.png.mcmeta')) {
+    const pngPath = path.slice(0, -7);
+    if (!entries.some((other) => other.id !== entry.id && other.path === pngPath)) warnings.push('No matching .png');
+  } else if (path.endsWith('.png')) {
+    if (entries.filter((other) => other.path === path).length > 1) warnings.push('Duplicate path');
+    const category = anyPackPathCategory(path);
+    const rule = category ? ANY_PACK_RULES[category] : null;
+    if (rule && entry.width && entry.height) {
+      const fits = (entry.width === rule.width && entry.height === rule.height)
+        || (rule.alternate || []).some(([width, height]) => entry.width === width && entry.height === height);
+      if (!fits) warnings.push(`Expected ${rule.width}×${rule.height}`);
+    }
+    if (rule?.alpha && entry.alphaPct === 0) warnings.push('No transparency');
+    if (entry.height > entry.width && entry.width >= 8 && !entries.some((other) => other.path === `${path}.mcmeta`)) warnings.push('Looks animated · add .mcmeta');
+  }
+  return warnings;
+}
+
+function updateAnyPackHealth() {
+  let warnings = 0;
+  for (const entry of state.anyPackEntries) warnings += anyPackWarnings(entry).length;
+  if (els.anyPackHealth) {
+    els.anyPackHealth.textContent = warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'No format warnings';
+    els.anyPackHealth.className = `any-pack-health ${warnings ? 'is-warning' : 'is-ok'}`;
+  }
+  return warnings;
+}
+
 function anyPackSafeName(name) {
   return String(name).replace(/[^a-zA-Z0-9_.-]+/g, '_').replace(/^_+|_+$/g, '') || 'texture.png';
 }
@@ -2846,9 +2898,16 @@ function renderAnyPackEntries() {
     path.setAttribute('aria-label', `Path for ${entry.file.name}`);
     path.addEventListener('input', () => {
       entry.path = path.value.trim();
+      updateAnyPackHealth();
     });
     const detail = document.createElement('small');
-    detail.textContent = `${entry.width ? `${entry.width}×${entry.height} · ` : ''}${(entry.file.size / 1024).toFixed(1)} KB · ${entry.file.name}`;
+    const warnings = anyPackWarnings(entry);
+    const alpha = entry.alphaPct == null ? '' : `${entry.alphaPct}% alpha · ${entry.colors} colours · `;
+    detail.textContent = `${entry.width ? `${entry.width}×${entry.height} · ` : ''}${alpha}${(entry.file.size / 1024).toFixed(1)} KB · ${entry.file.name}`;
+    if (warnings.length) {
+      detail.classList.add('any-entry-warning');
+      detail.textContent += ' · ⚠ ' + warnings.join(' · ');
+    }
     main.append(path, detail);
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -2868,6 +2927,7 @@ function renderAnyPackEntries() {
   els.anyPackEmpty.hidden = state.anyPackEntries.length > 0;
   els.anyPackCount.textContent = `${state.anyPackEntries.length} file${state.anyPackEntries.length === 1 ? '' : 's'}`;
   els.anyPackExportBtn.disabled = state.anyPackEntries.length === 0;
+  updateAnyPackHealth();
 }
 
 async function addAnyPackFiles(files) {
@@ -2880,11 +2940,30 @@ async function addAnyPackFiles(files) {
     }
     let width = 0;
     let height = 0;
+    let alphaPct = null;
+    let colorCount = 0;
     if (isPng) {
       try {
         const bitmap = await createImageBitmap(file);
         width = bitmap.width;
         height = bitmap.height;
+        const sample = document.createElement('canvas');
+        sample.width = width;
+        sample.height = height;
+        const sampleCtx = sample.getContext('2d');
+        sampleCtx.imageSmoothingEnabled = false;
+        sampleCtx.drawImage(bitmap, 0, 0);
+        const pixels = sampleCtx.getImageData(0, 0, width, height).data;
+        let visible = 0;
+        const palette = new Set();
+        for (let i = 0; i < pixels.length; i += 4) {
+          if (pixels[i + 3] > 0) {
+            visible++;
+            palette.add(`${pixels[i]},${pixels[i + 1]},${pixels[i + 2]}`);
+          }
+        }
+        alphaPct = Math.round((visible / (width * height)) * 100);
+        colorCount = palette.size;
         bitmap.close?.();
       } catch {
         toast(`${file.name} could not be decoded.`, true);
@@ -2899,6 +2978,8 @@ async function addAnyPackFiles(files) {
       path: anyPackUniquePath(anyPackAutoPath(file)),
       width,
       height,
+      alphaPct,
+      colors: colorCount,
       url: isPng ? URL.createObjectURL(file) : null,
     };
     state.anyPackEntries.push(entry);
