@@ -2930,21 +2930,35 @@ function syncAnyPackSettings() {
 
 function renderAnyPackTemplates() {
   els.anyPackTemplate.replaceChildren();
+  const none = document.createElement('option');
+  none.value = '';
+  none.textContent = 'No template';
+  els.anyPackTemplate.append(none);
   for (const preset of TEMPLATE_PRESETS) {
     const option = document.createElement('option');
     option.value = preset.id;
     option.textContent = preset.name;
     els.anyPackTemplate.append(option);
   }
-  els.anyPackTemplate.value = TEMPLATE_PRESETS[0].id;
+  els.anyPackTemplate.value = '';
   syncAnyPackTemplate();
 }
 
 function syncAnyPackTemplate() {
-  const preset = getTemplatePreset(els.anyPackTemplate.value);
+  const id = els.anyPackTemplate.value;
+  if (!id) {
+    els.anyPackTemplateNote.textContent = 'Optional: pick a format template';
+    els.anyPackTemplateMetaBtn.hidden = true;
+    els.anyPackTemplateBlankBtn.disabled = true;
+    els.anyPackTemplateGuideBtn.disabled = true;
+    return;
+  }
+  const preset = getTemplatePreset(id);
   els.anyPackTemplateNote.textContent = `${preset.width}×${preset.height}${preset.path ? ' · ' + preset.path : ' · download only'}`;
   els.anyPackTemplateNote.title = preset.note;
   els.anyPackTemplateMetaBtn.hidden = !preset.meta;
+  els.anyPackTemplateBlankBtn.disabled = false;
+  els.anyPackTemplateGuideBtn.disabled = false;
 }
 
 async function downloadTemplate(guide) {
@@ -2964,7 +2978,7 @@ function downloadTemplateMeta() {
   toast('Animation .mcmeta template');
 }
 
-function openAnyPack() {
+function openAnyPack(templateId = null) {
   els.anyPackName.value = state.anyPackName;
   els.anyPackNamespace.value = state.anyPackNamespace;
   els.anyPackCategory.value = state.anyPackCategory;
@@ -2977,6 +2991,8 @@ function openAnyPack() {
   }
   els.anyPackFormat.value = state.anyPackFormat;
   renderAnyPackTemplates();
+  els.anyPackTemplate.value = templateId || '';
+  syncAnyPackTemplate();
   renderAnyPackEntries();
   if (!els.anyPackDialog.open) {
     document.body.classList.add('dialog-open');
@@ -4002,6 +4018,25 @@ function initUiZoom() {
 
 function init() {
   initUiZoom();
+  document.querySelector('.make-grid')?.addEventListener('click', (event) => {
+    const card = event.target.closest('[data-make]');
+    if (!card) return;
+    const make = card.dataset.make;
+    if (make === 'blocks') {
+      els.promptInput.focus();
+      els.promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (make === 'themes') openThemeStudio();
+    else if (make === 'items') openItemStudio();
+    else if (make === 'entities') openAnyPack('entity_skin');
+    else if (make === 'players') openAnyPack('player_skin');
+    else if (make === 'armor') openAnyPack('armor_layer');
+    else if (make === 'gui') openAnyPack('gui_container');
+    else if (make === 'animation') openAnyPack('animation');
+    else if (make === 'particles') openAnyPack('particle');
+    else if (make === 'paintings') openAnyPack('painting');
+    else if (make === 'environment') openAnyPack('sun');
+    else openAnyPack();
+  });
   if (PROCEDURAL_ONLY) {
     const mode = $('#engineMode');
     if (mode) mode.textContent = IS_TAURI ? 'DESKTOP' : IS_STATIC_DEMO ? 'STATIC DEMO' : 'PROCEDURAL';

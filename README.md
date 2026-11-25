@@ -192,6 +192,19 @@ Open **Item pack studio** in the left panel or press **W**.
 
 The old procedural sword/axe/bow/shield generator was removed because its silhouettes were not good enough. Import and package external item art instead.
 
+## What you can make
+
+![Blockloom front page](screenshots/blockloom-front-page.png)
+
+The front page maps every texture category and labels the honest mode for each:
+
+- **Generate** — blocks and theme kits
+- **Import + pack** — item sprites
+- **Template + pack** — entity/player skins, armor, GUI, animations, particles, paintings, environment
+- **Pack** — any texture path under a namespace
+
+Every card opens the relevant studio or format template.
+
 ## Texture generation
 
 - 90 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
@@ -209,6 +222,7 @@ The old procedural sword/axe/bow/shield generator was removed because its silhou
 - **Import any square block/item texture** from 1–512 px, or the first frame of a vertical animation strip.
 - A local HTTP API and CLI for generating block PNGs, full texture sets, and weapon/item sprites for MCSuperMods and other applications.
 - An **Item pack studio** for importing a transparent item sprite, setting its target id, and exporting a drop-in item pack.
+- A **front-page capability map** covering blocks, theme kits, items, mob/player skins, armor, GUI, animations, particles, paintings, environment, and universal packs.
 - A **Universal texture packer** for any PNG path under `assets/<namespace>/textures/`, including entity, armor, GUI, particle, painting, non-square sheets, and `.png.mcmeta` animation metadata.
 - **Blank and guided Java 26.3 format templates** for armor layers, player/entity skins, GUI containers, particles, animation strips, paintings, and the sun.
 
