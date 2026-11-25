@@ -87,6 +87,9 @@ const els = {
   itemDownloadBtn: $('#itemDownloadBtn'),
   itemCopyBtn: $('#itemCopyBtn'),
   itemPackBtn: $('#itemPackBtn'),
+  itemImportBtn: $('#itemImportBtn'),
+  itemImportInput: $('#itemImportInput'),
+  itemTargetInput: $('#itemTargetInput'),
   importInput: $('#importInput'),
   dropOverlay: $('#dropOverlay'),
   textureTitle: $('#textureTitle'),
@@ -255,6 +258,8 @@ const state = {
   itemSize: 16,
   itemFormat: 'modern',
   itemCurrent: null,
+  itemTarget: 'iron_sword',
+  itemImported: false,
   dragDepth: 0,
 };
 
@@ -2539,6 +2544,7 @@ function itemMaterialInfo() {
 function itemFilename(extension = 'png') {
   const type = itemTypeInfo();
   const material = itemMaterialInfo();
+  if (state.itemImported) return `blockloom_${state.itemTarget.replace(/[^a-z0-9_-]+/gi, '-')}_${state.itemSize}px.${extension}`;
   return `blockloom_${material.id}_${type.id}_${state.itemSeed}_${state.itemSize}px.${extension}`;
 }
 
@@ -2578,6 +2584,29 @@ function renderItemSelectors() {
   renderItemTypeButtons();
 }
 
+function drawItemPreviewCanvas() {
+  const canvas = els.itemPreview;
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (!state.itemCanvas) return;
+  context.imageSmoothingEnabled = false;
+  context.drawImage(state.itemCanvas, 0, 0, canvas.width, canvas.height);
+}
+
+function sampleCanvasPalette(canvas) {
+  const data = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+  const counts = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 24) continue;
+    const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7)
+    .map(([key]) => `#${key.split(',').map((value) => Number(value).toString(16).padStart(2, '0')).join('')}`);
+}
+
 function itemCanvasFromResult(result) {
   const canvas = document.createElement('canvas');
   canvas.width = result.width;
@@ -2612,14 +2641,13 @@ function renderItemStudio() {
     size: state.itemSize,
   });
   state.itemCurrent = result;
+  state.itemTarget = result.recipe.itemId;
+  state.itemImported = false;
   state.itemCanvas = itemCanvasFromResult(result);
-  const canvas = els.itemPreview;
-  const context = canvas.getContext('2d');
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.imageSmoothingEnabled = false;
-  context.drawImage(state.itemCanvas, 0, 0, canvas.width, canvas.height);
+  drawItemPreviewCanvas();
   els.itemTitle.textContent = `${material.name} ${type.name}`;
-  els.itemTarget.textContent = result.recipe.itemId;
+  els.itemTarget.textContent = state.itemTarget;
+  els.itemTargetInput.value = state.itemTarget;
   const palette = sampleItemPalette(result);
   els.itemPalette.replaceChildren();
   for (const color of palette) {
@@ -2629,6 +2657,47 @@ function renderItemStudio() {
     els.itemPalette.append(swatch);
   }
   if (document.activeElement !== els.itemSeed) els.itemSeed.value = state.itemSeed;
+}
+
+async function importItemTexture(file) {
+  if (!file) return;
+  try {
+    const image = await readTextureFile(file);
+    const plan = planTextureImport(image.naturalWidth || image.width, image.naturalHeight || image.height, 512);
+    if (!plan.ok) throw new Error(plan.reason);
+    const targetSize = Math.min(64, plan.targetSize);
+    const canvas = document.createElement('canvas');
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+    const context = canvas.getContext('2d');
+    context.imageSmoothingEnabled = false;
+    context.clearRect(0, 0, targetSize, targetSize);
+    context.drawImage(image, 0, 0, plan.sourceWidth, plan.cropHeight, 0, 0, targetSize, targetSize);
+    state.itemImported = true;
+    state.itemCanvas = canvas;
+    state.itemSize = targetSize;
+    state.itemTarget = importTitle(file.name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'imported_item';
+    state.itemCurrent = { width: targetSize, height: targetSize, recipe: { itemId: state.itemTarget }, version: 'imported' };
+    els.itemSize.value = String(targetSize);
+    els.itemTitle.textContent = importTitle(file.name);
+    els.itemTarget.textContent = state.itemTarget;
+    els.itemTargetInput.value = state.itemTarget;
+    drawItemPreviewCanvas();
+    const palette = sampleCanvasPalette(canvas);
+    els.itemPalette.replaceChildren();
+    for (const color of palette) {
+      const swatch = document.createElement('span');
+      swatch.style.backgroundColor = color;
+      swatch.title = color.toUpperCase();
+      els.itemPalette.append(swatch);
+    }
+    toast('Imported item texture · set the target id if needed');
+  } catch (error) {
+    console.error(error);
+    toast(error.message || 'Could not import that item texture.', true);
+  } finally {
+    els.itemImportInput.value = '';
+  }
 }
 
 function openItemStudio() {
@@ -2679,16 +2748,16 @@ async function exportItemPack() {
     const result = state.itemCurrent;
     const { blob, filename } = await buildItemResourcePack({
       canvas: state.itemCanvas,
-      itemId: result.recipe.itemId,
-      title: `${itemMaterialInfo().name} ${itemTypeInfo().name}`,
+      itemId: state.itemTarget,
+      title: els.itemTitle.textContent,
       seed: state.itemSeed,
       size: state.itemSize,
-      material: state.itemMaterial,
-      type: state.itemType,
+      material: state.itemImported ? 'imported' : state.itemMaterial,
+      type: state.itemImported ? 'item' : state.itemType,
       formatId: state.itemFormat,
     });
     downloadBlob(blob, filename);
-    toast('Item pack exported · ' + result.recipe.itemId);
+    toast('Item pack exported · ' + state.itemTarget);
   } catch (error) {
     console.error(error);
     toast('Could not build the item pack', true);
@@ -3239,6 +3308,16 @@ function bindEvents() {
   els.itemDownloadBtn.addEventListener('click', downloadItemPng);
   els.itemCopyBtn.addEventListener('click', copyItemPng);
   els.itemPackBtn.addEventListener('click', exportItemPack);
+  els.itemImportBtn.addEventListener('click', () => els.itemImportInput.click());
+  els.itemImportInput.addEventListener('change', () => {
+    const file = els.itemImportInput.files?.[0];
+    if (file) importItemTexture(file);
+  });
+  els.itemTargetInput.addEventListener('input', () => {
+    const value = els.itemTargetInput.value.toLowerCase().replace(/[^a-z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64);
+    state.itemTarget = value || (state.itemCurrent?.recipe?.itemId || 'imported_item');
+    els.itemTarget.textContent = state.itemTarget;
+  });
   els.finishBtn.addEventListener('click', openFinisher);
   els.shareBtn.addEventListener('click', copyShareLink);
   els.finisherDialog.addEventListener('close', () => {

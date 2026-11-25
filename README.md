@@ -189,12 +189,13 @@ Open **Weapon / item studio** in the left panel or press **W**.
 - Eight material palettes: wood, stone, iron, gold, diamond, netherite, copper, emerald.
 - Deterministic 16 px sprites, scalable to 32/64 px, with transparent backgrounds.
 - Download PNG, copy PNG, or export a drop-in **item resource pack**.
+- **Import PNG** loads an existing item sprite (including one downloaded from a web generator); edit the target id and package it.
 - Item pack path: `assets/minecraft/textures/item/<item>.png`.
 - Vanilla IDs are used for the five vanilla tool tiers; copper/emerald produce modded IDs.
 
 ![Item studio](screenshots/blockloom-item-studio.png)
 
-This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive.
+This is separate from the block library/finisher for now: item sprites export directly rather than entering the three-face block archive. Web-generated textures work through the same local import path; Blockloom does not scrape or log into external services.
 
 ## Texture generation
 

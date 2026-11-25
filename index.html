@@ -758,6 +758,7 @@
           <div class="item-control-block">
             <label class="item-field"><span>Material</span><select id="itemMaterial" aria-label="Item material"></select></label>
             <label class="item-field"><span>Pack format</span><select id="itemFormat" aria-label="Item pack format"></select></label>
+            <label class="item-field"><span>Target id</span><input id="itemTargetInput" type="text" maxlength="64" spellcheck="false" aria-label="Item target id" /></label>
           </div>
           <div class="item-control-block item-inline">
             <label class="item-field item-seed"><span>Seed</span><input id="itemSeed" type="number" min="1" max="999999999" inputmode="numeric" /></label>
@@ -776,6 +777,8 @@
             <button class="btn btn-outline" id="itemDownloadBtn" type="button">Download PNG</button>
             <button class="btn btn-outline" id="itemCopyBtn" type="button">Copy PNG</button>
             <button class="btn btn-primary" id="itemPackBtn" type="button">Export item pack</button>
+            <button class="btn btn-outline" id="itemImportBtn" type="button">Import PNG</button>
+            <input id="itemImportInput" type="file" accept="image/png,image/*" hidden />
           </div>
         </section>
       </div>
