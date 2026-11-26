@@ -1,0 +1,408 @@
+{
+  "engineVersion": "1.0.0",
+  "seed": 20261124,
+  "hash": "sha256",
+  "count": 80,
+  "cases": [
+    {
+      "theme": "royal_sword",
+      "motif": "kingsword",
+      "hash": "cc42b853d4733561638f4b53a08dd133a8ce3929133ded1e199cbd5410a73efc"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "throneblade",
+      "hash": "0563cb47eb5f16770139c16eadc9b51407e6f79cd76b9ac10f080bd71a787a89"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "crownblade",
+      "hash": "13d442e266e2ce60e693b8184ffac6e685d7ce697722fac122cf2e338efb6052"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "dawnblade",
+      "hash": "392b7b61d103db76dc5116c51315dfc74700c3485ea126c038a5305d481a702f"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "regent",
+      "hash": "16ea25ba2133c2951572b5f8187959f1e02fb677ed87c37d64b8bd9e91641e09"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "courtblade",
+      "hash": "23ab833929330616519b207dd60e23f87c8916565eb556e5696ec9476ca5c8a5"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "herald",
+      "hash": "e8b3bc4fec713ac6dc245c33d5f6856b85968f06481e8c190cfab446f6eb2d60"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "fleurblade",
+      "hash": "01295588747d78d22dc63a1679575d2ade26fe6c2de02110f643eca84956472b"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "lionheart",
+      "hash": "70902cd21e6f25b45ecebf6247deea326e9d608defbddb7df83f7dda8472ae16"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "goldedge",
+      "hash": "beb9768a9e4659aa89c817b184e61608d172461c8c200a28fdba7c20af8a5505"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "sovereign",
+      "hash": "da9109d39d5dbb83163e2c0df0905cb61dc58d512d34ab79c54225721d7af0e5"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "noblesword",
+      "hash": "975a7bf0ae064dbec98b9f3099c040ef92a3a8ba1da9bb7f9fd498431a630d58"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "crestblade",
+      "hash": "e2af49318a8577d91aeee9dea005a50e9da14683e73430c7ffab9264ae159a07"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "dawnregent",
+      "hash": "7803cb577f0a768f088f8e14f0f388e421e57d9a74ae877c426b0b4f6e9d5a63"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "gildedsapphire",
+      "hash": "0c7ecf4db707e402358c0f3f3e6d893c7ab447ed18601e78ab780bc007662603"
+    },
+    {
+      "theme": "royal_sword",
+      "motif": "royalblade",
+      "hash": "6b3c73c7a2fec5d67c407ab50d05d1553a971ffe09a37ca47efb7dc2f293fe48"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "emerald_rune",
+      "hash": "c1e02a1a62e96481574c3bea1e2241633d8d17b8d3fb4675efcd5b247390536e"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "silverbound_relic",
+      "hash": "3519a8668d59bd1c49f0159c3766579873562ecec1de09fe549c6d4aa663623e"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "verdant_elder",
+      "hash": "ec98e4d694557d4b02998153af6bb4f0692f3e9501b6983377569ed5e0843137"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "runestone_miner",
+      "hash": "347ca8e5619aa609738dcc87786795ac30903df58c7e12a6ef0abfa119af331c"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "jade_glyph",
+      "hash": "eadb1e4d4d4e7aaa50ba32dd7af502cf5470c7e4eac10fbf63d91919791cdef5"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "ancient_vein",
+      "hash": "e13d37a508dcb450abd991248be21937c2781e62e2153e7bba9ab40eea6fd10c"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "moonlit_rune",
+      "hash": "0b9f36c641bcc4e3d14b92a623503c2516d33e0e27730c4913b3a4eb273e682d"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "obsidian_script",
+      "hash": "9b28e3f4c9c602d8faa2c03b92f8d85244c3ef1cb18cfaefffb304911e6ce915"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "emerald_temple",
+      "hash": "93f0e0a38253125b7378e75d65f768be390ca1f7a528b7b64c090e02e68fc81a"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "silver_sigil",
+      "hash": "a77da14f2a00a16057cfde598d1f0b8063ba007f7f66ac48ba5373519a5b7ed3"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "warden_rune",
+      "hash": "cef60ec0a72dcacfeb8f9d3466c88c3669ad1c89cc93b0a26f59a0abf01a0237"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "verdant_arc",
+      "hash": "b5316549204d48aed0a611bd3f2ccb6e660bb87b54bbffd4d327523c0bc47324"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "relic_carver",
+      "hash": "5142e203dd9480e8be041d3db090e4f45fed7fb7f5c7d77421abe61f9be391b3"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "runic_crown",
+      "hash": "9d5c110ac965591a31ee1e4ce2a580189da6d5442ae7ad75d0285bf4f8e708c3"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "elder_gem",
+      "hash": "55cf6eb952be4df57c78ca38ed895854c0868723628e2bb6c8dc81c27e13d1d3"
+    },
+    {
+      "theme": "runic_pickaxe",
+      "motif": "forgotten_glyph",
+      "hash": "2785e36fc18f8b1f7584ec4b264e4ce0cc1591df23608434f0e1381f3e8c9179"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "jade_sun",
+      "hash": "fd6994b595396937f2b1afc9db9f3b3bf786f967b92208731eb63baadc9d10d2"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "bronze_bound",
+      "hash": "9166e056ea1285c66636260ad1d74583d30ba8e962221c8408f60b74beaa11c1"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "emerald_ritual",
+      "hash": "e0ea5f3d879ebf1d996b404321d767bf0b3fe813470b3f297413adda86afcd72"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "moss_crescent",
+      "hash": "1a7ec83021420dae4961d78ad08b62039ed538772c1f5e88b03517ab6860658b"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "temple_hatchet",
+      "hash": "a546e8f387d8e3ea6b20d267d87511befbde620f5b807da39b98431097b70cc3"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "serpent_bind",
+      "hash": "9b53002b1349edc4085916000d214ee03161d062c36d3294f99f65c03ff9cb07"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "carved_labrys",
+      "hash": "fe1bce9c7342b9774eb506c13189c67735bcac5c44f541b8be9861f6fe60214c"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "royal_jade",
+      "hash": "0c0c7f1dfce08611e01788fcdcb7de1fdbf033d50677e88525a95d538dc7bb4d"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "spiral_bronze",
+      "hash": "cb79bde4eff781b327b9be7c99a7740839860580838aebaf342ec6e053b6545b"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "lotus_jade",
+      "hash": "9e02bd6b5d6e187b5b20e14bffc523aa61d7fb457e16514381411d5153df0f3b"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "obsidian_edge",
+      "hash": "f42287800df1ea4f0a5632af246731f4a460d698e9352d1e28c271cf218630a5"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "feathered_jade",
+      "hash": "ace4f85141eb33c1dcac6e0ffa32e9a2ae53af08e32548a61dc165a796e5c0df"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "twin_curve",
+      "hash": "65525d5c98430ffccd94bba12b86d998e652a3b10f3d8b90d434cfc4ba2a8234"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "runed_jade",
+      "hash": "02387745188418ed0cd8d02e985562b597ba7f76c0df20ec6f38f59e1f067d59"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "amber_inset",
+      "hash": "5f80698d24723631e92b396b8b16979767ebaa843ba22937167c07dec6829e6f"
+    },
+    {
+      "theme": "jade_axe",
+      "motif": "moonlit_jade",
+      "hash": "c990c1de2c4bcd9a33c332c6fbc91c5e5630c948f8c530c94d40b0905fd372d2"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "moonlit_filigree",
+      "hash": "5672cc0b23be5f7ce224435bf1e6058d1499243832bb95c649d075183015653b"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "starlance",
+      "hash": "a61ff3071e89292d471a591db0afcbd6b5dea6c7d6079435d7a7e7733a891d14"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "silver_comet",
+      "hash": "9717e9d64021c406f53b587968e973dcd5702eb19794a7ffbc8361125388721f"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "eclipse_thread",
+      "hash": "b4369f2db482d0fc218edbc78fc5b722b9bfcb92b40bdad4fdf7156f6d4282bd"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "astral_crescent",
+      "hash": "ba8722c7e59fb31f4b8802871a581124130808e73fce2ca3f75b922dc27eb4ec"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "nebula_string",
+      "hash": "5c8503901c97979c4f613d10bc7c46c987a6d766e769eb28178b0609d222acf6"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "frostmoon",
+      "hash": "738c14f36760c47ef7694558299a37c4cc49b12e5678e4e111585161de3d772d"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "aurora_filigree",
+      "hash": "ccb093e3e9ccb4065871b0e5d108f88a5aabf84ec0f57be8bf6d288d05e6b41c"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "solar_arc",
+      "hash": "02a371b143c08a078597d0f66f0952183984982cec6c70fac4c673b9d7bdb299"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "constellation",
+      "hash": "af57876079c8e2d619bc9cd42c949d3dbafbbb4529d782fce4cb85b833d6c5e5"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "twilight_starbow",
+      "hash": "d5e782d2a33bf095194270f1aa3f8791447a568f156557ac07993911d9eb4749"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "lunar_halo",
+      "hash": "2ec5146dfec86f09f26573dc041cef1e81472dc19f406efdd840683e0af72e4e"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "meteorstring",
+      "hash": "760c6067ecd9f55388f6973449b9aadbabb8739bed073b7e8370d1b0c606f538"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "sapphire_skybow",
+      "hash": "3e9093bbdd6a3ecc7e82a8c66e04491c9b343752d4a95ea846944d0bce312444"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "radiant_silverbow",
+      "hash": "7ed760308e94043f2a589be88b31339b200f93c9d51b7c22e30d47f15a9f9813"
+    },
+    {
+      "theme": "celestial_bow",
+      "motif": "void_crescent",
+      "hash": "265a5a35b90606acae2f274d26f1551118a1858286de90bd35e735c78953d867"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "crescent_glyph",
+      "hash": "6cd2e5c5568c7c9384a9034442b1a44ca6ff4e72241bdf60cac0240ff173d878"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "spiral_rune",
+      "hash": "4824a50bdd1c092b4e9a7c7f8aa2a476eab61b4cadc331a2aecaf9cdee689f4c"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "crowned_eye",
+      "hash": "e743d8a1254e8d38d056ddd493c9ab974e733d78ca8056d8a20f3eed0215372a"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "tide_knot",
+      "hash": "6351d6c548433d22063cca26c42aa3bd386dd16a63e6846cf033657fcc7b8e0d"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "four_point",
+      "hash": "4830c056757dbf127d1140065ce99b3fb8a222511abbea6f86b62ff1fc251e9c"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "serpent_glyph",
+      "hash": "68a28b7ff914876aa26096ae5ec314dea84ccdbc123faac6f821cb4dd36a9412"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "starburst_rune",
+      "hash": "e2952a6b115f71eb3f87c89f69b588550285a0ba3862bda37aa538e9b1853baa"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "turquoise_sun",
+      "hash": "e741f3161aa770dabd655e7badf6f501ba5a5d97bdb3cdaba12141871acddd5a"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "twin_wave",
+      "hash": "1f656b9b64cb1563c1a4760ade68ff65051ece36c4d1ee062f908c38378d0457"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "obsidian_lotus",
+      "hash": "a271a4d9c6f01301ad0f4fa3759834a67c78e8f867dc312eae50bbd8fa73d70a"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "crossed_rune",
+      "hash": "26051da426b42d0b8231e80ebe12a7772ef76e401bef3fcc0358912d8ca6efe2"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "angular_eye",
+      "hash": "4775c5ca0574d818a869087eec7fdeeb664f210d55a1b5bc1a370ac9ac841bcb"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "moonlit_glyph",
+      "hash": "876a83be083a92d2250831ec4c9d32fdb7084d52df9b26af9818002f09edcb86"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "triangular_ward",
+      "hash": "8e627fc36b014dde20d125c7111adfcba654d11b6c335ae36368d242b00f89d2"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "radiant_ring",
+      "hash": "be1c2be07d64c28a3f685943f282519f4bb4f45be56f91a38fd02e84c368bb89"
+    },
+    {
+      "theme": "rune_shield",
+      "motif": "ancient_spiral",
+      "hash": "066361343af4c508075da530f9aa8d18a655e14b28120715efca49d3d51296a8"
+    }
+  ]
+}

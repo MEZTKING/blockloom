@@ -26,7 +26,7 @@ npm run check # tests + syntax checks for every module
 
 **Live procedural demo:** [meztking.github.io/blockloom](https://meztking.github.io/blockloom/) — the static Pages build omits the Node server, so AI is disabled there by design. The finisher, import, local library, offline cache, and all client-side exports work.
 
-**Core package:** [@blockloom/core v1.4.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.4.0) — DOM-free block + item generator, 90 recipes, types, and worker docs.
+**Core package:** [@blockloom/core v1.5.0](https://github.com/MEZTKING/blockloom/releases/tag/core-v1.5.0) — DOM-free block + item generator, 90 recipes, types, and worker docs.
 
 **Integration handoff:** [issue #1](https://github.com/MEZTKING/blockloom/issues/1) — shared coordination channel for MCSuperMods.
 
@@ -211,6 +211,24 @@ The Universal Packer autosaves its draft files and settings in IndexedDB. Reopen
 
 **Share** puts the current workspace into a compressed URL when it fits under the link limit. The recipient opens the link and gets the same files, paths, and pack settings. Large packs should be exported as ZIP instead.
 
+## Item motif studio
+
+![Item motif studio](screenshots/blockloom-item-motifs.png)
+
+Press **Y** or open **Item motif studio**.
+
+Five families, 16 motifs each, all transparent 16×16 cut-outs built from components rather than recoloured templates:
+
+| Family | Components |
+|---|---|
+| Royal Sword | blade, guard, grip, pommel, gem, inlay |
+| Runic Pickaxe | head arc, binding, rune script, haft, gem |
+| Jade Axe | wedge/labrys/crescent head, bronze edge, binding, inset, haft |
+| Celestial Bow | limb arc, string, grip, filigree, tip ornament |
+| Rune Shield | rim, frame, ward, glyph, boss |
+
+Each motif exports as PNG, copies to the clipboard, or becomes a 16-file item pack at `assets/minecraft/textures/item/<motif>.png`. 32/64 px are whole-pixel scales of the 16 px art, not a separate native detail track.
+
 ## Pixel editor
 
 ![Pixel editor](screenshots/blockloom-pixel-editor.png)
@@ -247,6 +265,7 @@ Blank and guided Java 26.3 templates are available from the Universal Packer:
 - 90 data-driven recipes across stone, earth, wood, glass, wool, concrete, metal, ore, and nether/end families.
 - A **Celestial prompt theme** for heaven/sky-city prompts, resolving to pale Marble with blue veining.
 - **Theme motif sheets** for Brass Checker, Gold Marble, Aztec Temple, and Celestial — 16 distinct motifs per palette.
+- **Item motif sheets**: Royal Sword, Runic Pickaxe, Jade Axe, Celestial Bow, Rune Shield — 16 component-built 16×16 sprites per family, with PNG and item-pack export.
 - Fixed reference palettes for brass, gold, turquoise, and sky-blue theme sheets.
 - Natural-language parser: `mossy cobblestone with tiny cyan crystals`, `cracked deepslate with glowing amber veins`, `frosted oak planks`.
 - Effects: mossy, cracked, glowing, frosted, ancient, charred, gilded, flecked, wet, flowery, crystals.

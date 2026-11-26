@@ -78,7 +78,7 @@ test('transparent families emit alpha and opaque families stay opaque', () => {
 });
 
 test('core modules contain no DOM, canvas, network, or randomness', () => {
-  for (const file of ['engine.js', 'data.js', 'items.js', 'themes.js', 'index.js']) {
+  for (const file of ['engine.js', 'data.js', 'items.js', 'itemthemes.js', 'themes.js', 'index.js']) {
     const source = readFileSync(join(root, 'core', file), 'utf8');
     assert.doesNotMatch(source, /\bdocument\.|\bwindow\.|HTMLCanvasElement|\bfetch\s*\(/, file);
     assert.doesNotMatch(source, /Math\.random|Date\.now/, file);

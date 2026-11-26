@@ -54,6 +54,9 @@ Without `BRIDGE_TOKEN`, only loopback clients can use the bridge. The token is n
 | `GET /api/themes` | List four 16-motif theme families |
 | `GET/POST /api/theme` | One themed motif PNG or JSON |
 | `GET/POST /api/theme-sheet` | ZIP of all 16 motifs for a theme |
+| `GET /api/item-themes` | List five item motif families |
+| `GET/POST /api/item-motif` | One item motif PNG or JSON |
+| `GET/POST /api/item-motif-sheet` | ZIP of all 16 item motifs for a family |
 | `GET /api/openapi.json` | OpenAPI 3.0 document |
 
 ### One PNG
@@ -135,6 +138,16 @@ curl "http://127.0.0.1:4173/api/theme-sheet?theme=brass_checker" -o brass.zip
 ```
 
 Themes: `brass_checker`, `gold_marble`, `aztec_temple`, `celestial`. Each has 16 motif ids. The ZIP writes `assets/minecraft/textures/block/<motif>.png` plus `blockloom-theme.json`.
+
+### Item motifs
+
+```bash
+curl http://127.0.0.1:4173/api/item-themes
+curl "http://127.0.0.1:4173/api/item-motif?theme=royal_sword&motif=kingsword&seed=42" -o kingsword.png
+curl "http://127.0.0.1:4173/api/item-motif-sheet?theme=rune_shield" -o shields.zip
+```
+
+Families: `royal_sword`, `runic_pickaxe`, `jade_axe`, `celestial_bow`, `rune_shield`. Each has 16 motif ids. Sheets write `assets/minecraft/textures/item/<motif>.png`.
 
 ### Batch
 

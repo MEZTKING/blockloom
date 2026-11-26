@@ -77,5 +77,7 @@ test('capabilities list the recipe vocabulary', () => {
   assert.equal(caps.items.types.length, 6);
   assert.equal(caps.items.materials.length, 8);
   assert.equal(caps.themes.count, 4);
+  assert.equal(caps.itemThemes.count, 5);
+  assert.equal(caps.itemThemes.families[0].motifs, 16);
   assert.equal(caps.themes.families[0].motifs, 16);
 });

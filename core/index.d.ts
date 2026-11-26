@@ -222,3 +222,31 @@ export function generateThemeSheet(options?: { themeId?: string; prompt?: string
 export function listThemes(): ThemeDefinition[];
 export const THEMES: ThemeDefinition[];
 export const THEME_ENGINE_VERSION: string;
+
+export interface ItemThemeMotif { id: string; name: string; }
+export interface ItemTheme { id: string; name: string; palette: Record<string, string>; motifs: ItemThemeMotif[]; }
+export interface ItemThemeRecipe {
+  theme: string;
+  themeName: string;
+  motif: string;
+  motifName: string;
+  size: number;
+  seed: number;
+  engineVersion: string;
+}
+export interface GeneratedItemMotif {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray;
+  recipe: ItemThemeRecipe;
+  version: string;
+}
+export interface GeneratedItemThemeSheet {
+  theme: { id: string; name: string; palette: Record<string, string> };
+  motifs: GeneratedItemMotif[];
+}
+export function generateItemMotif(options?: { themeId?: string; motifId?: string; seed?: number; size?: 16 | 32 | 64 }): GeneratedItemMotif;
+export function generateItemThemeSheet(options?: { themeId?: string; seed?: number; size?: 16 | 32 | 64 }): GeneratedItemThemeSheet;
+export function listItemThemes(): ItemTheme[];
+export const ITEM_THEMES: ItemTheme[];
+export const ITEM_THEME_ENGINE_VERSION: string;

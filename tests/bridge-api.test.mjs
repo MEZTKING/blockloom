@@ -166,3 +166,22 @@ test('theme endpoints list, generate, and ZIP 16 motifs', async () => {
   const zip = Buffer.from(await sheet.arrayBuffer());
   assert.deepEqual([...zip.subarray(0, 4)], [80, 75, 3, 4]);
 });
+
+test('item motif endpoints list, render PNG/JSON, and ZIP a family', async () => {
+  const auth = { Authorization: `Bearer ${TOKEN}` };
+  const list = await (await fetch(`${base}/api/item-themes`, { headers: auth })).json();
+  assert.equal(list.themes.length, 5);
+  assert.equal(list.themes[0].motifs.length, 16);
+  const png = await fetch(`${base}/api/item-motif?theme=royal_sword&motif=kingsword&seed=4&size=16`, { headers: auth });
+  assert.equal(png.headers.get('content-type'), 'image/png');
+  const bytes = Buffer.from(await png.arrayBuffer());
+  assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.equal(bytes.readUInt32BE(16), 16);
+  const json = await (await fetch(`${base}/api/item-motif?theme=jade_axe&motif=jade_sun&format=json`, { headers: auth })).json();
+  assert.equal(json.recipe.theme, 'jade_axe');
+  assert.ok(json.image.startsWith('data:image/png;base64,'));
+  const sheet = await fetch(`${base}/api/item-motif-sheet?theme=celestial_bow&seed=3`, { headers: auth });
+  assert.equal(sheet.headers.get('content-type'), 'application/zip');
+  const zip = Buffer.from(await sheet.arrayBuffer());
+  assert.deepEqual([...zip.subarray(0, 4)], [80, 75, 3, 4]);
+});

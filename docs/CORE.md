@@ -6,10 +6,10 @@ It is the same engine used by the Blockloom app, local bridge, and CLI. Same inp
 
 ## Install / import
 
-The package lives in [`core/`](../core) and is published with the `core-v1.4.0` tag. Install the release tarball:
+The package lives in [`core/`](../core) and is published with the `core-v1.5.0` tag. Install the release tarball:
 
 ```bash
-npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.4.0/blockloom-core-1.4.0.tgz
+npm install https://github.com/MEZTKING/blockloom/releases/download/core-v1.5.0/blockloom-core-1.5.0.tgz
 ```
 
 Or copy `core/` into your project. It is plain ESM with no dependencies.
@@ -86,6 +86,27 @@ item.version;          // ITEM_ENGINE_VERSION
 ```
 
 Item sprites are deterministic 16×16 templates scaled to 16/32/64. `core/item-golden.json` pins 12 item hashes. `ITEM_ENGINE_VERSION` is separate from the block `ENGINE_VERSION`.
+
+## Item motif sheets
+
+```js
+import { listItemThemes, generateItemThemeSheet, generateItemMotif } from '@blockloom/core';
+
+listItemThemes().forEach((t) => console.log(t.id, t.motifs.length));
+const sheet = generateItemThemeSheet({ themeId: 'royal_sword', seed: 42, size: 16 });
+sheet.motifs.length; // 16
+generateItemMotif({ themeId: 'rune_shield', motifId: 'crescent_glyph', size: 16 }).recipe.motifName;
+```
+
+Five component-built families, 16 motifs each:
+
+- `royal_sword` — blade, guard, grip, pommel, gem, inlay
+- `runic_pickaxe` — head arc, binding, rune script, haft, gem
+- `jade_axe` — lobe/wedge head, bronze edge, binding, inset, haft
+- `celestial_bow` — limb arc, string, grip, filigree, tip ornament
+- `rune_shield` — rim, frame, ward, glyph, boss
+
+All sprites are transparent 16×16 cut-outs. `ITEM_THEME_ENGINE_VERSION = 1.0.0`; `core/itemtheme-golden.json` pins 80 hashes. Sizes 32/64 are whole-pixel scales, not native detail.
 
 ## Theme sheets
 
@@ -218,4 +239,4 @@ MIT. Credit: **Blockloom / Lelouch**. The MIT licence in the repository root app
 
 ## Release
 
-Tag: `core-v1.4.0`
+Tag: `core-v1.5.0`

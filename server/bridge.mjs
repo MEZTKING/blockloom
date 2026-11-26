@@ -2,6 +2,8 @@
 import {
   FINISHES,
   ITEM_MATERIALS,
+  ITEM_THEMES,
+  ITEM_THEME_ENGINE_VERSION,
   ITEM_TYPES,
   THEMES,
   THEME_ENGINE_VERSION,
@@ -9,6 +11,8 @@ import {
   MODIFIERS,
   detectTheme,
   generateItem,
+  generateItemMotif,
+  generateItemThemeSheet,
   generateThemeMotif,
   generateThemeSheet,
   getMaterial,
@@ -19,7 +23,7 @@ import {
 import { createZip } from '../js/zip.js';
 import { encodePng } from './png.mjs';
 
-export const BRIDGE_API_VERSION = '1.2.0';
+export const BRIDGE_API_VERSION = '1.3.0';
 export const MAX_BATCH_ITEMS = 64;
 export const MAX_SIZE = 512;
 export const FACES = ['side', 'top', 'bottom'];
@@ -320,6 +324,10 @@ export function capabilities() {
     modifiers: MODIFIERS.map(({ id, label }) => ({ id, label })),
     faces: FACES,
     formats: ['png', 'json', 'zip'],
+    itemThemes: {
+      count: ITEM_THEMES.length,
+      families: ITEM_THEMES.map((theme) => ({ id: theme.id, name: theme.name, motifs: theme.motifs.length })),
+    },
     themes: {
       count: THEMES.length,
       families: THEMES.map((theme) => ({ id: theme.id, name: theme.name, motifs: theme.motifs.length })),
@@ -348,6 +356,9 @@ export const API_DOCS = {
     'GET /api/themes': 'List four motif-sheet themes.',
     'GET /api/theme?theme=brass_checker&motif=classic_brass_checker': 'One theme motif PNG or JSON.',
     'GET /api/theme-sheet?theme=aztec_temple': 'ZIP of all 16 motifs for a theme.',
+    'GET /api/item-themes': 'List five item motif families.',
+    'GET /api/item-motif?theme=royal_sword&motif=kingsword': 'One 16px item motif PNG or JSON.',
+    'GET /api/item-motif-sheet?theme=royal_sword': 'ZIP of all 16 item motifs for a family.',
     'GET /api/openapi.json': 'OpenAPI 3.0 description.',
   },
   examples: {
@@ -493,3 +504,39 @@ export async function themeSheetZip(input = {}) {
   const zip = Buffer.from(await blob.arrayBuffer());
   return { zip, filename: `blockloom_${sheet.theme.id}_16motifs_${input.seed || 1}.zip`, theme: sheet.theme };
 }
+
+export function renderItemMotif(input = {}) {
+  const result = generateItemMotif({
+    themeId: input.themeId || input.theme || 'royal_sword',
+    motifId: input.motifId || input.motif || 'kingsword',
+    seed: input.seed,
+    size: input.size,
+  });
+  const png = encodePng(result.width, result.height, result.rgba);
+  return {
+    ...result,
+    png,
+    dataUrl: `data:image/png;base64,${png.toString('base64')}`,
+    filename: `blockloom_${result.recipe.motif}_${result.recipe.seed}_${result.recipe.size}px`,
+  };
+}
+
+export function serializeItemMotif(result) {
+  return { ok: true, width: result.width, height: result.height, recipe: result.recipe, version: result.version, image: result.dataUrl };
+}
+
+export async function itemThemeSheetZip(input = {}) {
+  const sheet = generateItemThemeSheet({ themeId: input.themeId || input.theme, seed: input.seed, size: input.size });
+  const files = [];
+  const entries = [];
+  for (const motif of sheet.motifs) {
+    const png = encodePng(motif.width, motif.height, motif.rgba);
+    const name = `assets/minecraft/textures/item/${motif.recipe.motif}.png`;
+    files.push({ name, data: png });
+    entries.push({ motif: motif.recipe.motif, name: motif.recipe.motifName, file: name });
+  }
+  files.push({ name: 'blockloom-item-motifs.json', data: JSON.stringify({ generator: 'Blockloom item motifs', engineVersion: ITEM_THEME_ENGINE_VERSION, theme: sheet.theme, seed: input.seed, size: input.size, motifs: entries }, null, 2) });
+  const blob = await createZip(files);
+  return { zip: Buffer.from(await blob.arrayBuffer()), filename: `blockloom_${sheet.theme.id}_16itemmotifs_${input.seed || 1}.zip`, theme: sheet.theme };
+}
+export { itemThemeSheetZip as itemMotifSheetZip };

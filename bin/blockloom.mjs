@@ -9,11 +9,16 @@ import {
   renderTheme,
   renderTextureSet,
   themeSheetZip,
+  renderItemMotif,
+  itemThemeSheetZip,
+  serializeItemMotif,
   serializeItem,
   serializeTextureSet,
   texturePng,
   textureResultZip,
 } from '../server/bridge.mjs';
+
+import { listItemThemes } from '../core/index.js';
 
 const HELP = `Blockloom local texture bridge CLI
 
@@ -27,6 +32,9 @@ Usage:
   blockloom themes
   blockloom theme --theme brass_checker --motif classic_brass_checker --out brass.png
   blockloom theme-sheet --theme aztec_temple --out aztec.zip
+  blockloom item-themes
+  blockloom item-motif --theme royal_sword --motif kingsword --out sword.png
+  blockloom item-motif-sheet --theme royal_sword --out swords.zip
 
 Theme options:
   --theme <id>          brass_checker | gold_marble | aztec_temple | celestial
@@ -190,6 +198,25 @@ async function themeSheet(values) {
   await writeOutput(zip, values.out || `${filename}`, true);
 }
 
+async function itemThemes() {
+  console.log(JSON.stringify(listItemThemes(), null, 2));
+}
+
+async function itemMotifCommand(values) {
+  const result = renderItemMotif({ theme: values.theme, motif: values.motif, seed: values.seed, size: values.size });
+  const format = values.format || (values.out?.endsWith('.json') ? 'json' : 'png');
+  if (format === 'json') {
+    await writeOutput(JSON.stringify(serializeItemMotif(result), null, 2), values.out, false);
+    return;
+  }
+  await writeOutput(result.png, values.out, true);
+}
+
+async function itemMotifSheetCommand(values) {
+  const { zip, filename } = await itemThemeSheetZip({ theme: values.theme, seed: values.seed, size: values.size });
+  await writeOutput(zip, values.out || filename, true);
+}
+
 async function main() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
@@ -237,6 +264,9 @@ async function main() {
   if (command === 'themes') return themes();
   if (command === 'theme') return theme(values);
   if (command === 'theme-sheet') return themeSheet(values);
+  if (command === 'item-themes') return itemThemes();
+  if (command === 'item-motif') return itemMotifCommand(values);
+  if (command === 'item-motif-sheet') return itemMotifSheetCommand(values);
   if (command === 'item') return item(values);
   if (command === 'batch') return batch(values);
   throw new Error(`Unknown command “${command}”. Run blockloom help.`);

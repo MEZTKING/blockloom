@@ -21,6 +21,7 @@ import { buildItemResourcePack } from './itempack.js';
 import { buildAnyResourcePack } from './anypack.js';
 import { TEMPLATE_PRESETS, createTemplateCanvas, getTemplatePreset, templateMeta } from './templates.js';
 import { PixelEditor } from './pixedit.js';
+import { ItemMotifStudio } from './itemthemes.js';
 import { saveAnyPackDraft, loadAnyPackDraft, clearAnyPackDraft as clearAnyPackDraftStore, savePackSnapshot, listPackSnapshots, getPackSnapshot, deletePackSnapshot } from './drafts.js';
 import { TextureFinisher } from './finisher.js';
 import {
@@ -137,6 +138,8 @@ const els = {
   anyPackTemplateMetaBtn: $('#anyPackTemplateMetaBtn'),
   anyPackTemplateEditBtn: $('#anyPackTemplateEditBtn'),
   pixelDialog: $('#pixelDialog'),
+  itemMotifBtn: $('#itemMotifBtn'),
+  itemMotifDialog: $('#itemMotifDialog'),
   variantSheetDialog: $('#variantSheetDialog'),
   variantSheetGrid: $('#variantSheetGrid'),
   closeVariantSheetBtn: $('#closeVariantSheetBtn'),
@@ -488,7 +491,7 @@ function hasCustomTexture() {
 }
 
 function syncDialogBody() {
-  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog, els.pixelDialog, els.packHistoryDialog];
+  const dialogs = [els.howDialog, els.aiDialog, els.libraryDialog, els.finisherDialog, els.packDialog, els.versionDialog, els.itemDialog, els.variantSheetDialog, els.anyPackDialog, els.themeDialog, els.pixelDialog, els.packHistoryDialog, els.itemMotifDialog];
   document.body.classList.toggle('dialog-open', dialogs.some((dialog) => dialog?.open));
 }
 
@@ -2591,7 +2594,7 @@ function bindTextureDrop() {
     event.preventDefault();
     state.dragDepth = 0;
     showDropOverlay(false);
-    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open || els.pixelDialog.open || els.packHistoryDialog.open) return;
+    if (els.aiDialog.open || els.libraryDialog.open || els.finisherDialog.open || els.packDialog.open || els.versionDialog.open || els.itemDialog.open || els.variantSheetDialog.open || els.anyPackDialog.open || els.themeDialog.open || els.pixelDialog.open || els.packHistoryDialog.open || els.itemMotifDialog.open) return;
     importTextureFile(file);
   });
 }
@@ -3092,6 +3095,15 @@ function downloadTemplateMeta() {
 }
 
 let pixelEditor = null;
+
+let itemMotifStudio = null;
+
+function initItemMotifStudio() {
+  if (!els.itemMotifDialog) return;
+  itemMotifStudio = new ItemMotifStudio();
+  els.itemMotifBtn.addEventListener('click', () => itemMotifStudio.open());
+  els.itemMotifDialog.addEventListener('close', () => syncDialogBody());
+}
 
 function initPixelEditor() {
   pixelEditor = new PixelEditor();
@@ -4422,6 +4434,9 @@ function bindEvents() {
     } else if (key === 't') {
       event.preventDefault();
       openThemeStudio();
+    } else if (key === 'y') {
+      event.preventDefault();
+      itemMotifStudio?.open();
     } else if (key === 's') {
       event.preventDefault();
       copyShareLink();
@@ -4508,6 +4523,7 @@ function initUiZoom() {
 function init() {
   initUiZoom();
   initPixelEditor();
+  initItemMotifStudio();
   document.querySelector('.make-grid')?.addEventListener('click', (event) => {
     const card = event.target.closest('[data-make]');
     if (!card) return;

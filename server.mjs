@@ -2,8 +2,8 @@ import http from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { extname, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { API_DOCS, BRIDGE_API_VERSION, OPENAPI, batchZip, capabilities, renderItem, renderTextureSet, renderTheme, serializeItem, serializeTextureSet, serializeTheme, texturePng, textureResultZip, themeSheetZip } from './server/bridge.mjs';
-import { THEME_ENGINE_VERSION, listThemes } from './core/index.js';
+import { API_DOCS, BRIDGE_API_VERSION, OPENAPI, batchZip, capabilities, renderItem, renderItemMotif, itemThemeSheetZip, renderTextureSet, renderTheme, serializeItem, serializeItemMotif, serializeTextureSet, serializeTheme, texturePng, textureResultZip, themeSheetZip } from './server/bridge.mjs';
+import { ITEM_THEME_ENGINE_VERSION, THEME_ENGINE_VERSION, listItemThemes, listThemes } from './core/index.js';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const port = Number(process.env.PORT) || 4173;
@@ -341,7 +341,7 @@ function aiStatus() {
   };
 }
 
-const BRIDGE_PATHS = new Set(['/api', '/api/health', '/api/materials', '/api/generate', '/api/batch', '/api/item', '/api/themes', '/api/theme', '/api/theme-sheet', '/api/openapi.json']);
+const BRIDGE_PATHS = new Set(['/api', '/api/health', '/api/materials', '/api/generate', '/api/batch', '/api/item', '/api/themes', '/api/theme', '/api/theme-sheet', '/api/item-themes', '/api/item-motif', '/api/item-motif-sheet', '/api/openapi.json']);
 
 function isLoopbackHost(value) {
   return value === '127.0.0.1' || value === 'localhost' || value === '::1';
@@ -548,6 +548,41 @@ async function handleBridge(req, res, url) {
 
   if (url.pathname === '/api/themes' && req.method === 'GET') {
     json(res, 200, { ok: true, version: BRIDGE_API_VERSION, themes: listThemes(), themeEngineVersion: THEME_ENGINE_VERSION });
+    return true;
+  }
+
+  if (url.pathname === '/api/item-themes' && req.method === 'GET') {
+    json(res, 200, { ok: true, version: BRIDGE_API_VERSION, themes: listItemThemes(), engineVersion: ITEM_THEME_ENGINE_VERSION });
+    return true;
+  }
+
+  if (url.pathname === '/api/item-motif' && (req.method === 'GET' || req.method === 'POST')) {
+    let body = {};
+    if (req.method === 'POST') body = await readJson(req, 32 * 1024);
+    const q = url.searchParams;
+    const result = renderItemMotif({
+      theme: body.theme || q.get('theme') || undefined,
+      motif: body.motif || q.get('motif') || undefined,
+      seed: body.seed || q.get('seed') || 1,
+      size: body.size || q.get('size') || 16,
+    });
+    const format = String(body.format || q.get('format') || (String(req.headers.accept || '').includes('application/json') ? 'json' : 'png')).toLowerCase();
+    if (format === 'json') json(res, 200, serializeItemMotif(result));
+    else if (format === 'png') sendBuffer(res, 200, result.png, 'image/png', `${result.filename}.png`, { 'X-Blockloom-Item-Motif': result.recipe.motif, 'Content-Disposition': `inline; filename="${result.filename}.png"` });
+    else bridgeError(res, 400, 'Item motif format must be png or json.');
+    return true;
+  }
+
+  if (url.pathname === '/api/item-motif-sheet' && (req.method === 'GET' || req.method === 'POST')) {
+    let body = {};
+    if (req.method === 'POST') body = await readJson(req, 32 * 1024);
+    const q = url.searchParams;
+    const { zip, filename, theme } = await itemThemeSheetZip({
+      theme: body.theme || q.get('theme') || undefined,
+      seed: body.seed || q.get('seed') || 1,
+      size: body.size || q.get('size') || 16,
+    });
+    sendBuffer(res, 200, zip, 'application/zip', filename, { 'X-Blockloom-Item-Theme': theme.id });
     return true;
   }
 

@@ -38,3 +38,11 @@ export {
   generateThemeSheet,
   listThemes,
 } from './themes.js';
+
+export {
+  ITEM_THEMES,
+  ITEM_THEME_ENGINE_VERSION,
+  generateItemMotif,
+  generateItemThemeSheet,
+  listItemThemes,
+} from './itemthemes.js';
