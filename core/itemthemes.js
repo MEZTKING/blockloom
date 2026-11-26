@@ -4,7 +4,7 @@ export const ITEM_THEME_ENGINE_VERSION = '1.0.0';
 export const ITEM_THEMES = [
   {
     id: 'royal_sword', name: 'Royal Sword',
-    palette: { metal: '#cfd6e2', metalDark: '#8e97a8', gold: '#e6c65a', goldDark: '#a8862f', grip: '#4a3a52', gem: '#4c8fe0', outline: '#1d2230' },
+    palette: { steel: ['#2b3140', '#8e97a8', '#eef3fb'], gold: ['#462601', '#c48609', '#fde045'], grip: ['#1d1826', '#4a3a52', '#8b7a93'], sapphire: ['#0a2f5e', '#1f7ad8', '#c6ecff'], outline: '#05070f' },
     motifs: [
       ['kingsword', 'Kingsword', { blade: 'straight', guard: 'cross', grip: 3, pommel: 'round', gem: 'sapphire', inlay: 'edge' }],
       ['throneblade', 'Throneblade', { blade: 'straight', guard: 'crown', grip: 3, pommel: 'crown', gem: 'sapphire', inlay: 'fuller' }],
@@ -26,7 +26,7 @@ export const ITEM_THEMES = [
   },
   {
     id: 'runic_pickaxe', name: 'Runic Pickaxe',
-    palette: { metal: '#9aa4ad', metalDark: '#5f6870', jade: '#3f9d63', jadeDark: '#276b43', gold: '#c9a955', goldDark: '#8a7233', haft: '#5a4430', rune: '#6fe3a7', outline: '#1c241f' },
+    palette: { steel: ['#242a2e', '#8b949c', '#e2eaf1'], jade: ['#0f3b1f', '#43945c', '#b4f3bd'], silver: ['#333941', '#a9b2bd', '#f4f8fc'], haft: ['#261a10', '#6a4d31', '#a8865f'], rune: ['#12503a', '#4fd98a', '#e2fff0'], outline: '#070d09' },
     motifs: [
       ['emerald_rune', 'Emerald Rune', { head: 'wide', curve: 0, binding: 'wrap', rune: 'chevron', haft: 'straight', gem: 'emerald' }],
       ['silverbound_relic', 'Silverbound Relic', { head: 'wide', curve: 1, binding: 'band', rune: 'spiral', haft: 'straight', gem: 'silver' }],
@@ -48,7 +48,7 @@ export const ITEM_THEMES = [
   },
   {
     id: 'jade_axe', name: 'Jade Axe',
-    palette: { jade: '#46a86b', jadeDark: '#2a7346', jadeLight: '#8ee0a8', bronze: '#b98a4a', bronzeDark: '#7e5a2c', haft: '#5f4632', amber: '#e3a83f', outline: '#1b241d' },
+    palette: { jade: ['#0f3b1f', '#43945c', '#b4f3bd'], bronze: ['#3a2a10', '#956d2c', '#f0cb7a'], haft: ['#241a11', '#5f4632', '#a0805c'], amber: ['#4a2c06', '#e3a83f', '#ffeaa8'], outline: '#080d09' },
     motifs: [
       ['jade_sun', 'Jade Sun Axe', { head: 'crescent', lobe: 0, binding: 'band', inset: 'sun', haft: 'straight', gem: 'amber' }],
       ['bronze_bound', 'Bronze Bound Jade', { head: 'wedge', lobe: 0, binding: 'wrap', inset: 'dots', haft: 'straight', gem: 'bronze' }],
@@ -70,7 +70,7 @@ export const ITEM_THEMES = [
   },
   {
     id: 'celestial_bow', name: 'Celestial Bow',
-    palette: { silver: '#c3ccda', silverDark: '#8b95a6', blue: '#5f9de0', blueDark: '#3a6ea8', string: '#e6ecf5', gold: '#dcc06a', grip: '#4a3f52', outline: '#1b2130' },
+    palette: { silver: ['#252c3a', '#9aa4b4', '#f4f8fd'], blue: ['#071327', '#1f5f9e', '#a8d8ff'], string: ['#7b8393', '#d7dce5', '#ffffff'], gold: ['#462601', '#c48609', '#fde045'], grip: ['#1a1522', '#4a3a52', '#8b7a93'], outline: '#05070f' },
     motifs: [
       ['moonlit_filigree', 'Moonlit Filigree', { limb: 'recurve', string: 'taut', filigree: 'scroll', grip: 2, ornament: 'moon' }],
       ['starlance', 'Starlance Longbow', { limb: 'long', string: 'taut', filigree: 'rays', grip: 2, ornament: 'star' }],
@@ -92,7 +92,7 @@ export const ITEM_THEMES = [
   },
   {
     id: 'rune_shield', name: 'Rune Shield',
-    palette: { body: '#2b2537', bodyLight: '#413a52', bronze: '#a98548', bronzeDark: '#6d5529', turquoise: '#2fc4b4', silver: '#c2c9d6', outline: '#141019' },
+    palette: { body: ['#0a080c', '#3a3450', '#6f6889'], bronze: ['#33240d', '#a98548', '#f2ce80'], turquoise: ['#062e2c', '#2fc4b4', '#cbfdfb'], silver: ['#252c3a', '#a9b2bd', '#f4f8fc'], outline: '#04030a' },
     motifs: [
       ['crescent_glyph', 'Crescent Glyph Shield', { rim: 'round', frame: 'band', ward: 'crescent', glyph: 'none', boss: 'none' }],
       ['spiral_rune', 'Spiral Rune Shield', { rim: 'round', frame: 'double', ward: 'spiral', glyph: 'none', boss: 'ring' }],
@@ -128,9 +128,81 @@ function hash(x, y, seed, salt = 0) {
   return (h >>> 0) / 4294967295;
 }
 
-function rgb(hex) { return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; }
-function mix(a, b, t) { return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)]; }
-function shade(c, amount) { return c.map((v) => Math.max(0, Math.min(255, v + amount))); }
+/* ---------- style engine: multi-step ramps, directional light, internal outline ---------- */
+function hexToRgb(hex) { return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]; }
+function rgbToHex(c) { return `#${c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`; }
+function lerpRgb(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+
+/* 11-step ramp through dark → mid → light, matching the continuous ramps in the reference set. */
+function buildRamp(darkHex, midHex, lightHex, steps = 11) {
+  const dark = hexToRgb(darkHex), mid = hexToRgb(midHex), light = hexToRgb(lightHex);
+  const out = [];
+  for (let i = 0; i < steps; i++) {
+    const t = i / (steps - 1);
+    out.push(t <= 0.5 ? lerpRgb(dark, mid, t * 2) : lerpRgb(mid, light, (t - 0.5) * 2));
+  }
+  return out;
+}
+
+const LIGHT_BANDS = 11;
+
+function rampPick(ramp, l) {
+  const t = Math.max(0, Math.min(1, l));
+  return ramp[Math.min(ramp.length - 1, Math.round(t * (ramp.length - 1)))];
+}
+
+function shadeAt(ramp, l) {
+  const c = rampPick(ramp, l);
+  return [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])];
+}
+
+/* A shape is a light-value field; colour is resolved after the geometry is known. */
+function shapeField() {
+  const cells = new Map();
+  const set = (x, y, light, mat = 'base') => {
+    if (x < 0 || y < 0 || x > 15 || y > 15) return;
+    const key = y * 16 + x;
+    const prev = cells.get(key);
+    if (prev && prev.mat === mat) { prev.l = Math.max(prev.l, light); return; }
+    if (prev && prev.l > light) return;
+    cells.set(key, { x, y, l: light, mat });
+  };
+  const line = (x0, y0, x1, y1, light, mat = 'base', thickness = 1) => {
+    let x = x0, y = y0;
+    const dx = Math.abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    const dy = -Math.abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (;;) {
+      for (let ox = 0; ox < thickness; ox++) for (let oy = 0; oy < thickness; oy++) set(x + ox, y + oy, light, mat);
+      if (x === x1 && y === y1) break;
+      const e2 = 2 * err;
+      if (e2 >= dy) { err += dy; x += sx; }
+      if (e2 <= dx) { err += dx; y += sy; }
+    }
+  };
+  const rect = (x0, y0, w, h, light, mat = 'base') => { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) set(x0 + x, y0 + y, light, mat); };
+  const has = (x, y) => cells.has(y * 16 + x);
+  return { cells, set, line, rect, has };
+}
+
+/* Colourise a field: nearest-to-light edge gets a highlight, far edge gets the outline tone. */
+function renderField(c, field, ramps, outlineRgb, opts = {}) {
+  const { lightX = 1, lightY = 1, highlight = 0.34, darken = 0.3 } = opts;
+  const norm = Math.hypot(lightX, lightY) || 1;
+  const dx = lightX / norm, dy = lightY / norm;
+  const sx = Math.round(dx), sy = Math.round(dy);
+  for (const { x, y, l, mat } of field.cells.values()) {
+    const ramp = ramps[mat] || ramps.base;
+    const litNeighbour = field.has(x + sx, y + sy);
+    const shadedNeighbour = field.has(x - sx, y - sy);
+    let value = l;
+    if (!litNeighbour) value = Math.min(1, value + highlight);
+    if (!shadedNeighbour) value = Math.max(0, value - darken);
+    const color = value <= 0.04 ? outlineRgb : shadeAt(ramp, value);
+    const i = (y * 16 + x) * 4;
+    c.buf[i] = color[0]; c.buf[i + 1] = color[1]; c.buf[i + 2] = color[2]; c.buf[i + 3] = 255;
+  }
+}
 
 function canvas(seed) {
   const size = 16;
@@ -165,358 +237,357 @@ function canvas(seed) {
   return { size, buf, paint, at, line, grain, seed };
 }
 
+const EXTRA_RAMPS = {
+  emerald: buildRamp('#07301b', '#2fb56f', '#b6ffd2'),
+  stone: buildRamp('#23262a', '#7c8288', '#cfd6dd'),
+  obsidian: buildRamp('#0b0912', '#332b47', '#6d5f8f'),
+  moss: buildRamp('#16300f', '#4f7a2e', '#bfe08a'),
+  ruby: buildRamp('#3a0710', '#c62b3f', '#ffc2cc'),
+};
+
+function rampsFor(pal) {
+  const out = { ...EXTRA_RAMPS };
+  let base = null;
+  for (const [key, value] of Object.entries(pal)) {
+    if (Array.isArray(value) && value.length === 3) {
+      out[key] = buildRamp(value[0], value[1], value[2]);
+      if (!base) base = out[key];
+    }
+  }
+  out.base = out.steel || out.jade || out.body || out.silver || base;
+  return out;
+}
+
 /* ---------- sword ---------- */
 function drawSword(c, p, pal) {
-  const metal = rgb(pal.metal), metalDark = rgb(pal.metalDark);
-  const gold = rgb(pal.gold), goldDark = rgb(pal.goldDark);
-  const grip = rgb(pal.grip), outline = rgb(pal.outline);
-  const gem = { sapphire: rgb('#4c8fe0'), gold: rgb('#e6c65a'), ruby: rgb('#d8504c'), emerald: rgb('#3ad07a'), none: rgb(pal.gem) }[p.gem] || rgb(pal.gem);
-  const edge = shade(metal, 34);
-  const bladeLen = 9;
-  const wide = p.blade === 'leaf' ? 1 : 0;
-  // blade: diagonal from (13,0) to (5,8)
+  const ramps = rampsFor(pal);
+  const outline = hexToRgb(pal.outline);
+  const f = shapeField();
+  const bladeLen = p.blade === 'taper' ? 8 : 9;
   for (let i = 0; i < bladeLen; i++) {
     const x = 13 - i, y = i;
-    c.paint(x, y, c.grain(x, y, edge, 6));
-    c.paint(x, y + 1, c.grain(x, y + 1, metal, 8));
-    if (i < 5) c.paint(x + 1, y, c.grain(x + 1, y, shade(edge, 12), 6));
-    if (wide && i > 0) c.paint(x + 1, y + 1, c.grain(x + 1, y + 1, metalDark, 8));
-    if (i === bladeLen - 1) { c.paint(x, y + 2, metalDark); }
+    const light = 0.42 + (i / bladeLen) * 0.34;
+    f.set(x, y, light - 0.1, 'steel');
+    f.set(x, y + 1, light, 'steel');
+    f.set(x + 1, y + 1, light - 0.26, 'steel');
+    if (p.blade === 'leaf' && i > 1 && i < bladeLen - 2) f.set(x + 1, y, light - 0.3, 'steel');
   }
-  c.paint(14, 1, edge);
+  f.set(14, 1, 0.85, 'steel');
   // inlay
-  if (p.inlay === 'fuller') {
-    for (let i = 1; i < 8; i++) c.paint(13 - i, i + 1, shade(metalDark, -26));
-  } else if (p.inlay === 'edge') {
-    for (let i = 1; i < 8; i++) c.paint(13 - i, i, gold);
+  if (p.inlay === 'edge') {
+    for (let i = 1; i < bladeLen - 1; i++) f.set(13 - i, i, 0.72, 'gold');
+  } else if (p.inlay === 'fuller') {
+    for (let i = 1; i < bladeLen - 1; i++) f.set(13 - i, i + 1, 0.36, 'steel');
   } else if (p.inlay === 'rays') {
-    for (let i = 1; i < 7; i += 2) { c.paint(13 - i, i, gold); c.paint(13 - i + 1, i + 1, gold); }
+    for (let i = 2; i < bladeLen - 1; i += 2) { f.set(13 - i, i, 0.9, 'gold'); f.set(13 - i + 1, i + 1, 0.8, 'gold'); }
   } else if (p.inlay === 'band') {
-    for (let y = 3; y < 7; y++) c.paint(13 - (y) + 1, y, gold);
-    for (let y = 3; y < 7; y++) c.paint(13 - y, y + 1, gold);
+    for (let y = 3; y < 7; y++) { f.set(14 - y, y, 0.78, 'gold'); f.set(14 - y, y + 1, 0.62, 'gold'); }
   }
-  // guard
   const gy = 9;
   if (p.guard === 'cross') {
-    for (let x = 3; x <= 8; x++) c.paint(x, gy, gold);
-    c.paint(3, gy + 1, goldDark); c.paint(8, gy + 1, goldDark);
-    c.paint(4, gy - 1, gold); c.paint(7, gy - 1, gold);
+    for (let x = 3; x <= 8; x++) f.set(x, gy, 0.62, 'gold');
+    f.set(3, gy + 1, 0.4, 'gold'); f.set(8, gy + 1, 0.4, 'gold');
   } else if (p.guard === 'wide') {
-    for (let x = 2; x <= 9; x++) c.paint(x, gy, gold);
-    for (let x = 3; x <= 8; x++) c.paint(x, gy + 1, goldDark);
-    c.paint(2, gy - 1, gold); c.paint(9, gy - 1, gold);
+    for (let x = 2; x <= 9; x++) f.set(x, gy, 0.64, 'gold');
+    for (let x = 3; x <= 8; x++) f.set(x, gy + 1, 0.44, 'gold');
   } else if (p.guard === 'curved') {
-    c.paint(3, gy, gold); c.paint(4, gy, gold); c.paint(5, gy, gold);
-    c.paint(6, gy + 1, gold); c.paint(7, gy + 1, gold); c.paint(8, gy + 1, gold);
-    c.paint(2, gy - 1, goldDark); c.paint(9, gy, gold);
+    for (let x = 3; x <= 6; x++) f.set(x, gy, 0.6, 'gold');
+    for (let x = 5; x <= 8; x++) f.set(x, gy + 1, 0.52, 'gold');
   } else if (p.guard === 'crown') {
-    for (let x = 3; x <= 8; x++) c.paint(x, gy, gold);
-    for (const x of [3, 5, 6, 8]) c.paint(x, gy - 1, gold);
-    c.paint(4, gy - 2, edge); c.paint(7, gy - 2, edge);
-    c.paint(3, gy + 1, goldDark); c.paint(8, gy + 1, goldDark);
+    for (let x = 3; x <= 8; x++) f.set(x, gy, 0.6, 'gold');
+    for (const x of [3, 5, 6, 8]) f.set(x, gy - 1, 0.8, 'gold');
+    f.set(4, gy - 2, 0.55, 'steel'); f.set(7, gy - 2, 0.55, 'steel');
   } else if (p.guard === 'winged') {
-    for (let x = 2; x <= 9; x++) c.paint(x, gy, x % 2 ? gold : goldDark);
-    c.paint(2, gy - 1, gold); c.paint(9, gy - 1, gold);
-    c.paint(1, gy - 2, goldDark); c.paint(10, gy - 2, goldDark);
-    c.paint(1, gy - 1, metal); c.paint(10, gy - 1, metal);
+    for (let x = 2; x <= 9; x++) f.set(x, gy, x % 2 ? 0.66 : 0.5, 'gold');
+    f.set(2, gy - 1, 0.78, 'gold'); f.set(9, gy - 1, 0.78, 'gold');
+    f.set(1, gy - 2, 0.6, 'gold'); f.set(10, gy - 2, 0.6, 'gold');
   } else {
-    for (let x = 3; x <= 8; x++) c.paint(x, gy, gold);
-    c.paint(3, gy - 1, metal); c.paint(5, gy - 1, metal); c.paint(7, gy - 1, gold);
-    c.paint(4, gy - 2, metal); c.paint(6, gy - 2, metal);
+    for (let x = 3; x <= 8; x++) f.set(x, gy, 0.6, 'gold');
+    for (const x of [3, 5, 7]) f.set(x, gy - 1, 0.85, 'gold');
+    f.set(4, gy - 2, 0.6, 'steel'); f.set(6, gy - 2, 0.6, 'steel');
   }
-  if (p.guard !== 'curved') { for (let x = 3; x <= 8; x++) c.paint(x, gy + 1, x % 2 ? goldDark : gold); }
-  // grip with wrapping bands (kept inside the canvas)
+  // grip
   let gx = 4, gyy = gy + 1;
   const steps = Math.min(4, Math.max(2, p.grip));
   for (let i = 0; i < steps; i++) {
-    const color = i % 2 === 0 ? grip : shade(grip, 26);
-    c.paint(gx, gyy, color);
-    c.paint(gx, gyy + 1, shade(grip, -18));
+    f.set(gx, gyy, i % 2 ? 0.62 : 0.46, 'grip');
+    f.set(gx, gyy + 1, 0.34, 'grip');
     gx -= 1; gyy += 1;
   }
   // pommel
   const px = gx + 1, py = gyy;
   if (p.pommel === 'round') {
-    c.paint(px - 1, py, gold); c.paint(px, py, goldDark);
-    c.paint(px - 1, py + 1, gem); c.paint(px, py + 1, shade(gem, -24));
+    f.set(px - 1, py, 0.72, 'gold'); f.set(px, py, 0.52, 'gold'); f.set(px - 1, py + 1, 0.44, 'gold');
   } else if (p.pommel === 'pointed') {
-    c.paint(px - 1, py, gold); c.paint(px - 1, py + 1, goldDark);
+    f.set(px - 1, py, 0.66, 'gold'); f.set(px - 1, py + 1, 0.4, 'gold');
   } else {
-    c.paint(px - 1, py, gold); c.paint(px, py, goldDark);
-    c.paint(px - 2, py, gold); c.paint(px - 1, py - 1, edge);
-    c.paint(px - 1, py + 1, gem);
+    f.set(px - 1, py, 0.7, 'gold'); f.set(px, py, 0.5, 'gold');
+    f.set(px - 2, py, 0.8, 'gold'); f.set(px - 1, py - 1, 0.9, 'gold');
   }
-  // jewel in the guard
-  if (p.gem !== 'none') { c.paint(4, gy, shade(gem, 26)); c.paint(7, gy, gem); }
-  c.paint(0, 15, outline, 0);
+  const gemMat = p.gem === 'none' ? 'gold' : p.gem;
+  f.set(4, gy, 1, gemMat); f.set(7, gy, 0.86, gemMat);
+  renderField(c, f, ramps, outline, { lightX: 1, lightY: 1, highlight: 0.3, darken: 0.34 });
   return c;
 }
 
 /* ---------- pickaxe ---------- */
 function drawPickaxe(c, p, pal) {
-  const metal = rgb(pal.metal), metalDark = rgb(pal.metalDark), edge = shade(metal, 30);
-  const gold = rgb(pal.gold), goldDark = rgb(pal.goldDark);
-  const haft = rgb(pal.haft), rune = rgb(pal.rune);
+  const ramps = rampsFor(pal);
+  const outline = hexToRgb(pal.outline);
+  const f = shapeField();
   const curve = p.curve || 0;
   const span = { flat: 11, narrow: 9, wide: 13, crest: 12 }[p.head] ?? 12;
   const x0 = Math.round((16 - span) / 2);
-  // head: 3-row arc
+  const tip = Math.floor(span / 2);
   for (let i = 0; i < span; i++) {
     const x = x0 + i;
+    const edgeFall = Math.abs(i - tip) / tip;
     const bend = Math.round(Math.sin((i / (span - 1)) * Math.PI) * curve);
-    const y = 2 + bend;
-    c.paint(x, y, c.grain(x, y, edge, 8));
-    c.paint(x, y + 1, c.grain(x, y + 1, metal, 8));
-    c.paint(x, y + 2, c.grain(x, y + 2, metalDark, 8));
+    const y = 2 + bend + Math.round(edgeFall * 1.6);
+    f.set(x, y, 0.88 - edgeFall * 0.18, 'steel');
+    f.set(x, y + 1, 0.66 - edgeFall * 0.12, 'steel');
+    f.set(x, y + 2, 0.4 - edgeFall * 0.08, 'steel');
     if (p.head === 'crest' && (i === 2 || i === span - 3)) {
-      c.paint(x, y - 1, gold);
-      c.paint(x, y - 2, shade(gold, 20));
+      f.set(x, y - 1, 0.95, 'steel');
+      f.set(x, y - 2, 0.72, 'steel');
     }
-    if (p.head === 'wide' && i % 3 === 0) c.paint(x, y + 1, metalDark);
+    if (p.head === 'wide' && i % 3 === 1) f.set(x, y, 0.98, 'steel');
   }
-  // pointed tips
-  c.paint(x0 - 1, 3 + curve, metal);
-  c.paint(x0 + span, 3 + curve, metal);
-  c.paint(x0 - 1, 4 + curve, metalDark);
-  c.paint(x0 + span, 4 + curve, metalDark);
+  f.set(x0 - 1, 3 + curve + 2, 0.55, 'steel');
+  f.set(x0 + span, 3 + curve + 2, 0.55, 'steel');
   // binding
-  const bx = 7, by = 5 + curve;
-  if (p.binding === 'wrap') {
-    for (let x = bx - 1; x <= bx + 2; x++) { c.paint(x, by, gold); c.paint(x, by + 1, goldDark); }
-  } else if (p.binding === 'band') {
-    for (let x = bx - 1; x <= bx + 2; x++) c.paint(x, by, gold);
-    for (let x = bx - 1; x <= bx + 2; x++) c.paint(x, by + 1, shade(gold, -26));
+  const bx = 7, by = 5 + curve + 1;
+  if (p.binding === 'band') {
+    for (let x = bx - 1; x <= bx + 2; x++) { f.set(x, by, 0.66, 'gold'); f.set(x, by + 1, 0.46, 'gold'); }
+  } else if (p.binding === 'wrap') {
+    f.set(bx - 1, by, 0.7, 'gold'); f.set(bx + 2, by, 0.5, 'gold');
+    f.set(bx - 1, by + 1, 0.54, 'gold'); f.set(bx + 2, by + 1, 0.38, 'gold');
+    f.set(bx, by, 0.6, 'gold'); f.set(bx + 1, by, 0.6, 'gold');
   } else {
-    c.paint(bx - 1, by, gold); c.paint(bx, by, rune); c.paint(bx + 1, by, gold);
-    c.paint(bx, by + 1, goldDark);
+    f.set(bx - 1, by, 0.72, 'gold'); f.set(bx, by, 0.86, 'rune'); f.set(bx + 1, by, 0.62, 'gold');
+    f.set(bx, by + 1, 0.44, 'gold'); f.set(bx + 1, by + 1, 0.4, 'gold');
   }
-  // haft (2 px wide, with a bend option)
+  // haft
   for (let y = by + 2; y <= 14; y++) {
     const drift = p.haft === 'bent' ? Math.round((y - by - 2) * 0.6) : 0;
     const x = 7 - drift;
-    c.paint(x, y, c.grain(x, y, haft, 12));
-    c.paint(x + 1, y, shade(c.grain(x + 1, y, haft, 12), -22));
+    f.set(x, y, 0.62 - (y - by) * 0.015, 'haft');
+    f.set(x + 1, y, 0.4, 'haft');
   }
   // rune script on the head
-  const runeY = 3 + curve;
+  const ry = 3 + curve;
   const runeShapes = {
-    chevron: () => { for (let i = 0; i < 3; i++) { c.paint(bx - 2 + i, runeY + 1 - (i % 2), rune); c.paint(bx + 2 - i, runeY + 1 - (i % 2), rune); } },
-    spiral: () => { c.paint(bx, runeY, rune); c.paint(bx + 1, runeY, rune); c.paint(bx + 1, runeY + 1, rune); c.paint(bx, runeY + 1, rune); c.paint(bx - 1, runeY + 1, rune); },
-    dots: () => { c.paint(bx - 3, runeY, rune); c.paint(bx + 3, runeY, rune); c.paint(bx, runeY, shade(rune, -30)); },
-    runes: () => { c.paint(bx - 4, runeY, rune); c.paint(bx - 2, runeY + 1, rune); c.paint(bx + 2, runeY + 1, rune); c.paint(bx + 4, runeY, rune); },
-    glyph: () => { c.paint(bx - 1, runeY, rune); c.paint(bx + 1, runeY, rune); c.paint(bx, runeY + 1, rune); c.paint(bx - 1, runeY + 2, rune); },
-    vein: () => { for (let x = bx - 5; x <= bx + 5; x++) c.paint(x, runeY + 1, rune); },
-    crescent: () => { c.paint(bx - 1, runeY, rune); c.paint(bx - 2, runeY + 1, rune); c.paint(bx - 1, runeY + 2, rune); c.paint(bx, runeY + 1, shade(rune, -40)); },
-    sigil: () => { c.paint(bx, runeY, rune); c.paint(bx - 1, runeY + 1, rune); c.paint(bx + 1, runeY + 1, rune); c.paint(bx, runeY + 2, rune); },
-    eye: () => { c.paint(bx - 2, runeY + 1, rune); c.paint(bx - 1, runeY + 1, rune); c.paint(bx, runeY + 1, shade(rune, -50)); c.paint(bx + 1, runeY + 1, rune); c.paint(bx + 2, runeY + 1, rune); },
-    arc: () => { for (let i = -3; i <= 3; i++) c.paint(bx + i, runeY + (3 - Math.abs(i)) % 2 + 1, rune); },
-    crown: () => { c.paint(bx - 1, runeY, rune); c.paint(bx + 1, runeY, rune); c.paint(bx, runeY + 1, gold); c.paint(bx - 2, runeY + 2, rune); c.paint(bx + 2, runeY + 2, rune); },
+    chevron: () => { for (let i = 0; i < 3; i++) { f.set(bx - 2 + i, ry + 1 - (i % 2), 0.95, 'rune'); f.set(bx + 2 - i, ry + 1 - (i % 2), 0.95, 'rune'); } },
+    spiral: () => { f.set(bx, ry, 0.95, 'rune'); f.set(bx + 1, ry, 0.9, 'rune'); f.set(bx + 1, ry + 1, 0.85, 'rune'); f.set(bx - 1, ry + 1, 0.8, 'rune'); },
+    dots: () => { f.set(bx - 3, ry, 0.95, 'rune'); f.set(bx + 3, ry, 0.95, 'rune'); },
+    runes: () => { f.set(bx - 4, ry, 0.9, 'rune'); f.set(bx - 2, ry + 1, 0.95, 'gold'); f.set(bx + 2, ry + 1, 0.95, 'gold'); f.set(bx + 4, ry, 0.9, 'rune'); },
+    glyph: () => { f.set(bx - 1, ry, 0.95, 'rune'); f.set(bx + 1, ry, 0.9, 'rune'); f.set(bx, ry + 1, 0.85, 'rune'); },
+    vein: () => { for (let x = bx - 5; x <= bx + 5; x++) f.set(x, ry + 1, 0.7 + (x === bx ? 0.3 : 0), 'rune'); },
+    crescent: () => { f.set(bx - 1, ry, 0.95, 'rune'); f.set(bx - 2, ry + 1, 0.95, 'rune'); f.set(bx - 1, ry + 2, 0.9, 'rune'); },
+    sigil: () => { f.set(bx, ry, 0.95, 'rune'); f.set(bx - 1, ry + 1, 0.9, 'rune'); f.set(bx + 1, ry + 1, 0.9, 'rune'); },
+    eye: () => { f.set(bx - 2, ry + 1, 0.9, 'rune'); f.set(bx - 1, ry + 1, 0.95, 'rune'); f.set(bx + 1, ry + 1, 0.95, 'rune'); f.set(bx + 2, ry + 1, 0.9, 'rune'); },
+    arc: () => { for (let i = -3; i <= 3; i++) f.set(bx + i, ry + (3 - Math.abs(i)) % 2 + 1, 0.92, 'rune'); },
+    crown: () => { f.set(bx - 1, ry, 0.95, 'rune'); f.set(bx + 1, ry, 0.95, 'rune'); f.set(bx, ry + 1, 1, 'gold'); },
   };
   (runeShapes[p.rune] || runeShapes.dots)();
-  const gemColor = { emerald: rgb('#3ad07a'), jade: rgb('#5fd394'), silver: rgb('#dfe6f0'), stone: rgb('#8d9299'), obsidian: rgb('#3a3346'), gold }[p.gem] || gold;
-  c.paint(bx, by + 1, gemColor);
+  const gemMat = p.gem || 'emerald';
+  f.set(bx, by + 1, 1, gemMat);
+  renderField(c, f, ramps, outline, { lightX: 0, lightY: -1, highlight: 0.26, darken: 0.3 });
   return c;
 }
 
 /* ---------- axe ---------- */
 function drawAxe(c, p, pal) {
-  const jade = rgb(pal.jade), jadeDark = rgb(pal.jadeDark), jadeLight = rgb(pal.jadeLight);
-  const bronze = rgb(pal.bronze), bronzeDark = rgb(pal.bronzeDark);
-  const haft = rgb(pal.haft), amber = rgb(pal.amber);
-  const haftX = p.head === 'labrys' ? 8 : 8;
-  // head on the left of the haft, plus a second lobe for labrys
-  const drawLobe = (cx, cy, half, edgeDir) => {
+  const ramps = rampsFor(pal);
+  const outline = hexToRgb(pal.outline);
+  const f = shapeField();
+  const haftX = 8;
+  const lobe = p.lobe ? 1 : 0;
+  const lobeAt = (cx, cy, half) => {
     for (let y = cy - half; y <= cy + half; y++) {
       const dist = Math.abs(y - cy);
-      const reach = half - Math.floor(dist * 0.45);
-      for (let x = cx - reach; x <= cx + (edgeDir ? reach : 1); x++) {
-        let color = jade;
-        if (x <= cx - reach + 1) color = jadeLight;
-        else if (x >= cx + reach - 1) color = jadeDark;
-        c.paint(x, y, c.grain(x, y, color, 8));
+      const reach = Math.max(1, half - Math.floor(dist * 0.4));
+      for (let x = cx - reach; x <= cx + 1; x++) {
+        const fromEdge = (cx - reach) - x;
+        const light = 0.68 - Math.abs(fromEdge) * 0.09 - dist * 0.02;
+        f.set(x, y, Math.max(0.2, light), 'jade');
       }
-    }
-    // bronze cutting edge
-    for (let y = cy - half; y <= cy + half; y++) {
-      const dist = Math.abs(y - cy);
-      const reach = half - Math.floor(dist * 0.45);
-      c.paint(cx + edgeDir * reach, y, bronze);
-      if (edgeDir < 0) c.paint(cx - reach + 1, y, bronzeDark);
+      f.set(cx - reach, y, 0.92, 'bronze');
+      if (reach > 2) f.set(cx - reach + 1, y, 0.62, 'jade');
     }
   };
   if (p.head === 'labrys') {
-    drawLobe(4, 5, p.lobe ? 3 : 2, -1);
-    drawLobe(11, 5, p.lobe ? 3 : 2, 1);
+    lobeAt(4, 5, 2 + lobe);
+    lobeAt(11, 5, 2 + lobe);
+    f.set(haftX, 2 + lobe * 0, 0.5, 'haft');
   } else if (p.head === 'wedge') {
     for (let y = 2; y <= 8; y++) {
-      const wide = y < 5 ? y - 1 + (p.lobe ? 1 : 0) : 9 - y + (p.lobe ? 1 : 0);
-      for (let x = haftX - 1 - wide; x < haftX; x++) {
-        c.paint(x, y, c.grain(x, y, x < haftX - wide + 2 ? jadeLight : jade, 8));
+      const wide = (y < 5 ? y : 9 - y) + 1 + lobe;
+      for (let x = haftX - wide; x < haftX; x++) {
+        const light = 0.34 + (x - (haftX - wide)) / Math.max(1, wide) * 0.36;
+        f.set(x, y, Math.min(0.9, light), 'jade');
       }
-      c.paint(haftX - 1 - wide, y, bronze);
+      f.set(haftX - wide, y, 0.94, 'bronze');
     }
   } else {
-    drawLobe(5, 5, 3 + (p.lobe ? 1 : 0), -1);
+    lobeAt(5, 5, 3 + lobe);
+    for (let y = 3; y <= 7; y++) f.set(2, y, 0.5, 'jade');
   }
   // binding
   for (let y = 9; y <= 10; y++) {
-    if (p.binding === 'wrap') { c.paint(haftX - 1, y, bronze); c.paint(haftX + 1, y, bronze); }
-    else if (p.binding === 'band') { for (let x = haftX - 1; x <= haftX + 1; x++) c.paint(x, y, bronze); }
-    else if (p.binding === 'clasp') { c.paint(haftX, y, bronzeDark); c.paint(haftX + 1, y, bronze); }
-    else { c.paint(haftX - 1, y, bronze); c.paint(haftX, y, bronzeDark); c.paint(haftX + 1, y, bronzeDark); }
+    if (p.binding === 'band') { for (let x = haftX - 1; x <= haftX + 1; x++) f.set(x, y, x === haftX ? 0.7 : 0.52, 'bronze'); }
+    else if (p.binding === 'wrap') { f.set(haftX - 1, y, 0.62, 'bronze'); f.set(haftX + 1, y, 0.48, 'bronze'); f.set(haftX, y, 0.4, 'bronze'); }
+    else if (p.binding === 'clasp') { f.set(haftX, y, 0.44, 'bronze'); f.set(haftX + 1, y, 0.66, 'bronze'); }
+    else { f.set(haftX - 1, y, 0.6, 'bronze'); f.set(haftX, y, 0.42, 'bronze'); f.set(haftX + 1, y, 0.5, 'bronze'); }
   }
   // haft
   for (let y = 11; y <= 14; y++) {
     const x = p.haft === 'bent' ? haftX + Math.round((y - 11) * 0.5) : haftX;
-    c.paint(x, y, c.grain(x, y, haft, 12));
-    c.paint(x + 1, y, shade(c.grain(x + 1, y, haft, 12), -22));
+    f.set(x, y, 0.6 - (y - 11) * 0.02, 'haft');
+    f.set(x + 1, y, 0.38, 'haft');
   }
   // inset glyph
   const gx = p.head === 'labrys' ? 4 : 5, gy = 5;
   const insetShapes = {
-    sun: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) c.paint(gx + dx, gy + dy, amber); },
-    dots: () => { c.paint(gx - 1, gy - 1, amber); c.paint(gx + 1, gy + 1, amber); },
-    ring: () => { for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) c.paint(gx + dx, gy + dy, amber); },
-    moss: () => { c.paint(gx, gy, shade(jade, -30)); c.paint(gx + 1, gy + 1, shade(jade, -40)); },
-    line: () => { for (let y = gy - 1; y <= gy + 1; y++) c.paint(gx, y, amber); },
-    eye: () => { c.paint(gx - 1, gy, amber); c.paint(gx, gy, jadeDark); c.paint(gx + 1, gy, amber); },
-    carve: () => { c.paint(gx - 1, gy, jadeDark); c.paint(gx + 1, gy, jadeDark); c.paint(gx, gy + 1, jadeDark); c.paint(gx, gy - 1, amber); },
-    crown: () => { c.paint(gx - 1, gy, amber); c.paint(gx + 1, gy, amber); c.paint(gx, gy - 1, shade(amber, 26)); },
-    spiral: () => { c.paint(gx, gy, amber); c.paint(gx + 1, gy, amber); c.paint(gx + 1, gy + 1, amber); c.paint(gx, gy + 1, shade(amber, -30)); },
-    lotus: () => { c.paint(gx, gy, amber); c.paint(gx - 1, gy + 1, amber); c.paint(gx + 1, gy + 1, amber); },
-    diamond: () => { c.paint(gx, gy, amber); c.paint(gx, gy - 1, shade(amber, 22)); },
-    feather: () => { for (let i = 0; i < 3; i++) c.paint(gx + i - 1, gy - i + 1, amber); },
-    twin: () => { c.paint(gx, gy, amber); c.paint(11 - gx, gy, amber); },
-    runes: () => { c.paint(gx - 1, gy, amber); c.paint(gx + 1, gy - 1, amber); c.paint(gx, gy + 1, amber); },
-    amber: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [0, 2]]) c.paint(gx + dx, gy + dy, amber); },
-    moon: () => { c.paint(gx, gy, rgb('#dfe6f0')); c.paint(gx - 1, gy, rgb('#b9c6da')); c.paint(gx, gy + 1, rgb('#dfe6f0')); },
+    sun: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) f.set(gx + dx, gy + dy, 0.95, 'amber'); },
+    dots: () => { f.set(gx - 1, gy - 1, 0.9, 'amber'); f.set(gx + 1, gy + 1, 0.9, 'amber'); },
+    ring: () => { for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) f.set(gx + dx, gy + dy, 0.92, 'amber'); },
+    moss: () => { f.set(gx, gy, 0.8, 'moss'); f.set(gx + 1, gy + 1, 0.7, 'moss'); },
+    line: () => { for (let y = gy - 1; y <= gy + 1; y++) f.set(gx, y, 0.92, 'amber'); },
+    eye: () => { f.set(gx - 1, gy, 0.9, 'amber'); f.set(gx + 1, gy, 0.9, 'amber'); },
+    carve: () => { f.set(gx - 1, gy, 0.3, 'jade'); f.set(gx + 1, gy, 0.3, 'jade'); f.set(gx, gy - 1, 0.95, 'amber'); },
+    crown: () => { f.set(gx - 1, gy, 0.92, 'amber'); f.set(gx + 1, gy, 0.92, 'amber'); f.set(gx, gy - 1, 1, 'amber'); },
+    spiral: () => { f.set(gx, gy, 0.92, 'amber'); f.set(gx + 1, gy, 0.86, 'amber'); f.set(gx + 1, gy + 1, 0.8, 'amber'); },
+    lotus: () => { f.set(gx, gy, 0.95, 'amber'); f.set(gx - 1, gy + 1, 0.88, 'amber'); f.set(gx + 1, gy + 1, 0.88, 'amber'); },
+    diamond: () => { f.set(gx, gy, 0.95, 'amber'); f.set(gx, gy - 1, 1, 'amber'); },
+    feather: () => { for (let i = 0; i < 3; i++) f.set(gx + i - 1, gy - i + 1, 0.9, 'amber'); },
+    twin: () => { f.set(gx, gy, 0.95, 'amber'); f.set(11 - gx, gy, 0.95, 'amber'); },
+    runes: () => { f.set(gx - 1, gy, 0.92, 'amber'); f.set(gx + 1, gy - 1, 0.92, 'amber'); },
+    amber: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) f.set(gx + dx, gy + dy, 0.98, 'amber'); },
+    moon: () => { f.set(gx, gy, 0.95, 'silver'); f.set(gx - 1, gy, 0.8, 'silver'); },
   };
   (insetShapes[p.inset] || insetShapes.dots)();
-  const gemColor = { amber, bronze: bronzeDark, emerald: rgb('#3ad07a'), moss: shade(jade, -30), gold: rgb('#e6c65a'), obsidian: rgb('#3a3346'), silver: rgb('#dfe6f0') }[p.gem] || amber;
-  c.paint(haftX, 10, gemColor);
+  const gemMat = p.gem === 'gold' ? 'amber' : p.gem || 'amber';
+  f.set(haftX, 10, 1, gemMat);
+  renderField(c, f, ramps, outline, { lightX: -1, lightY: -0.45, highlight: 0.26, darken: 0.28 });
   return c;
 }
 
 /* ---------- bow ---------- */
 function drawBow(c, p, pal) {
-  const silver = rgb(pal.silver), silverDark = rgb(pal.silverDark);
-  const blue = rgb(pal.blue), blueDark = rgb(pal.blueDark);
-  const stringCol = rgb(pal.string), gold = rgb(pal.gold), grip = rgb(pal.grip);
+  const ramps = rampsFor(pal);
+  const outline = hexToRgb(pal.outline);
+  const f = shapeField();
   const span = { short: 9, recurve: 11, long: 13 }[p.limb] || 11;
   const top = Math.floor((16 - span) / 2);
-  // limb: arc opening right, 2 px thick
   for (let i = 0; i < span; i++) {
     const t = i / (span - 1);
-    const bulge = Math.round(Math.sin(t * Math.PI) * 7);
+    const bulge = Math.round(Math.sin(t * Math.PI) * 6);
     const x = 3 + bulge;
     const y = top + i;
-    c.paint(x, y, c.grain(x, y, silver, 8));
-    c.paint(x + 1, y, c.grain(x + 1, y, silverDark, 8));
-    if (bulge > 1) c.paint(x + 2, y, c.grain(x + 2, y, shade(silverDark, -16), 8));
-    if (p.limb === 'recurve' && (i === 1 || i === span - 2)) {
-      c.paint(x + 2, y, blue);
-      c.paint(x + 3, y, blueDark);
-    }
+    f.set(x, y, 0.5, 'silver');
+    f.set(x + 1, y, 0.72, 'silver');
+    f.set(x + 2, y, 0.9, 'silver');
+    if (p.limb === 'recurve' && (i === 1 || i === span - 2)) { f.set(x + 3, y, 0.8, 'blue'); }
   }
-  // tips
-  c.paint(2, top, blue); c.paint(3, top, shade(stringCol, -10)); c.paint(4, top, silverDark);
-  c.paint(2, top + span - 1, blue); c.paint(3, top + span - 1, shade(stringCol, -10)); c.paint(4, top + span - 1, silverDark);
-  // string between the tips
-  for (let i = 1; i < span - 1; i++) {
+  f.set(2, top, 0.8, 'blue'); f.set(3, top, 0.66, 'silver');
+  f.set(2, top + span - 1, 0.8, 'blue'); f.set(3, top + span - 1, 0.66, 'silver');
+  for (let i = 0; i < span; i++) {
     const y = top + i;
-    if (p.string === 'taut') c.paint(1, y, stringCol);
-    else if (i % 2 === 0) c.paint(1, y, shade(stringCol, -30));
+    if (p.string === 'taut') f.set(1, y, i === 0 || i === span - 1 ? 0.9 : 0.6, 'string');
+    else if (i % 2 === 0) f.set(1, y, 0.42, 'string');
   }
-  // grip at the middle of the limb
   const mid = top + Math.floor(span / 2);
-  const gripLen = Math.max(2, p.grip);
-  const bulge = 3 + Math.round(Math.sin(0.5 * Math.PI) * 7);
-  for (let i = 0; i < gripLen; i++) {
-    c.paint(bulge - 1, mid - i + 1, grip);
-    c.paint(bulge, mid - i + 1, shade(grip, 22));
+  const bulge = 3 + Math.round(Math.sin(0.5 * Math.PI) * 6);
+  for (let i = 0; i < Math.max(2, p.grip); i++) {
+    f.set(bulge - 1, mid - i + 1, 0.42, 'grip');
+    f.set(bulge, mid - i + 1, 0.62, 'grip');
+    f.set(bulge + 1, mid - i + 1, 0.8, 'grip');
   }
-  // filigree along the upper limb
   const fx = 5, fy = top + 2;
   const filigree = {
-    scroll: () => { c.paint(fx, fy, gold); c.paint(fx + 1, fy + 1, gold); c.paint(fx + 2, fy + 1, gold); c.paint(fx + 3, fy, gold); },
-    rays: () => { for (let i = 0; i < 3; i++) c.paint(fx + i, fy + i, gold); },
-    trail: () => { for (let i = 0; i < 3; i++) c.paint(fx + 1, fy + i, gold); },
-    ring: () => { for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) c.paint(fx + dx, fy + dy, gold); },
-    dots: () => { c.paint(fx, fy, gold); c.paint(fx + 2, fy + 2, gold); },
-    shard: () => { c.paint(fx, fy + 1, blue); c.paint(fx + 1, fy + 2, gold); c.paint(fx + 2, fy + 1, blueDark); },
+    scroll: () => { f.set(fx, fy, 0.95, 'gold'); f.set(fx + 1, fy + 1, 0.95, 'gold'); f.set(fx + 2, fy + 1, 0.9, 'gold'); f.set(fx + 3, fy, 0.9, 'gold'); },
+    rays: () => { for (let i = 0; i < 3; i++) f.set(fx + i, fy + i, 0.95, 'gold'); },
+    trail: () => { for (let i = 0; i < 3; i++) f.set(fx + 1, fy + i, 0.92, 'gold'); },
+    ring: () => { for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) f.set(fx + dx, fy + dy, 0.92, 'gold'); },
+    dots: () => { f.set(fx, fy, 0.95, 'gold'); f.set(fx + 2, fy + 2, 0.9, 'gold'); },
+    shard: () => { f.set(fx, fy + 1, 0.9, 'blue'); f.set(fx + 1, fy + 2, 0.95, 'gold'); },
   };
   (filigree[p.filigree] || filigree.dots)();
-  // ornament at the upper tip
   const ox = 3, oy = top - 1;
   const ornaments = {
-    moon: () => { c.paint(ox + 1, oy, blue); c.paint(ox + 2, oy + 1, blue); c.paint(ox + 1, oy + 2, blue); },
-    star: () => { c.paint(ox + 1, oy, gold); c.paint(ox, oy + 1, gold); c.paint(ox + 2, oy + 1, gold); c.paint(ox + 1, oy + 2, gold); },
-    comet: () => { c.paint(ox + 1, oy, gold); c.paint(ox + 2, oy + 1, shade(gold, -20)); c.paint(ox + 3, oy + 2, shade(gold, -34)); },
-    eclipse: () => { c.paint(ox + 1, oy, rgb('#2a2436')); c.paint(ox + 1, oy + 1, gold); },
-    crescent: () => { c.paint(ox + 1, oy, silver); c.paint(ox + 2, oy + 1, silver); },
-    nebula: () => { c.paint(ox + 1, oy, rgb('#8f6fd8')); c.paint(ox + 2, oy + 1, rgb('#5f6fd8')); },
-    aurora: () => { c.paint(ox + 1, oy, rgb('#63e0c3')); c.paint(ox + 2, oy + 1, rgb('#8f6fd8')); },
-    sun: () => { c.paint(ox + 1, oy, gold); c.paint(ox, oy, shade(gold, 22)); c.paint(ox + 2, oy, shade(gold, 22)); },
-    constellation: () => { c.paint(ox, oy, silver); c.paint(ox + 2, oy + 1, silver); c.paint(ox + 1, oy + 2, silver); },
-    halo: () => { c.paint(ox, oy + 1, gold); c.paint(ox + 2, oy + 1, gold); c.paint(ox + 1, oy, gold); },
-    meteor: () => { c.paint(ox + 1, oy, rgb('#e07a4a')); c.paint(ox + 2, oy + 1, rgb('#8a4a2a')); },
-    gem: () => { c.paint(ox + 1, oy, rgb('#4c8fe0')); c.paint(ox + 1, oy + 1, rgb('#8fb8ee')); },
-    radiant: () => { c.paint(ox + 1, oy, gold); c.paint(ox + 1, oy + 2, gold); c.paint(ox, oy + 1, shade(gold, 20)); },
-    void: () => { c.paint(ox + 1, oy, rgb('#2a2436')); c.paint(ox + 2, oy + 1, rgb('#5a3a76')); },
+    moon: () => { f.set(ox + 1, oy, 0.9, 'blue'); f.set(ox + 2, oy + 1, 0.9, 'blue'); f.set(ox + 1, oy + 2, 0.8, 'blue'); },
+    star: () => { f.set(ox + 1, oy, 1, 'gold'); f.set(ox, oy + 1, 0.9, 'gold'); f.set(ox + 2, oy + 1, 0.9, 'gold'); f.set(ox + 1, oy + 2, 0.9, 'gold'); },
+    comet: () => { f.set(ox + 1, oy, 1, 'gold'); f.set(ox + 2, oy + 1, 0.8, 'gold'); f.set(ox + 3, oy + 2, 0.6, 'gold'); },
+    eclipse: () => { f.set(ox + 1, oy, 0.25, 'silver'); f.set(ox + 1, oy + 1, 0.95, 'gold'); },
+    crescent: () => { f.set(ox + 1, oy, 0.9, 'silver'); f.set(ox + 2, oy + 1, 0.9, 'silver'); },
+    nebula: () => { f.set(ox + 1, oy, 0.85, 'blue'); f.set(ox + 2, oy + 1, 0.7, 'blue'); },
+    aurora: () => { f.set(ox + 1, oy, 0.9, 'silver'); f.set(ox, oy + 1, 0.95, 'blue'); f.set(ox + 3, oy, 0.85, 'blue'); },
+    sun: () => { f.set(ox + 1, oy, 1, 'gold'); f.set(ox, oy, 0.85, 'gold'); f.set(ox + 2, oy, 0.85, 'gold'); },
+    constellation: () => { f.set(ox, oy, 0.85, 'silver'); f.set(ox + 2, oy + 1, 0.85, 'silver'); f.set(ox + 1, oy + 2, 0.85, 'silver'); },
+    halo: () => { f.set(ox, oy + 1, 0.92, 'gold'); f.set(ox + 2, oy + 1, 0.92, 'gold'); f.set(ox + 1, oy, 1, 'gold'); },
+    meteor: () => { f.set(ox + 1, oy, 0.95, 'gold'); f.set(ox + 2, oy + 1, 0.7, 'gold'); },
+    gem: () => { f.set(ox + 1, oy, 0.95, 'blue'); f.set(ox + 1, oy + 1, 1, 'blue'); },
+    radiant: () => { f.set(ox + 1, oy, 1, 'gold'); f.set(ox + 1, oy + 2, 0.9, 'gold'); f.set(ox, oy + 1, 0.85, 'gold'); },
+    void: () => { f.set(ox + 1, oy, 0.3, 'blue'); f.set(ox + 2, oy + 1, 0.5, 'blue'); },
   };
   (ornaments[p.ornament] || ornaments.star)();
+  renderField(c, f, ramps, outline, { lightX: 1, lightY: -0.35, highlight: 0.26, darken: 0.3 });
   return c;
 }
 
 /* ---------- shield ---------- */
 function drawShield(c, p, pal) {
-  const body = rgb(pal.body), bodyLight = rgb(pal.bodyLight);
-  const bronze = rgb(pal.bronze), bronzeDark = rgb(pal.bronzeDark);
-  const turquoise = rgb(pal.turquoise), silver = rgb(pal.silver);
+  const ramps = rampsFor(pal);
+  const outline = hexToRgb(pal.outline);
+  const f = shapeField();
   const inRim = (x, y) => {
-    const cx = 7.5, cy = 7.5;
-    const dx = Math.abs(x - cx), dy = Math.abs(y - cy);
-    if (p.rim === 'round') return dx * dx + dy * dy <= 30;
-    if (p.rim === 'hex') return dx + dy * 0.72 <= 6.1;
-    if (p.rim === 'kite') return (dx <= 4.6 - (y - 2) * 0.11 && y >= 1 && y <= 14) || (y > 8 && dx <= 5 - (y - 8) * 0.75);
-    return dx * dx + dy * dy <= 26;
+    const dx = Math.abs(x - 7.5), dy = Math.abs(y - 7.5);
+    if (p.rim === 'hex') return dx + dy * 0.72 <= 6.2;
+    if (p.rim === 'kite') return (dy <= 6 && dx <= 4.6 - (y - 2) * 0.1) || (y > 8 && dx <= 5.2 - (y - 8) * 0.8);
+    return dx * dx + dy * dy <= 31;
   };
-  const edgeOf = (x, y) => inRim(x, y) && (!inRim(x + 1, y) || !inRim(x - 1, y) || !inRim(x, y + 1) || !inRim(x, y - 1));
-  for (let y = 1; y <= 14; y++) {
-    for (let x = 1; x <= 14; x++) {
+  const edge = (x, y) => inRim(x, y) && (!inRim(x + 1, y) || !inRim(x - 1, y) || !inRim(x, y + 1) || !inRim(x, y - 1));
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < 16; x++) {
       if (!inRim(x, y)) continue;
-      let color = y < 8 ? bodyLight : body;
-      if (edgeOf(x, y)) color = bronze;
-      if (p.frame === 'double' && edgeOf(x, y)) color = bronzeDark;
-      if (p.frame === 'double' && inRim(x, y) && !edgeOf(x, y) && (edgeOf(x + 1, y) || edgeOf(x, y + 1))) color = bronze;
-      c.paint(x, y, c.grain(x, y, color, 7));
+      const dx = Math.abs(x - 7.5), dy = Math.abs(y - 7.5);
+      const radial = 1 - Math.min(1, Math.hypot(dx, dy) / 7);
+      if (edge(x, y)) {
+        f.set(x, y, 0.58 + radial * 0.22, 'bronze');
+      } else if (p.frame === 'double' && edge(x + 1, y) === false && (edge(x, y + 1) || edge(x + 1, y))) {
+        f.set(x, y, 0.5, 'bronze');
+      } else {
+        f.set(x, y, 0.2 + radial * 0.44, 'body');
+      }
     }
   }
-  const ward = (x, y, color) => { if (inRim(x, y)) c.paint(x, y, color); };
+  const ward = (x, y, light, mat) => { if (inRim(x, y)) f.set(x, y, light, mat); };
   const wards = {
-    crescent: () => { for (let i = -2; i <= 2; i++) ward(7 + i, 5 + Math.abs(i), silver); },
-    spiral: () => { ward(7, 7, silver); ward(8, 7, silver); ward(8, 8, silver); ward(7, 8, silver); ward(6, 8, silver); ward(6, 9, silver); },
-    eye: () => { ward(5, 7, silver); ward(6, 6, silver); ward(7, 5, silver); ward(8, 6, silver); ward(9, 7, silver); ward(8, 8, silver); ward(7, 9, silver); ward(6, 8, silver); ward(7, 7, turquoise); },
-    knot: () => { ward(7, 6, silver); ward(8, 7, silver); ward(6, 8, silver); ward(7, 9, silver); ward(9, 8, silver); },
-    cross: () => { for (let i = 3; i <= 12; i++) { ward(i, 7, silver); ward(7, i, silver); } },
-    serpent: () => { for (let i = 0; i < 6; i++) ward(4 + i, 5 + Math.round(Math.sin(i) * 2), turquoise); },
-    star: () => { for (let i = 0; i < 4; i++) { ward(7 - i, 7 - i, silver); ward(7 + i, 7 - i, silver); ward(7 - i, 7 + i, silver); ward(7 + i, 7 + i, silver); } ward(7, 7, silver); },
-    sun: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) ward(7 + dx, 7 + dy, turquoise); },
-    waves: () => { for (let i = 0; i < 4; i++) { ward(5 + i, 6, turquoise); ward(8 - i, 9, turquoise); } },
-    lotus: () => { ward(7, 6, turquoise); ward(6, 8, turquoise); ward(8, 8, turquoise); ward(5, 9, silver); ward(9, 9, silver); },
-    triangle: () => { for (let i = 0; i < 4; i++) { ward(7 - i, 9 - i, silver); ward(7 + i, 9 - i, silver); } ward(4, 9, silver); ward(3, 9, silver); ward(11, 9, silver); ward(12, 9, silver); },
-    ring: () => { for (const [dx, dy] of [[0, -2], [1, -1], [2, 0], [1, 1], [0, 2], [-1, 1], [-2, 0], [-1, -1]]) ward(7 + dx, 7 + dy, turquoise); },
+    crescent: () => { for (let i = -2; i <= 2; i++) ward(7 + i, 5 + Math.abs(i), 0.92, 'silver'); },
+    spiral: () => { ward(7, 7, 0.95, 'silver'); ward(8, 7, 0.9, 'silver'); ward(8, 8, 0.85, 'silver'); ward(7, 8, 0.8, 'silver'); ward(6, 8, 0.75, 'silver'); ward(6, 9, 0.7, 'silver'); },
+    eye: () => { for (const [x, y] of [[5, 7], [6, 6], [7, 5], [8, 6], [9, 7], [8, 8], [7, 9], [6, 8]]) ward(x, y, 0.88, 'silver'); ward(7, 7, 1, 'turquoise'); },
+    knot: () => { ward(7, 6, 0.9, 'silver'); ward(8, 7, 0.88, 'silver'); ward(6, 8, 0.86, 'silver'); ward(7, 9, 0.84, 'silver'); ward(9, 8, 0.82, 'silver'); },
+    cross: () => { for (let i = 3; i <= 12; i++) { ward(i, 7, 0.86, 'silver'); ward(7, i, 0.86, 'silver'); } },
+    serpent: () => { for (let i = 0; i < 6; i++) ward(4 + i, 5 + Math.round(Math.sin(i) * 2), 0.9, 'turquoise'); },
+    star: () => { for (let i = 0; i < 4; i++) { ward(7 - i, 7 - i, 0.88, 'silver'); ward(7 + i, 7 - i, 0.88, 'silver'); ward(7 - i, 7 + i, 0.86, 'silver'); ward(7 + i, 7 + i, 0.86, 'silver'); } ward(7, 7, 1, 'silver'); },
+    sun: () => { for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) ward(7 + dx, 7 + dy, 0.95, 'turquoise'); },
+    waves: () => { for (let i = 0; i < 4; i++) { ward(5 + i, 6, 0.9, 'turquoise'); ward(8 - i, 9, 0.88, 'turquoise'); } },
+    lotus: () => { ward(7, 6, 1, 'turquoise'); ward(6, 8, 0.9, 'turquoise'); ward(8, 8, 0.9, 'turquoise'); ward(5, 9, 0.85, 'silver'); ward(9, 9, 0.85, 'silver'); },
+    triangle: () => { for (let i = 0; i < 4; i++) { ward(7 - i, 9 - i, 0.9, 'silver'); ward(7 + i, 9 - i, 0.9, 'silver'); } for (const x of [4, 5, 6, 9, 10, 11]) ward(x, 9, 0.85, 'silver'); },
+    ring: () => { for (const [dx, dy] of [[0, -2], [1, -1], [2, 0], [1, 1], [0, 2], [-1, 1], [-2, 0], [-1, -1]]) ward(7 + dx, 7 + dy, 0.95, 'turquoise'); },
   };
   (wards[p.ward] || wards.ring)();
-  const boss = { ring: turquoise, dot: silver }[p.boss];
-  if (boss) { c.paint(7, 7, boss); c.paint(8, 8, shade(boss, -18)); }
+  if (p.boss === 'ring') { ward(7, 7, 1, 'turquoise'); ward(8, 8, 0.85, 'turquoise'); }
+  if (p.boss === 'dot') { ward(7, 7, 1, 'silver'); ward(8, 8, 0.8, 'silver'); }
   const glyphs = {
-    crown: () => { ward(6, 3, bronze); ward(8, 3, bronze); ward(7, 2, bronze); },
-    moon: () => { ward(2, 3, silver); ward(3, 3, silver); ward(3, 4, silver); },
-    rays: () => { for (let i = 0; i < 3; i++) { ward(3 + i, 3 + i, silver); ward(12 - i, 3 + i, silver); } },
-    runes: () => { ward(3, 12, silver); ward(5, 12, silver); ward(10, 12, silver); ward(12, 12, silver); },
+    crown: () => { ward(6, 3, 0.9, 'bronze'); ward(8, 3, 0.9, 'bronze'); ward(7, 2, 1, 'bronze'); },
+    moon: () => { ward(2, 3, 0.95, 'silver'); ward(3, 3, 0.85, 'silver'); ward(3, 4, 0.75, 'silver'); },
+    rays: () => { for (let i = 0; i < 3; i++) { ward(3 + i, 3 + i, 0.9, 'silver'); ward(12 - i, 3 + i, 0.9, 'silver'); } },
+    runes: () => { ward(3, 12, 0.85, 'silver'); ward(5, 12, 0.85, 'silver'); ward(10, 12, 0.85, 'silver'); ward(12, 12, 0.85, 'silver'); },
   };
   if (glyphs[p.glyph]) glyphs[p.glyph]();
+  renderField(c, f, ramps, outline, { lightX: -0.6, lightY: -1, highlight: 0.22, darken: 0.26 });
   return c;
 }
 

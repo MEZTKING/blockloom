@@ -106,7 +106,7 @@ Five component-built families, 16 motifs each:
 - `celestial_bow` — limb arc, string, grip, filigree, tip ornament
 - `rune_shield` — rim, frame, ward, glyph, boss
 
-All sprites are transparent 16×16 cut-outs. `ITEM_THEME_ENGINE_VERSION = 1.0.0`; `core/itemtheme-golden.json` pins 80 hashes. Sizes 32/64 are whole-pixel scales, not native detail.
+All sprites are transparent 16×16 cut-outs drawn with the same style rules as the Bloxal reference sets: an 11-step colour ramp per material, directional light with a bright lit edge and a near-black shaded edge, and per-component material assignment. `ITEM_THEME_ENGINE_VERSION = 1.0.0`; `core/itemtheme-golden.json` pins 80 hashes. Sizes 32/64 are whole-pixel scales, not native detail.
 
 ## Theme sheets
 

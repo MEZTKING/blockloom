@@ -217,7 +217,7 @@ The Universal Packer autosaves its draft files and settings in IndexedDB. Reopen
 
 Press **Y** or open **Item motif studio**.
 
-Five families, 16 motifs each, all transparent 16×16 cut-outs built from components rather than recoloured templates:
+Five families, 16 motifs each, all transparent 16×16 cut-outs built from components rather than recoloured templates. Shading follows the reference style: an 11-step ramp per material, directional light with a bright lit edge and a near-black shadow edge:
 
 | Family | Components |
 |---|---|
